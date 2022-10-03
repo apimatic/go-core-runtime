@@ -1,0 +1,871 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>https: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/apimatic/go-core-runtime/https/callBuilder.go (95.4%)</option>
+				
+				<option value="file1">github.com/apimatic/go-core-runtime/https/fileWrapper.go (90.9%)</option>
+				
+				<option value="file2">github.com/apimatic/go-core-runtime/https/formData.go (93.8%)</option>
+				
+				<option value="file3">github.com/apimatic/go-core-runtime/https/httpClient.go (100.0%)</option>
+				
+				<option value="file4">github.com/apimatic/go-core-runtime/https/httpConfiguration.go (100.0%)</option>
+				
+				<option value="file5">github.com/apimatic/go-core-runtime/https/httpHeaders.go (100.0%)</option>
+				
+				<option value="file6">github.com/apimatic/go-core-runtime/https/interceptors.go (100.0%)</option>
+				
+				<option value="file7">github.com/apimatic/go-core-runtime/https/mockingServer.go (78.9%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package https
+
+import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "io"
+        "io/ioutil"
+        "log"
+        "net/http"
+        "net/url"
+        "strconv"
+        "strings"
+
+        "github.com/apimatic/go-core-runtime/utilities"
+)
+
+const CONTENT_TYPE_HEADER = "content-type"
+const ACCEPT_HEADER = "accept"
+const CONTENT_LENGTH_HEADER = "content-length"
+const AUTHORIZATION_HEADER = "authorization"
+const FORM_URLENCODED_CONTENT_TYPE = "application/x-www-form-urlencoded"
+const JSON_CONTENT_TYPE = "application/json"
+const TEXT_CONTENT_TYPE = "text/plain; charset=utf-8"
+const XML_CONTENT_TYPE = "application/xml"
+const MULTIPART_CONTENT_TYPE = "multipart/form-data"
+
+type Authenticator func(bool) HttpInterceptor
+type CallBuilderFactory func(httpMethod, path string) CallBuilder
+type baseUrlProvider func(server string) string
+
+type CallBuilder interface {
+        AppendPath(path string)
+        AppendTemplateParam(param string)
+        AppendTemplateParams(params interface{})
+        BaseUrl(arg string)
+        Method(httpMethodName string)
+        Accept(acceptHeaderValue string)
+        ContentType(contentTypeHeaderValue string)
+        Header(name string, value interface{})
+        CombineHeaders(headersToMerge map[string]string)
+        QueryParam(name string, value interface{})
+        QueryParams(parameters map[string]interface{})
+        FormParam(name string, value interface{})
+        FormData(fields map[string]interface{})
+        Text(body string)
+        FileStream(file FileWrapper)
+        Json(data interface{})
+        intercept(interceptor HttpInterceptor)
+        InterceptRequest(interceptor func(httpRequest *http.Request) *http.Request)
+        toRequest() *http.Request
+        Call() *HttpContext
+        CallAsJson() (*json.Decoder, *http.Response)
+        CallAsText() (string, *http.Response)
+        CallAsStream() ([]byte, *http.Response)
+        Authenticate(requiresAuth bool)
+}
+
+type defaultCallBuilder struct {
+        path                   string
+        baseUrlArg             string
+        baseUrlProvider        baseUrlProvider
+        httpMethod             string
+        acceptHeaderValue      string
+        contentTypeHeaderValue string
+        headers                map[string]string
+        query                  url.Values
+        form                   url.Values
+        formData               bytes.Buffer
+        body                   string
+        streamBody             []byte
+        httpClient             HttpClient
+        interceptors           []HttpInterceptor
+        requiresAuth           bool
+        authProvider           Authenticator
+}
+
+func newDefaultCallBuilder(
+        httpClient HttpClient,
+        httpMethod,
+        path string,
+        baseUrlProvider baseUrlProvider,
+        authProvider Authenticator,
+) *defaultCallBuilder <span class="cov8" title="1">{
+        cb := defaultCallBuilder{
+                httpClient:      httpClient,
+                path:            path,
+                httpMethod:      httpMethod,
+                authProvider:    authProvider,
+                baseUrlProvider: baseUrlProvider,
+        }
+        return &amp;cb
+}</span>
+
+func (cb *defaultCallBuilder) addAuthentication() <span class="cov8" title="1">{
+        if cb.authProvider != nil </span><span class="cov8" title="1">{
+                cb.intercept(cb.authProvider(cb.requiresAuth))
+        }</span>
+}
+
+func (cb *defaultCallBuilder) Authenticate(requiresAuth bool) <span class="cov8" title="1">{
+        cb.requiresAuth = requiresAuth
+        if cb.requiresAuth == true </span><span class="cov8" title="1">{
+                cb.addAuthentication()
+        }</span>
+}
+
+func (cb *defaultCallBuilder) AppendPath(path string) <span class="cov8" title="1">{
+        if cb.path != "" </span><span class="cov8" title="1">{
+                cb.path = sanitizePath(mergePath(cb.path, path))
+        }</span> else<span class="cov8" title="1"> {
+                cb.path = sanitizePath(path)
+        }</span>
+}
+
+func (cb *defaultCallBuilder) AppendTemplateParam(param string) <span class="cov8" title="1">{
+        if strings.Contains(cb.path, "%s") </span><span class="cov8" title="1">{
+                cb.path = fmt.Sprintf(cb.path, "/"+url.QueryEscape(param))
+        }</span> else<span class="cov8" title="1"> {
+                cb.AppendPath(url.QueryEscape(param))
+        }</span>
+}
+
+func (cb *defaultCallBuilder) AppendTemplateParams(params interface{}) <span class="cov8" title="1">{
+        switch x := params.(type) </span>{
+        case []string:<span class="cov8" title="1">
+                for _, param := range x </span><span class="cov8" title="1">{
+                        cb.AppendTemplateParam(param)
+                }</span>
+        case []int:<span class="cov8" title="1">
+                for _, param := range x </span><span class="cov8" title="1">{
+                        cb.AppendTemplateParam(strconv.Itoa(int(param)))
+                }</span>
+        }
+}
+
+func (cb *defaultCallBuilder) BaseUrl(server string) <span class="cov0" title="0">{
+        cb.baseUrlArg = server
+}</span>
+
+func (cb *defaultCallBuilder) Method(httpMethodName string) <span class="cov8" title="1">{
+        if strings.EqualFold(httpMethodName, http.MethodGet) </span><span class="cov8" title="1">{
+                cb.httpMethod = http.MethodGet
+        }</span> else<span class="cov8" title="1"> if strings.EqualFold(httpMethodName, http.MethodPut) </span><span class="cov8" title="1">{
+                cb.httpMethod = http.MethodPut
+        }</span> else<span class="cov8" title="1"> if strings.EqualFold(httpMethodName, http.MethodPost) </span><span class="cov8" title="1">{
+                cb.httpMethod = http.MethodPost
+        }</span> else<span class="cov8" title="1"> if strings.EqualFold(httpMethodName, http.MethodPatch) </span><span class="cov8" title="1">{
+                cb.httpMethod = http.MethodPatch
+        }</span> else<span class="cov8" title="1"> if strings.EqualFold(httpMethodName, http.MethodDelete) </span><span class="cov8" title="1">{
+                cb.httpMethod = http.MethodDelete
+        }</span> else<span class="cov8" title="1"> {
+                log.Panic("Invalid HTTP method given!")
+        }</span>
+}
+
+func (cb *defaultCallBuilder) Accept(acceptHeaderValue string) <span class="cov8" title="1">{
+        cb.acceptHeaderValue = acceptHeaderValue
+}</span>
+
+func (cb *defaultCallBuilder) ContentType(contentTypeHeaderValue string) <span class="cov8" title="1">{
+        cb.contentTypeHeaderValue = contentTypeHeaderValue
+}</span>
+
+func (cb *defaultCallBuilder) Header(
+        name string,
+        value interface{},
+) <span class="cov8" title="1">{
+        if cb.headers == nil </span><span class="cov8" title="1">{
+                cb.headers = make(map[string]string)
+        }</span>
+        <span class="cov8" title="1">SetHeaders(cb.headers, name, fmt.Sprintf("%v", value))</span>
+}
+
+func (cb *defaultCallBuilder) CombineHeaders(headersToMerge map[string]string) <span class="cov8" title="1">{
+        MergeHeaders(cb.headers, headersToMerge)
+}</span>
+
+func (cb *defaultCallBuilder) QueryParam(
+        name string,
+        value interface{},
+) <span class="cov8" title="1">{
+        if cb.query == nil </span><span class="cov8" title="1">{
+                cb.query = url.Values{}
+        }</span>
+        <span class="cov8" title="1">cb.query = PrepareFormFields(name, value, cb.query)</span>
+}
+
+func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) <span class="cov8" title="1">{
+        cb.query = utilities.PrepareQueryParams(cb.query, parameters)
+}</span>
+
+func (cb *defaultCallBuilder) FormParam(
+        name string,
+        value interface{},
+) <span class="cov8" title="1">{
+        if cb.form == nil </span><span class="cov8" title="1">{
+                cb.form = url.Values{}
+        }</span>
+        <span class="cov8" title="1">cb.form = PrepareFormFields(name, value, cb.form)
+        cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)</span>
+}
+
+func (cb *defaultCallBuilder) FormData(fields map[string]interface{}) <span class="cov8" title="1">{
+        var headerVal string
+        cb.formData, headerVal = PrepareMultipartFields(fields)
+        cb.setContentTypeIfNotSet(headerVal)
+}</span>
+
+func (cb *defaultCallBuilder) Text(body string) <span class="cov8" title="1">{
+        cb.body = body
+        cb.setContentTypeIfNotSet(TEXT_CONTENT_TYPE)
+}</span>
+
+func (cb *defaultCallBuilder) FileStream(file FileWrapper) <span class="cov8" title="1">{
+        cb.streamBody = file.File
+        if cb.contentTypeHeaderValue != "" </span><span class="cov8" title="1">{
+                cb.Header(CONTENT_TYPE_HEADER, cb.contentTypeHeaderValue)
+        }</span> else<span class="cov8" title="1"> {
+                cb.Header(CONTENT_TYPE_HEADER, "application/octet-stream")
+        }</span>
+}
+
+func (cb *defaultCallBuilder) Json(data interface{}) <span class="cov8" title="1">{
+        bytes, err := json.Marshal(data)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Panic(err)
+        }</span>
+        <span class="cov8" title="1">cb.body = string(bytes)
+        cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)</span>
+}
+
+func (cb *defaultCallBuilder) setContentTypeIfNotSet(contentType string) <span class="cov8" title="1">{
+        if cb.headers == nil </span><span class="cov8" title="1">{
+                cb.headers = make(map[string]string)
+        }</span>
+        <span class="cov8" title="1">if cb.headers[CONTENT_TYPE_HEADER] == "" </span><span class="cov8" title="1">{
+                cb.headers[CONTENT_TYPE_HEADER] = contentType
+        }</span>
+}
+
+func (cb *defaultCallBuilder) intercept(interceptor HttpInterceptor) <span class="cov8" title="1">{
+        cb.interceptors = append(cb.interceptors, interceptor)
+}</span>
+
+func (cb *defaultCallBuilder) InterceptRequest(
+        interceptor func(httpRequest *http.Request) *http.Request,
+) <span class="cov8" title="1">{
+        cb.intercept(
+                func(
+                        req *http.Request,
+                        next HttpCallExecutor,
+                ) HttpContext </span><span class="cov8" title="1">{
+                        return next(interceptor(req))
+                }</span>)
+}
+
+func (cb *defaultCallBuilder) toRequest() *http.Request <span class="cov8" title="1">{
+        request := http.Request{
+                Method: cb.httpMethod,
+        }
+
+        url, _ := url.Parse(mergePath(cb.baseUrlProvider(cb.baseUrlArg), cb.path))
+        if len(cb.query) &gt; 0 </span><span class="cov8" title="1">{
+                url.RawQuery = encodeSpace(cb.query.Encode())
+        }</span>
+        <span class="cov8" title="1">request.URL = url
+
+        request.Header = make(http.Header)
+        if strings.TrimSpace(cb.acceptHeaderValue) != "" </span><span class="cov8" title="1">{
+                request.Header.Add(ACCEPT_HEADER, cb.acceptHeaderValue)
+        }</span>
+
+        <span class="cov8" title="1">if strings.TrimSpace(cb.contentTypeHeaderValue) != "" </span><span class="cov8" title="1">{
+                request.Header.Add(CONTENT_TYPE_HEADER, cb.contentTypeHeaderValue)
+        }</span>
+
+        <span class="cov8" title="1">for key, val := range cb.headers </span><span class="cov8" title="1">{
+                if request.Header.Get(key) != "" </span><span class="cov8" title="1">{
+                        continue</span>
+                } else<span class="cov8" title="1"> {
+                        request.Header.Add(key, val)
+                }</span>
+        }
+
+        <span class="cov8" title="1">if strings.TrimSpace(cb.body) != "" </span><span class="cov8" title="1">{
+                request.Body = io.NopCloser(bytes.NewBuffer([]byte(cb.body)))
+                defer request.Body.Close()
+        }</span> else<span class="cov8" title="1"> if cb.formData.Bytes() != nil </span><span class="cov8" title="1">{
+                request.Body = io.NopCloser(&amp;cb.formData)
+        }</span> else<span class="cov8" title="1"> if len(cb.form) &gt; 0 </span><span class="cov8" title="1">{
+                request.Form = cb.form
+                replaced := encodeSpace(cb.form.Encode())
+                request.Body = io.NopCloser(bytes.NewBuffer([]byte(replaced)))
+        }</span> else<span class="cov8" title="1"> if cb.streamBody != nil </span><span class="cov8" title="1">{
+                request.Body = io.NopCloser(bytes.NewBuffer(cb.streamBody))
+        }</span>
+
+        <span class="cov8" title="1">return &amp;request</span>
+}
+
+func (cb *defaultCallBuilder) Call() *HttpContext <span class="cov8" title="1">{
+        f := func(request *http.Request) HttpContext </span><span class="cov8" title="1">{
+                client := cb.httpClient
+                response := client.Execute(request)
+
+                return HttpContext{
+                        Request:  request,
+                        Response: response,
+                }
+        }</span>
+
+        <span class="cov8" title="1">pipeline := CallHttpInterceptors(cb.interceptors, f)
+        context := pipeline(cb.toRequest())
+        return &amp;context</span>
+}
+
+func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response) <span class="cov8" title="1">{
+        f := func(request *http.Request) *http.Request </span><span class="cov8" title="1">{
+                request.Header.Set(ACCEPT_HEADER, JSON_CONTENT_TYPE)
+                return request
+        }</span>
+
+        <span class="cov8" title="1">cb.InterceptRequest(f)
+        result := cb.Call()
+        if result.Response.Body == http.NoBody </span><span class="cov0" title="0">{
+                log.Panic("Response body empty!")
+        }</span>
+
+        <span class="cov8" title="1">return json.NewDecoder(result.Response.Body), result.Response</span>
+}
+
+func (cb *defaultCallBuilder) CallAsText() (string, *http.Response) <span class="cov8" title="1">{
+        result := cb.Call()
+        if result.Response.Body == http.NoBody </span><span class="cov0" title="0">{
+                log.Panic("Response body empty!")
+        }</span>
+
+        <span class="cov8" title="1">body, err := ioutil.ReadAll(result.Response.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Panic(err)
+        }</span>
+
+        <span class="cov8" title="1">return string(body), result.Response</span>
+}
+
+func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response) <span class="cov8" title="1">{
+        result := cb.Call()
+        if result.Response.Body == http.NoBody </span><span class="cov0" title="0">{
+                log.Panic("Response body empty!")
+        }</span>
+
+        <span class="cov8" title="1">bytes, err := ioutil.ReadAll(result.Response.Body)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Panic(err)
+        }</span>
+
+        <span class="cov8" title="1">return bytes, result.Response</span>
+}
+
+func mergePath(left, right string) string <span class="cov8" title="1">{
+        if right == "" </span><span class="cov8" title="1">{
+                return left
+        }</span>
+
+        <span class="cov8" title="1">if left[len(left)-1] == '/' &amp;&amp; right[0] == '/' </span><span class="cov8" title="1">{
+                return left + strings.Replace(right, "/", "", -1)
+        }</span> else<span class="cov8" title="1"> if left[len(left)-1] == '/' || right[0] == '/' </span><span class="cov8" title="1">{
+                return left + right
+        }</span> else<span class="cov8" title="1"> {
+                return left + "/" + right
+        }</span>
+}
+
+func sanitizePath(path string) string <span class="cov8" title="1">{
+        return strings.Replace(path, "//", "/", -1)
+}</span>
+
+func encodeSpace(str string) string <span class="cov8" title="1">{
+        return strings.ReplaceAll(str, "+", "%20")
+}</span>
+
+func CreateCallBuilderFactory(
+        baseUrlProvider baseUrlProvider,
+        auth Authenticator,
+        httpClient HttpClient,
+) CallBuilderFactory <span class="cov8" title="1">{
+        return func(
+                httpMethod,
+                path string,
+        ) CallBuilder </span><span class="cov8" title="1">{
+                return newDefaultCallBuilder(
+                        httpClient,
+                        httpMethod,
+                        path,
+                        baseUrlProvider,
+                        auth,
+                )
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package https
+
+import (
+        "io"
+        "log"
+        "net/http"
+        "net/url"
+        "path"
+)
+
+type FileWrapper struct {
+        File        []byte
+        FileName    string
+        FileHeaders http.Header
+}
+
+func GetFile(fileUrl string) FileWrapper <span class="cov8" title="1">{
+        url, _ := url.Parse(fileUrl)
+        resp, err := http.Get(url.String())
+        if err != nil </span><span class="cov8" title="1">{
+                log.Panic(err)
+        }</span>
+
+        <span class="cov8" title="1">body, err := ReadBytes(resp.Body)
+
+        file := FileWrapper{
+                File:        body,
+                FileName:    path.Base(url.Path),
+                FileHeaders: resp.Header,
+        }
+        return file</span>
+}
+
+func ReadBytes(input io.Reader) ([]byte, error) <span class="cov8" title="1">{
+        bytes, err := io.ReadAll(input)
+        if err != nil </span><span class="cov0" title="0">{
+                log.Panic(err)
+        }</span>
+        <span class="cov8" title="1">return bytes, err</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package https
+
+import (
+        "bytes"
+        "encoding/json"
+        "fmt"
+        "io"
+        "log"
+        "mime/multipart"
+        "net/url"
+        "reflect"
+        "strings"
+)
+
+func structToMap(data interface{}) (map[string]interface{}, error) <span class="cov8" title="1">{
+        dataBytes, err := json.Marshal(data)
+        if err != nil </span><span class="cov8" title="1">{
+                return nil, err
+        }</span>
+        <span class="cov8" title="1">mapData := make(map[string]interface{})
+        err = json.Unmarshal(dataBytes, &amp;mapData)
+        return mapData, err</span>
+}
+
+func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{}) []map[string]interface{} <span class="cov8" title="1">{
+        if keys == nil </span><span class="cov8" title="1">{
+                keys = &amp;[]map[string]interface{}{}
+        }</span>
+
+        <span class="cov8" title="1">if value == nil </span><span class="cov8" title="1">{
+                return append(*keys, make(map[string]interface{}))
+        }</span> else<span class="cov8" title="1"> if reflect.TypeOf(value).Kind() == reflect.Struct ||
+                reflect.TypeOf(value).Kind() == reflect.Ptr </span><span class="cov8" title="1">{
+                structMap, err := structToMap(value)
+                if err != nil </span><span class="cov8" title="1">{
+                        log.Panic(err)
+                }</span>
+                <span class="cov8" title="1">for k, v := range structMap </span><span class="cov8" title="1">{
+                        var fullName string = k
+                        if name != "" </span><span class="cov8" title="1">{
+                                fullName = name + "[" + k + "]"
+                        }</span>
+                        <span class="cov8" title="1">formEncodeMap(fullName, v, keys)</span>
+                }
+        } else<span class="cov8" title="1"> if reflect.TypeOf(value).Kind() == reflect.Map </span><span class="cov8" title="1">{
+                for k, v := range value.(map[string]interface{}) </span><span class="cov8" title="1">{
+                        var fullName string = k
+                        if name != "" </span><span class="cov8" title="1">{
+                                fullName = name + "[" + k + "]"
+                        }</span>
+                        <span class="cov8" title="1">formEncodeMap(fullName, v, keys)</span>
+                }
+        } else<span class="cov8" title="1"> if reflect.TypeOf(value).Kind() == reflect.Slice </span><span class="cov8" title="1">{
+                if reflect.TypeOf(value).Elem().Kind() == reflect.Interface </span><span class="cov8" title="1">{
+                        for num, val := range value.([]interface{}) </span><span class="cov8" title="1">{
+                                fullName := name + "[" + fmt.Sprintf("%v", num) + "]"
+                                formEncodeMap(fullName, val, keys)
+                        }</span>
+                } else<span class="cov8" title="1"> {
+                        for num, val := range value.([]string) </span><span class="cov8" title="1">{
+                                fullName := name + "[" + fmt.Sprintf("%v", num) + "]"
+                                formEncodeMap(fullName, val, keys)
+                        }</span>
+                }
+        } else<span class="cov8" title="1"> {
+                *keys = append(*keys, map[string]interface{}{name: fmt.Sprintf("%v", value)})
+        }</span>
+
+        <span class="cov8" title="1">return *keys</span>
+}
+
+func PrepareFormFields(key string, value interface{}, form url.Values) url.Values <span class="cov8" title="1">{
+        if form == nil </span><span class="cov8" title="1">{
+                form = url.Values{}
+        }</span>
+
+        <span class="cov8" title="1">switch x := value.(type) </span>{
+        case []string:<span class="cov8" title="1">
+                for _, val := range x </span><span class="cov8" title="1">{
+                        form.Add(key, fmt.Sprintf("%v", val))
+                }</span>
+        case []int:<span class="cov8" title="1">
+                for _, val := range x </span><span class="cov8" title="1">{
+                        form.Add(key, fmt.Sprintf("%v", val))
+                }</span>
+        case []int16:<span class="cov8" title="1">
+                for _, val := range x </span><span class="cov8" title="1">{
+                        form.Add(key, fmt.Sprintf("%v", val))
+                }</span>
+        case []int32:<span class="cov8" title="1">
+                for _, val := range x </span><span class="cov8" title="1">{
+                        form.Add(key, fmt.Sprintf("%v", val))
+                }</span>
+        case []int64:<span class="cov8" title="1">
+                for _, val := range x </span><span class="cov8" title="1">{
+                        form.Add(key, fmt.Sprintf("%v", val))
+                }</span>
+        case []bool:<span class="cov8" title="1">
+                for _, val := range x </span><span class="cov8" title="1">{
+                        form.Add(key, fmt.Sprintf("%v", val))
+                }</span>
+        case []float32:<span class="cov8" title="1">
+                for _, val := range x </span><span class="cov8" title="1">{
+                        form.Add(key, fmt.Sprintf("%v", val))
+                }</span>
+        case []float64:<span class="cov8" title="1">
+                for _, val := range x </span><span class="cov8" title="1">{
+                        form.Add(key, fmt.Sprintf("%v", val))
+                }</span>
+        default:<span class="cov8" title="1">
+                k := formEncodeMap(key, value, nil)
+
+                for num := range k </span><span class="cov8" title="1">{
+                        for key, val := range k[num] </span><span class="cov8" title="1">{
+                                form.Add(key, fmt.Sprintf("%v", val))
+                        }</span>
+                }
+        }
+
+        <span class="cov8" title="1">return form</span>
+}
+
+func PrepareMultipartFields(fields map[string]interface{}) (bytes.Buffer, string) <span class="cov8" title="1">{
+        body := &amp;bytes.Buffer{}
+        writer := multipart.NewWriter(body)
+
+        for key, val := range fields </span><span class="cov8" title="1">{
+                switch x := val.(type) </span>{
+                case FileWrapper:<span class="cov8" title="1">
+                        fw, err := writer.CreateFormFile(key, x.FileName)
+                        if err != nil </span><span class="cov0" title="0">{
+                                panic(err)</span>
+                        }
+                        <span class="cov8" title="1">_, err = io.Copy(fw, bytes.NewReader(x.File))
+                        if err != nil </span><span class="cov0" title="0">{
+                                panic(err)</span>
+                        }
+                default:<span class="cov8" title="1">
+                        fw, err := writer.CreateFormField(key)
+                        if err != nil </span><span class="cov0" title="0">{
+                                panic(err)</span>
+                        }
+                        <span class="cov8" title="1">marshalledBytes, err := json.Marshal(x)
+                        if err != nil </span><span class="cov0" title="0">{
+                                panic(err)</span>
+                        }
+                        <span class="cov8" title="1">_, err = io.Copy(fw, strings.NewReader(string(marshalledBytes)))
+                        if err != nil </span><span class="cov0" title="0">{
+                                panic(err)</span>
+                        }
+                }
+        }
+        <span class="cov8" title="1">writer.Close()
+        return *body, writer.FormDataContentType()</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package https
+
+import (
+        "log"
+        "net/http"
+        "time"
+)
+
+type HttpClientInterface interface {
+        Execute(request *http.Request) *http.Response
+}
+
+type HttpClient struct {
+        httpClientInstance http.Client
+}
+
+func NewHttpClient(opts ...ClientOption) HttpClient <span class="cov8" title="1">{
+        httpClient := &amp;HttpClient{
+                httpClientInstance: *http.DefaultClient,
+        }
+
+        for _, opt := range opts </span><span class="cov8" title="1">{
+                opt(httpClient)
+        }</span>
+
+        <span class="cov8" title="1">return *httpClient</span>
+}
+
+func (c *HttpClient) Execute(request *http.Request) *http.Response <span class="cov8" title="1">{
+        response, err := c.httpClientInstance.Do(request)
+        if err != nil </span><span class="cov8" title="1">{
+                log.Panic(err)
+        }</span>
+        <span class="cov8" title="1">return response</span>
+}
+
+type ClientOption func(*HttpClient)
+
+func WithTransport(transport http.RoundTripper) ClientOption <span class="cov8" title="1">{
+        return func(h *HttpClient) </span><span class="cov8" title="1">{
+                h.httpClientInstance.Transport = transport
+        }</span>
+}
+
+func WithTimeout(timeout float64) ClientOption <span class="cov8" title="1">{
+        return func(h *HttpClient) </span><span class="cov8" title="1">{
+                h.httpClientInstance.Timeout = time.Duration(timeout * float64(time.Second))
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package https
+
+import (
+        "net/http"
+)
+
+type HttpConfiguration struct {
+        Timeout   float64
+        Transport http.RoundTripper
+}
+
+func DefaultHttpConfiguration() HttpConfiguration <span class="cov8" title="1">{
+        return HttpConfiguration{
+                Timeout:   0,
+                Transport: http.DefaultTransport,
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package https
+
+func SetHeaders(headers map[string]string, name, value string) <span class="cov8" title="1">{
+        headers[name] = value
+}</span>
+
+func MergeHeaders(headers, headersToMerge map[string]string) <span class="cov8" title="1">{
+        for k, v := range headersToMerge </span><span class="cov8" title="1">{
+                if _, ok := headers[k]; !ok </span><span class="cov8" title="1">{
+                        headers[k] = v
+                }</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package https
+
+import (
+        "net/http"
+)
+
+type HttpCallExecutor func(request *http.Request) HttpContext
+
+type HttpInterceptor func(request *http.Request, next HttpCallExecutor) HttpContext
+
+func PassThroughInterceptor(
+        req *http.Request,
+        next HttpCallExecutor,
+) HttpContext <span class="cov8" title="1">{
+        return next(req)
+}</span>
+
+func CallHttpInterceptors(
+        interceptors []HttpInterceptor,
+        client HttpCallExecutor,
+) HttpCallExecutor <span class="cov8" title="1">{
+        var next HttpCallExecutor = client
+        for index := len(interceptors) - 1; index &gt;= 0; index-- </span><span class="cov8" title="1">{
+                current := interceptors[index]
+                last := next
+                next = func(req *http.Request) HttpContext </span><span class="cov8" title="1">{
+                        return current(req, last)
+                }</span>
+        }
+        <span class="cov8" title="1">return next</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package https
+
+import (
+        "net/http"
+        "net/http/httptest"
+)
+
+func GetTestingServer() *httptest.Server <span class="cov8" title="1">{
+        return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span><span class="cov8" title="1">{
+                if r.Method == "GET" </span><span class="cov8" title="1">{
+                        if r.URL.Path == "/response/integer" </span><span class="cov8" title="1">{
+                                w.WriteHeader(http.StatusOK)
+                                w.Write([]byte(`4`))
+
+                        }</span> else<span class="cov8" title="1"> if r.URL.Path == "/template/abc/def" || r.URL.Path == "/template/1/2/3/4/5" </span><span class="cov8" title="1">{
+                                w.WriteHeader(http.StatusOK)
+                                w.Write([]byte(`"passed": true,
+                                "message": "It's a hit!",`))
+                        }</span> else<span class="cov8" title="1"> if r.URL.Path == "/response/binary" </span><span class="cov8" title="1">{
+                                w.WriteHeader(http.StatusOK)
+                                w.Write([]byte(`"passed": true,
+                                "message": "It's a hit!",`))
+                        }</span>
+                } else<span class="cov8" title="1"> if r.Method == "POST" </span><span class="cov8" title="1">{
+                        if r.URL.Path == "/form/string" </span><span class="cov8" title="1">{
+                                w.WriteHeader(http.StatusOK)
+                                w.Write([]byte(`4`))
+
+                        }</span>
+                } else<span class="cov0" title="0"> if r.Method == "PUT" || r.Method == "PATCH" || r.Method == "DELETE" </span><span class="cov0" title="0">{
+                        w.WriteHeader(http.StatusOK)
+                }</span> else<span class="cov0" title="0"> if r.Method == "" </span><span class="cov0" title="0">{
+                        r.Method = "Invalid HTTP method given!"
+                }</span>
+        }))
+}</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

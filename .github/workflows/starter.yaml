@@ -1,0 +1,27 @@
+name: Go Core Libraries Tester
+
+on: workflow_dispatch
+#on:
+#  push:
+#    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Current Repo
+      uses: actions/checkout@v2
+
+    - name: Setting Up Go Env
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+
+    - name: Build Current Repo
+      run: go build -v ./...
+
+    - name: Runing Test Cases for Current Repo
+      run: go test -v ./...
