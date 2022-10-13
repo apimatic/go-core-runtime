@@ -31,4 +31,4 @@ jobs:
       env:
         CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
       with:
-        coverageComamand: go test -v ./...
+        coverageCommand: go test -cover
