@@ -1,4 +1,4 @@
-name: Go Core Libraries Tester
+name: Tests
 
 on: workflow_dispatch
 #on:
