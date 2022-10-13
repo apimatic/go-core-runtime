@@ -1,8 +1,8 @@
 # Getting Started with Go Core Runtime
 [![Go Reference](https://pkg.go.dev/badge/github.com/apimatic/go-core-runtime.svg)](https://pkg.go.dev/github.com/apimatic/go-core-runtime)
-[![Version](https://img.shields.io/badge/version-v0.0.2-green)](https://img.shields.io/badge/version-v0.0.2-green)
+[![GitHub release](https://img.shields.io/github/v/release/apimatic/go-core-runtime)](https://pkg.go.dev/github.com/apimatic/go-core-runtime?tab=versions)
 [![Licence][license-badge]][license-url]
-![Tests Passing](https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml/badge.svg)
+[![Tests Passing](https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml/badge.svg)](https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml)
 
 ## Introduction
 
