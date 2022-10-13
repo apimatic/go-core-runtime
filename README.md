@@ -1,5 +1,7 @@
-
 # Getting Started with Go Core Runtime
+[![Go Reference](https://pkg.go.dev/badge/github.com/apimatic/go-core-runtime.svg)](https://pkg.go.dev/github.com/apimatic/go-core-runtime)
+[![Version](https://img.shields.io/badge/version-v0.0.2-green)](https://img.shields.io/badge/version-v0.0.2-green)
+[![Licence][license-badge]][license-url]
 
 ## Introduction
 
@@ -58,3 +60,8 @@ go get ./...
 
 
 Each package contains its test files and code coverage reports as well.
+
+
+
+[license-badge]: https://img.shields.io/badge/licence-APIMATIC-blue
+[license-url]: LICENSE
