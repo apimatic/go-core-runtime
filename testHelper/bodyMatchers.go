@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
@@ -25,38 +24,58 @@ func NativeBodyMatcher(test *testing.T, responseBody, expectedBody string) {
 	}
 }
 
-func KeysBodyMatcher(test *testing.T, responseBody, expectedBody string) {
-	var expected, response map[string]interface{}
-	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
-	responseError := json.Unmarshal([]byte(responseBody), &response)
+func KeysBodyMatcher(test *testing.T, responseBody, expectedBody string, checkArrayCount, checkArrayOrder bool) {
 
-	if expectedError != nil || responseError != nil {
+	var response, expected map[string]interface{}
+	responseErr := json.Unmarshal([]byte(responseBody), &response)
+	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
+
+	if responseErr != nil && expectedErr != nil{
 		test.Error("Error while Unmarshalling")
 	}
 
-	responseStringSlice := toStringSlice(getMapKeys(response))
-	sort.Strings(responseStringSlice)
-
-	expectedStringSlice := toStringSlice(getMapKeys(expected))
-	sort.Strings(expectedStringSlice)
-
-	if !reflect.DeepEqual(responseStringSlice, expectedStringSlice) {
+	if !compareKeysBody(response, expected, checkArrayCount, checkArrayOrder, false) {
 		test.Errorf("got \n%v \nbut expected \n%v", responseBody, expectedBody)
 	}
 }
 
-func KeysAndValuesBodyMatcher(test *testing.T, responseBody, expectedBody string) {
-	var expected, response map[string]interface{}
-	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
-	responseError := json.Unmarshal([]byte(responseBody), &response)
+func KeysAndValuesBodyMatcher(test *testing.T, responseBody, expectedBody string, checkArrayCount, checkArrayOrder bool) {
+	var response, expected map[string]interface{}
+	responseErr := json.Unmarshal([]byte(responseBody), &response)
+	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
-	if expectedError != nil || responseError != nil {
+	if responseErr != nil && expectedErr != nil{
 		test.Error("Error while Unmarshalling")
 	}
 
-	if !reflect.DeepEqual(response, expected) {
+	if !compareKeysBody(response, expected, checkArrayCount, checkArrayOrder, true) {
 		test.Errorf("got \n%v \nbut expected \n%v", responseBody, expectedBody)
 	}
+}
+
+func compareKeysBody(response, expected map[string]interface{}, checkArrayCount, checkArrayOrder, checkValues bool) bool {
+	if checkArrayCount && len(expected) != len(response) {
+		return false
+	}
+	for key,value := range expected {	
+		responseValue := response[key]
+		if responseValue == nil {
+			return false
+		}
+		if reflect.ValueOf(responseValue).Kind() == reflect.Map {
+			if reflect.ValueOf(value).Kind() != reflect.Map {
+				return false
+			}
+			responseSubMap := responseValue.(map[string]interface{})
+			expectedSubMap := value.(map[string]interface{})
+			if !compareKeysBody(responseSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
+				return false
+			}
+		} else if checkValues && !reflect.DeepEqual(responseValue, value) {
+			return false
+		}
+	}
+	return true
 }
 
 func RawBodyMatcher(test *testing.T, responseBody, expectedBody string) {
