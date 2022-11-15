@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -12,8 +13,12 @@ import (
 
 func NativeBodyMatcher(test *testing.T, responseBody, expectedBody string) {
 	var expected, response interface{}
-	json.Unmarshal([]byte(expectedBody), &expected)
-	json.Unmarshal([]byte(responseBody), &response)
+	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
+	responseError := json.Unmarshal([]byte(responseBody), &response)
+
+	if expectedError != nil || responseError != nil {
+		test.Error("Error while Unmarshalling")
+	}
 
 	if !reflect.DeepEqual(response, expected) {
 		test.Errorf("got \n%v \nbut expected \n%v", responseBody, expectedBody)
@@ -21,42 +26,33 @@ func NativeBodyMatcher(test *testing.T, responseBody, expectedBody string) {
 }
 
 func KeysBodyMatcher(test *testing.T, responseBody, expectedBody string) {
-	if !compareKeysBody([]byte(responseBody), []byte(expectedBody)) {
+	var expected, response map[string]interface{}
+	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
+	responseError := json.Unmarshal([]byte(responseBody), &response)
+
+	if expectedError != nil || responseError != nil {
+		test.Error("Error while Unmarshalling")
+	}
+
+	responseStringSlice := toStringSlice(getMapKeys(response))
+	sort.Strings(responseStringSlice)
+
+	expectedStringSlice := toStringSlice(getMapKeys(expected))
+	sort.Strings(expectedStringSlice)
+
+	if !reflect.DeepEqual(responseStringSlice, expectedStringSlice) {
 		test.Errorf("got \n%v \nbut expected \n%v", responseBody, expectedBody)
 	}
-}
-func compareKeysBody(responseBytes, expectedBytes []byte) bool {
-	var expected, response map[string]interface{}
-	expectedErr := json.Unmarshal(expectedBytes, &expected)
-	responseErr := json.Unmarshal(responseBytes, &response)
-
-	if expectedErr != nil && responseErr != nil{
-		return false
-	}
-	for key,value := range expected {	
-		responseValue := response[key]
-		if responseValue == nil {
-			return false
-		}
-		switch responseValue.(type) {
-		case string : case float32 : case float64 : case bool :
-		case int : case int8 : case int16 : case int32 : case int64:
-			continue
-		default:
-			responseBytes,_ := json.Marshal(responseValue)
-			expectedBytes,_ := json.Marshal(value)
-			if !compareKeysBody(responseBytes, expectedBytes) {
-				return false
-			}
-		}
-	}
-	return true
 }
 
 func KeysAndValuesBodyMatcher(test *testing.T, responseBody, expectedBody string) {
 	var expected, response map[string]interface{}
-	json.Unmarshal([]byte(expectedBody), &expected)
-	json.Unmarshal([]byte(responseBody), &response)
+	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
+	responseError := json.Unmarshal([]byte(responseBody), &response)
+
+	if expectedError != nil || responseError != nil {
+		test.Error("Error while Unmarshalling")
+	}
 
 	if !reflect.DeepEqual(response, expected) {
 		test.Errorf("got \n%v \nbut expected \n%v", responseBody, expectedBody)
@@ -78,4 +74,23 @@ func IsSameFile(test *testing.T, expectedFileURL string, responseFile https.File
 
 func SliceToCommaSeparatedString(slice interface{}) string {
 	return strings.Join(strings.Split(fmt.Sprint(slice), " "), ",")
+}
+
+func toStringSlice(input []reflect.Value) []string {
+	stringSlice := make([]string, 0)
+	for _, v := range input {
+		stringSlice = append(stringSlice, v.Interface().(string))
+	}
+	return stringSlice
+}
+
+func getMapKeys(input map[string]interface{}) []reflect.Value {
+	keys := reflect.ValueOf(input).MapKeys()
+	for _, v := range input {
+		x := reflect.ValueOf(v)
+		if x.Kind() == reflect.Map {
+			keys = append(keys, getMapKeys(v.(map[string]interface{}))...)
+		}
+	}
+	return keys
 }
