@@ -1,7 +1,6 @@
 package testHelper
 
 import (
-	"encoding/json"
 	"net/http"
 	"testing"
 )
@@ -12,25 +11,27 @@ type TestHeader struct {
     Value     	string         `json:"Value"`        
 }
 
-func CheckResponseHeaders(t *testing.T, respHeaders http.Header, expectedHeaders string, allowExtra bool) {
+func NewTestHeader(checkValue bool, name, value string) TestHeader {
+	return TestHeader{
+        CheckValue: checkValue,
+		Name: name,
+		Value: value,
+    }
+}
+
+func CheckResponseHeaders(t *testing.T, responseHeaders http.Header, expectedHeadersList []TestHeader, allowExtraHeaders bool) {
 	
-	var expectedHeadersMaps []TestHeader
-	json.Unmarshal([]byte(expectedHeaders), &expectedHeadersMaps)
-	expectedHeadersCount := 0
-
-	for index, expectedHeadersMap := range expectedHeadersMaps {
-		expectedHeadersCount += index
-
-		respValue := respHeaders.Get(expectedHeadersMap.Name)
+	for _, expectedHeader := range expectedHeadersList {
+		respValue := responseHeaders.Get(expectedHeader.Name)
 		if(respValue == "") {
-			t.Errorf("expected header '%v' does not exists in response", expectedHeadersMap.Name)
+			t.Errorf("expected header '%v' does not exists in response", expectedHeader.Name)
 			break
-		} else if expectedHeadersMap.CheckValue && respValue != expectedHeadersMap.Value {
-			t.Errorf("response does not contains same value of expected header '%v'", expectedHeadersMap.Name)
+		} else if expectedHeader.CheckValue && respValue != expectedHeader.Value {
+			t.Errorf("response does not contains same value of expected header '%v'", expectedHeader.Name)
 			break
 		}
     }
-	if !allowExtra && len(respHeaders) != expectedHeadersCount {
+	if !allowExtraHeaders && len(responseHeaders) != len(expectedHeadersList) {
 		t.Errorf("response contains other headers than those listed in the expected headers list")
 	}
 }
