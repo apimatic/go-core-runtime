@@ -677,7 +677,7 @@ func TestPrepareQueryParamsAppendEmptyData(t *testing.T) {
 // UpdateUserAgent
 func TestUpdateUserAgentAllArguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine} {engine-version}")
-	if result != "userAgent linux go1.16.15 1.16.15" {
+	if result != "userAgent linux go1.18.7 1.18.7" {
 		t.Error("Fails")
 	}
 }
@@ -691,7 +691,7 @@ func TestUpdateUserAgentEmptyArguments(t *testing.T) {
 
 func TestUpdateUserAgent2Arguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine}")
-	if result != "userAgent linux go1.16.15" {
+	if result != "userAgent linux go1.18.7" {
 		t.Error("Fails", result)
 	}
 }
