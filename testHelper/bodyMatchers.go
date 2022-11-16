@@ -2,7 +2,9 @@ package testHelper
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/apimatic/go-core-runtime/https"
@@ -24,7 +26,6 @@ func NativeBodyMatcher(test *testing.T, expectedBody string, responseObject any)
 }
 
 func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, checkArrayCount, checkArrayOrder bool) {
-
 	responseBytes,_ := json.Marshal(responseObject)
 	var response, expected map[string]interface{}
 	responseErr := json.Unmarshal(responseBytes, &response)
@@ -93,4 +94,8 @@ func IsSameFile(test *testing.T, expectedFileURL string, responseFile https.File
 	if !reflect.DeepEqual(responseFile, expectedFile) {
 		test.Error("Response File does not match the File received")
 	}
+}
+
+func SliceToCommaSeparatedString(slice interface{}) string {
+	return strings.Join(strings.Split(fmt.Sprint(slice), " "), ",")
 }
