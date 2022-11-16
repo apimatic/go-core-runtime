@@ -30,11 +30,11 @@ func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, c
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
-	if responseErr != nil && expectedErr != nil{
+	if responseErr != nil && expectedErr != nil {
 		test.Error("Error while Unmarshalling")
 	}
 
-	if !matchKeysAndValuesBody(response, expected, checkArrayCount, checkArrayOrder, false) {
+	if !matchKeysAndValues(response, expected, checkArrayCount, checkArrayOrder, false) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
@@ -45,20 +45,20 @@ func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseObje
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
-	if responseErr != nil && expectedErr != nil{
+	if responseErr != nil && expectedErr != nil {
 		test.Error("Error while Unmarshalling")
 	}
 
-	if !matchKeysAndValuesBody(response, expected, checkArrayCount, checkArrayOrder, true) {
+	if !matchKeysAndValues(response, expected, checkArrayCount, checkArrayOrder, true) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
 
-func matchKeysAndValuesBody(response, expected map[string]interface{}, checkArrayCount, checkArrayOrder, checkValues bool) bool {
+func matchKeysAndValues(response, expected map[string]interface{}, checkArrayCount, checkArrayOrder, checkValues bool) bool {
 	if checkArrayCount && len(expected) != len(response) {
 		return false
 	}
-	for key,value := range expected {	
+	for key, value := range expected {
 		responseValue := response[key]
 		if responseValue == nil {
 			return false
@@ -69,7 +69,7 @@ func matchKeysAndValuesBody(response, expected map[string]interface{}, checkArra
 			}
 			responseSubMap := responseValue.(map[string]interface{})
 			expectedSubMap := value.(map[string]interface{})
-			if !matchKeysAndValuesBody(responseSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
+			if !matchKeysAndValues(responseSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
 				return false
 			}
 		} else if checkValues && !reflect.DeepEqual(responseValue, value) {
