@@ -11,7 +11,7 @@ import (
 )
 
 func NativeBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
-	responseBytes,_ := json.Marshal(responseObject)
+	responseBytes, _ := json.Marshal(responseObject)
 	var expected, response interface{}
 	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
 	responseError := json.Unmarshal(responseBytes, &response)
@@ -26,7 +26,7 @@ func NativeBodyMatcher(test *testing.T, expectedBody string, responseObject any)
 }
 
 func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, checkArrayCount, checkArrayOrder bool) {
-	responseBytes,_ := json.Marshal(responseObject)
+	responseBytes, _ := json.Marshal(responseObject)
 	var response, expected map[string]interface{}
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
@@ -41,7 +41,7 @@ func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, c
 }
 
 func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseObject any, checkArrayCount, checkArrayOrder bool) {
-	responseBytes,_ := json.Marshal(responseObject)
+	responseBytes, _ := json.Marshal(responseObject)
 	var response, expected map[string]interface{}
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
@@ -81,7 +81,7 @@ func matchKeysAndValues(response, expected map[string]interface{}, checkArrayCou
 }
 
 func RawBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
-	responseBytes,_ := json.Marshal(responseObject)
+	responseBytes, _ := json.Marshal(responseObject)
 	responseBody := string(responseBytes)
 
 	if responseBody != expectedBody {
@@ -89,7 +89,7 @@ func RawBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
 	}
 }
 
-func IsSameFile(test *testing.T, expectedFileURL string, responseFile https.FileWrapper) {
+func IsSameFile(test *testing.T, expectedFileURL string, responseFile []byte) {
 	expectedFile := https.GetFile(expectedFileURL).File
 	if !reflect.DeepEqual(responseFile, expectedFile) {
 		test.Error("Response File does not match the File received")
