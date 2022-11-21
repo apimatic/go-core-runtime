@@ -319,7 +319,10 @@ func TestPrepareMultipartFields(t *testing.T) {
 }
 
 func TestPrepareMultipartFieldsWithFile(t *testing.T) {
-	file := GetFile("https://www.google.com/doodles/googles-new-logo")
+	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
+	if err != nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
 	bytes, _ := PrepareMultipartFields(map[string]interface{}{"param": file})
 
 	if !strings.Contains(bytes.String(), `filename="googles-new-logo"`) {
