@@ -26,7 +26,10 @@ func RequestAuthentication() Authenticator {
 func TestAppendPath(t *testing.T) {
 	request := GetCallBuilder("GET", "//response/", nil)
 	request.AppendPath("/integer")
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -38,7 +41,10 @@ func TestAppendPath(t *testing.T) {
 func TestAppendPathEmptyPath(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.AppendPath("/response/integer")
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -50,7 +56,10 @@ func TestAppendPathEmptyPath(t *testing.T) {
 func TestAppendTemplateParamsStrings(t *testing.T) {
 	request := GetCallBuilder("GET", "/template/%s", nil)
 	request.AppendTemplateParams([]string{"abc", "def"})
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -62,7 +71,10 @@ func TestAppendTemplateParamsStrings(t *testing.T) {
 func TestAppendTemplateParamsIntegers(t *testing.T) {
 	request := GetCallBuilder("GET", "/template/%s", nil)
 	request.AppendTemplateParams([]int{1, 2, 3, 4, 5})
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -74,8 +86,10 @@ func TestAppendTemplateParamsIntegers(t *testing.T) {
 func TestMethodGet(t *testing.T) {
 	request := GetCallBuilder("", "/response/integer", nil)
 	request.Method("GET")
-	_, response := request.CallAsJson()
-
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 	expected := 200
 
 	if response.StatusCode != expected {
@@ -87,7 +101,10 @@ func TestMethodPost(t *testing.T) {
 	request := GetCallBuilder("", "/form/string", nil)
 	request.Method("POST")
 	request.FormParam("value", "TestString")
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -259,7 +276,10 @@ func TestFileStream(t *testing.T) {
 		err = fmt.Errorf("GetFile failed: %v", err)
 	}
 	request.FileStream(file)
-	_, resp := request.CallAsStream()
+	_, resp, err := request.CallAsStream()
+	if err != nil {
+		t.Errorf("Error in CallAsStream: %v", err)
+	}
 
 	if resp.StatusCode != 200 {
 		t.Errorf("Failed:\nExpected 200\nGot:%v", resp.StatusCode)
@@ -273,7 +293,10 @@ func TestFileStreamWithoutHeader(t *testing.T) {
 		err = fmt.Errorf("GetFile failed: %v", err)
 	}
 	request.FileStream(file)
-	_, resp := request.CallAsStream()
+	_, resp, err := request.CallAsStream()
+	if err != nil {
+		t.Errorf("Error in CallAsStream: %v", err)
+	}
 
 	if resp.StatusCode != 200 {
 		t.Errorf("Failed:\nExpected 200\nGot:%v", resp.StatusCode)

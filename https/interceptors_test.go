@@ -51,7 +51,10 @@ func TestCallHttpInterceptors(t *testing.T) {
 	}
 	req.intercept(interceptor1)
 	req.intercept(interceptor2)
-	respBody, response := req.CallAsText()
+	respBody, response, err := req.CallAsText()
+	if err != nil {
+		t.Errorf("Error in CallAsText: %v", err)
+	}
 
 	if response.StatusCode != 200 || respBody != "Success" {
 		t.Errorf("Interceptors not working!")

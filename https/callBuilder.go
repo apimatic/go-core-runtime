@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -50,9 +49,9 @@ type CallBuilder interface {
 	InterceptRequest(interceptor func(httpRequest *http.Request) *http.Request)
 	toRequest() *http.Request
 	Call() *HttpContext
-	CallAsJson() (*json.Decoder, *http.Response)
-	CallAsText() (string, *http.Response)
-	CallAsStream() ([]byte, *http.Response)
+	CallAsJson() (*json.Decoder, *http.Response, error)
+	CallAsText() (string, *http.Response, error)
+	CallAsStream() ([]byte, *http.Response, error)
 	Authenticate(requiresAuth bool)
 }
 
@@ -150,7 +149,7 @@ func (cb *defaultCallBuilder) Method(httpMethodName string) {
 	} else if strings.EqualFold(httpMethodName, http.MethodDelete) {
 		cb.httpMethod = http.MethodDelete
 	} else {
-		log.Panic("Invalid HTTP method given!")
+		fmt.Println("Invalid HTTP method given!")
 	}
 }
 
@@ -224,7 +223,7 @@ func (cb *defaultCallBuilder) FileStream(file FileWrapper) {
 func (cb *defaultCallBuilder) Json(data interface{}) {
 	bytes, err := json.Marshal(data)
 	if err != nil {
-		log.Panic(err)
+		fmt.Printf("Unable to marshal the given data: %v", err)
 	}
 	cb.body = string(bytes)
 	cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
@@ -315,7 +314,7 @@ func (cb *defaultCallBuilder) Call() *HttpContext {
 	return &context
 }
 
-func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response) {
+func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error) {
 	f := func(request *http.Request) *http.Request {
 		request.Header.Set(ACCEPT_HEADER, JSON_CONTENT_TYPE)
 		return request
@@ -323,39 +322,42 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response) {
 
 	cb.InterceptRequest(f)
 	result := cb.Call()
+	var err error
 	if result.Response.Body == http.NoBody {
-		log.Panic("Response body empty!")
+		err = fmt.Errorf("Response body empty!")
 	}
 
-	return json.NewDecoder(result.Response.Body), result.Response
+	return json.NewDecoder(result.Response.Body), result.Response, err
 }
 
-func (cb *defaultCallBuilder) CallAsText() (string, *http.Response) {
+func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
+	var err error
 	result := cb.Call()
 	if result.Response.Body == http.NoBody {
-		log.Panic("Response body empty!")
+		err = fmt.Errorf("Response body empty!")
 	}
 
 	body, err := ioutil.ReadAll(result.Response.Body)
 	if err != nil {
-		log.Panic(err)
+		err = fmt.Errorf("Error reading Response body: %v", err)
 	}
 
-	return string(body), result.Response
+	return string(body), result.Response, err
 }
 
-func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response) {
+func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
+	var err error
 	result := cb.Call()
 	if result.Response.Body == http.NoBody {
-		log.Panic("Response body empty!")
+		err = fmt.Errorf("Response body empty!")
 	}
 
 	bytes, err := ioutil.ReadAll(result.Response.Body)
 	if err != nil {
-		log.Panic(err)
+		err = fmt.Errorf("Error reading Response body: %v", err)
 	}
 
-	return bytes, result.Response
+	return bytes, result.Response, err
 }
 
 func mergePath(left, right string) string {
