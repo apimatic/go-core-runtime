@@ -39,7 +39,7 @@ func TestStructToMapMarshallingError(t *testing.T) {
 }
 
 func TestFormEncodeMapNilMap(t *testing.T) {
-	result := formEncodeMap("param", "value", nil)
+	result,_ := formEncodeMap("param", "value", nil)
 
 	expected := []map[string]interface{}{
 		{"param": "value"},
@@ -54,7 +54,7 @@ func TestFormEncodeMapNilValue(t *testing.T) {
 	mapInput := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
 	}
-	result := formEncodeMap("param2", nil, &mapInput)
+	result,_ := formEncodeMap("param2", nil, &mapInput)
 
 	expected := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
@@ -70,7 +70,7 @@ func TestFormEncodeMap(t *testing.T) {
 	mapInput := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
 	}
-	result := formEncodeMap("param2", "value2", &mapInput)
+	result,_ := formEncodeMap("param2", "value2", &mapInput)
 
 	expected := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
@@ -86,7 +86,7 @@ func TestFormEncodeMapStructType(t *testing.T) {
 	mapInput := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
 	}
-	result := formEncodeMap("param2", GetStruct(), &mapInput)
+	result,_ := formEncodeMap("param2", GetStruct(), &mapInput)
 
 	expected := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
@@ -103,7 +103,7 @@ func TestFormEncodeMapMapType(t *testing.T) {
 	mapInput := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
 	}
-	result := formEncodeMap("param2", map[string]interface{}{"Name": "Bisma"}, &mapInput)
+	result,_ := formEncodeMap("param2", map[string]interface{}{"Name": "Bisma"}, &mapInput)
 
 	expected := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
@@ -119,7 +119,7 @@ func TestFormEncodeMapSliceType(t *testing.T) {
 	mapInput := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
 	}
-	result := formEncodeMap("param2", []string{"Name", "Bisma"}, &mapInput)
+	result,_ := formEncodeMap("param2", []string{"Name", "Bisma"}, &mapInput)
 
 	expected := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
@@ -136,7 +136,7 @@ func TestFormEncodeMapInterfaceSliceType(t *testing.T) {
 	mapInput := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
 	}
-	result := formEncodeMap("param2", []interface{}{"Name", "Bisma"}, &mapInput)
+	result,_ := formEncodeMap("param2", []interface{}{"Name", "Bisma"}, &mapInput)
 
 	expected := []map[string]interface{}{
 		{"param": "value", "param1": "value1"},
@@ -150,17 +150,15 @@ func TestFormEncodeMapInterfaceSliceType(t *testing.T) {
 }
 
 func TestFormEncodeMapStructTypeError(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code should panic because input cannot be converted to struct.")
-		}
-	}()
-
 	mapInput := []map[string]interface{}{
 		{"param": "value"},
 	}
 	ptr := math.Inf(1)
-	formEncodeMap("param2", &ptr, &mapInput)
+	_, err := formEncodeMap("param2", &ptr, &mapInput)
+
+	if err.InnerError == nil{
+		t.Errorf("The code should panic because input cannot be converted to struct.")
+	}
 }
 
 func TestPrepareFormFieldsNil(t *testing.T) {

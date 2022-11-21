@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+
+	"github.com/apimatic/go-core-runtime/apiError"
 )
 
 func structToMap(data interface{}) (map[string]interface{}, error) {
@@ -22,18 +24,19 @@ func structToMap(data interface{}) (map[string]interface{}, error) {
 	return mapData, err
 }
 
-func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{}) []map[string]interface{} {
+func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{}) ([]map[string]interface{}, apiError.CustomError) {
+	var customError apiError.CustomError
 	if keys == nil {
 		keys = &[]map[string]interface{}{}
 	}
 
 	if value == nil {
-		return append(*keys, make(map[string]interface{}))
+		return append(*keys, make(map[string]interface{})), customError
 	} else if reflect.TypeOf(value).Kind() == reflect.Struct ||
 		reflect.TypeOf(value).Kind() == reflect.Ptr {
 		structMap, err := structToMap(value)
 		if err != nil {
-			log.Panic(err)
+			customError = *apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 		}
 		for k, v := range structMap {
 			var fullName string = k
@@ -66,7 +69,7 @@ func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{
 		*keys = append(*keys, map[string]interface{}{name: fmt.Sprintf("%v", value)})
 	}
 
-	return *keys
+	return *keys, customError
 }
 
 func PrepareFormFields(key string, value interface{}, form url.Values) url.Values {
@@ -108,8 +111,11 @@ func PrepareFormFields(key string, value interface{}, form url.Values) url.Value
 			form.Add(key, fmt.Sprintf("%v", val))
 		}
 	default:
-		k := formEncodeMap(key, value, nil)
+		k, err := formEncodeMap(key, value, nil)
 
+		if err.InnerError != nil {
+			apiError.NewCustomError(log.Llongfile, "", "Error parsing the date: ", err.InnerError)
+		}
 		for num := range k {
 			for key, val := range k[num] {
 				form.Add(key, fmt.Sprintf("%v", val))
@@ -129,24 +135,24 @@ func PrepareMultipartFields(fields map[string]interface{}) (bytes.Buffer, string
 		case FileWrapper:
 			fw, err := writer.CreateFormFile(key, x.FileName)
 			if err != nil {
-				panic(err)
+				apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 			}
 			_, err = io.Copy(fw, bytes.NewReader(x.File))
 			if err != nil {
-				panic(err)
+				apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 			}
 		default:
 			fw, err := writer.CreateFormField(key)
 			if err != nil {
-				panic(err)
+				apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 			}
 			marshalledBytes, err := json.Marshal(x)
 			if err != nil {
-				panic(err)
+				apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 			}
 			_, err = io.Copy(fw, strings.NewReader(string(marshalledBytes)))
 			if err != nil {
-				panic(err)
+				apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 			}
 		}
 	}

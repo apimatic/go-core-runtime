@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apimatic/go-core-runtime/apiError"
 )
 
 const DEFAULT_DATE = "2006-01-02"
@@ -25,59 +27,64 @@ func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) url
 	return queryParams
 }
 
-func JsonDecoderToString(dec *json.Decoder) string {
+func JsonDecoderToString(dec *json.Decoder) (string, apiError.CustomError) {
+	var customError apiError.CustomError
 	var str string
 	for {
 		if err := dec.Decode(&str); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Panic(err)
+			customError = *apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 		}
 	}
-	return str
+	return str, customError
 }
 
-func JsonDecoderToStringSlice(dec *json.Decoder) []string {
+func JsonDecoderToStringSlice(dec *json.Decoder) ([]string, apiError.CustomError) {
+	var customError apiError.CustomError
 	var arr []string
 	for {
 		if err := dec.Decode(&arr); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Panic(err)
+			customError = *apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 		}
 	}
-	return arr
+	return arr, customError
 }
 
-func JsonDecoderToIntSlice(dec *json.Decoder) []int {
+func JsonDecoderToIntSlice(dec *json.Decoder) ([]int, apiError.CustomError) {
+	var customError apiError.CustomError
 	var arr []int
 	for {
 		if err := dec.Decode(&arr); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Panic(err)
+			customError = *apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 		}
 	}
-	return arr
+	return arr, customError
 }
 
-func JsonDecoderToBooleanSlice(dec *json.Decoder) []bool {
+func JsonDecoderToBooleanSlice(dec *json.Decoder) ([]bool, apiError.CustomError) {
+	var customError apiError.CustomError
 	var arr []bool
 	for {
 		if err := dec.Decode(&arr); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Panic(err)
+			customError = *apiError.NewCustomError(log.Llongfile, "", err.Error(), err)
 		}
 	}
-	return arr
+	return arr, customError
 }
 
 // ToTimeSlice is used to make a time.Time slice from a string slice.
-func ToTimeSlice(slice interface{}, format string) []time.Time {
+func ToTimeSlice(slice interface{}, format string) ([]time.Time, apiError.CustomError) {
+	var customError apiError.CustomError
 	result := make([]time.Time, 0)
 	if slice == nil {
-		return []time.Time{}
+		return []time.Time{}, customError
 	}
 
 	if format == time.UnixDate {
@@ -89,12 +96,12 @@ func ToTimeSlice(slice interface{}, format string) []time.Time {
 		for _, val := range slice.([]string) {
 			date, err := time.Parse(format, val)
 			if err != nil {
-				log.Panic("Error parsing the date: ", err)
+				customError = *apiError.NewCustomError(log.Llongfile, "", "Error parsing the date:", err)
 			}
 			result = append(result, date)
 		}
 	}
-	return result
+	return result, customError
 }
 
 // TimeToStringSlice is used to make a string slice from a time.Time slice.
@@ -117,10 +124,11 @@ func TimeToStringSlice(slice []time.Time, format string) []string {
 }
 
 // ToTimeMap is used to make a time.Time map from a string map.
-func ToTimeMap(dict interface{}, format string) map[string]time.Time {
+func ToTimeMap(dict interface{}, format string) (map[string]time.Time, apiError.CustomError) {
+	var customError apiError.CustomError
 	result := make(map[string]time.Time, 0)
 	if dict == nil {
-		return map[string]time.Time{}
+		return map[string]time.Time{}, customError
 	}
 
 	if format == time.UnixDate {
@@ -132,19 +140,20 @@ func ToTimeMap(dict interface{}, format string) map[string]time.Time {
 		for key, val := range dict.(map[string]string) {
 			date, err := time.Parse(format, val)
 			if err != nil {
-				log.Panic("Error parsing the date: ", err)
+				customError = *apiError.NewCustomError(log.Llongfile, "", "Error parsing the date: ", err)
 			}
 			result[key] = date
 		}
 	}
-	return result
+	return result, customError
 }
 
 // ToNullableTimeMap is used to make a nullable time.Time map from a string map.
-func ToNullableTimeMap(dict interface{}, format string) map[string]*time.Time {
+func ToNullableTimeMap(dict interface{}, format string) (map[string]*time.Time, apiError.CustomError) {
+	var customError apiError.CustomError
 	result := make(map[string]*time.Time, 0)
 	if dict == nil {
-		return map[string]*time.Time{}
+		return map[string]*time.Time{}, customError
 	}
 
 	if format == time.UnixDate {
@@ -163,13 +172,13 @@ func ToNullableTimeMap(dict interface{}, format string) map[string]*time.Time {
 			} else {
 				date, err := time.Parse(format, *val)
 				if err != nil {
-					log.Panic("Error parsing the date: ", err)
+					customError =*apiError.NewCustomError(log.Llongfile, "", "Error parsing the date: ", err)
 				}
 				result[key] = &date
 			}
 		}
 	}
-	return result
+	return result, customError
 }
 
 // TimeToStringMap is used to make a string map from a time.Time map.
