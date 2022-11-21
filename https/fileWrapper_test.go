@@ -5,7 +5,10 @@ import (
 )
 
 func TestGetFile(t *testing.T) {
-	file := GetFile("https://www.google.com/doodles/googles-new-logo")
+	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
+	if err != nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
 
 	if file.FileName != "googles-new-logo" || len(file.File) <= 0 {
 		t.Errorf("Expected Image File not recieved ")
@@ -18,7 +21,10 @@ func TestGetFileErrorParsingUrl(t *testing.T) {
 			t.Errorf("The code should panic because file url is empty.")
 		}
 	}()
-	file := GetFile("")
+	file, err := GetFile("")
+	if err != nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
 
 	if file.FileName != "googles-new-logo" || len(file.File) <= 0 {
 		t.Errorf("Expected Image File not recieved ")

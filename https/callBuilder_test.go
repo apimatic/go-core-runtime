@@ -1,6 +1,7 @@
 package https
 
 import (
+	"fmt"
 	"io"
 	"math"
 	"net/http"
@@ -253,7 +254,11 @@ func TestJsonPanic(t *testing.T) {
 func TestFileStream(t *testing.T) {
 	request := GetCallBuilder("GET", "/response/binary", nil)
 	request.ContentType("image/png")
-	request.FileStream(GetFile("https://www.google.com/doodles/googles-new-logo"))
+	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
+	if err != nil {
+		err = fmt.Errorf("GetFile failed: %v", err)
+	}
+	request.FileStream(file)
 	_, resp := request.CallAsStream()
 
 	if resp.StatusCode != 200 {
@@ -263,7 +268,11 @@ func TestFileStream(t *testing.T) {
 
 func TestFileStreamWithoutHeader(t *testing.T) {
 	request := GetCallBuilder("GET", "/response/binary", nil)
-	request.FileStream(GetFile("https://www.google.com/doodles/googles-new-logo"))
+	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
+	if err != nil {
+		err = fmt.Errorf("GetFile failed: %v", err)
+	}
+	request.FileStream(file)
 	_, resp := request.CallAsStream()
 
 	if resp.StatusCode != 200 {
