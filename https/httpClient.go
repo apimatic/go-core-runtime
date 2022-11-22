@@ -1,7 +1,6 @@
 package https
 
 import (
-	"log"
 	"net/http"
 	"time"
 )
@@ -26,12 +25,8 @@ func NewHttpClient(opts ...ClientOption) HttpClient {
 	return *httpClient
 }
 
-func (c *HttpClient) Execute(request *http.Request) *http.Response {
-	response, err := c.httpClientInstance.Do(request)
-	if err != nil {
-		log.Panic(err)
-	}
-	return response
+func (c *HttpClient) Execute(request *http.Request) (*http.Response, error) {
+	return c.httpClientInstance.Do(request)
 }
 
 type ClientOption func(*HttpClient)
