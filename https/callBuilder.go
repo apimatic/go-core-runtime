@@ -182,7 +182,7 @@ func (cb *defaultCallBuilder) QueryParam(
 	if cb.query == nil {
 		cb.query = url.Values{}
 	}
-	cb.query = PrepareFormFields(name, value, cb.query)
+	cb.query, _ = PrepareFormFields(name, value, cb.query)
 }
 
 func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
@@ -196,13 +196,13 @@ func (cb *defaultCallBuilder) FormParam(
 	if cb.form == nil {
 		cb.form = url.Values{}
 	}
-	cb.form = PrepareFormFields(name, value, cb.form)
+	cb.form, _ = PrepareFormFields(name, value, cb.form)
 	cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)
 }
 
 func (cb *defaultCallBuilder) FormData(fields map[string]interface{}) {
 	var headerVal string
-	cb.formData, headerVal = PrepareMultipartFields(fields)
+	cb.formData, headerVal, _ = PrepareMultipartFields(fields)
 	cb.setContentTypeIfNotSet(headerVal)
 }
 
@@ -301,8 +301,13 @@ func (cb *defaultCallBuilder) toRequest() *http.Request {
 func (cb *defaultCallBuilder) Call() *HttpContext {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
-		response := client.Execute(request)
-
+		response, err := client.Execute(request)
+		if err != nil {
+			return HttpContext{
+				Request:  request,
+				Response: nil,
+			}
+		}
 		return HttpContext{
 			Request:  request,
 			Response: response,

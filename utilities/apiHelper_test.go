@@ -142,7 +142,7 @@ func TestToNullableTimeMapUnix(t *testing.T) {
 	input["time2"] = &time2
 	input["time3"] = nil
 
-	result,_ := ToNullableTimeMap(input, time.UnixDate)
+	result, _ := ToNullableTimeMap(input, time.UnixDate)
 	expected := GetNullableTimeMap(time.UnixDate)
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -157,7 +157,7 @@ func TestToNullableTimeMapRFC3339(t *testing.T) {
 	input["time2"] = &time2
 	input["time3"] = nil
 
-	result,_ := ToNullableTimeMap(input, time.RFC3339)
+	result, _ := ToNullableTimeMap(input, time.RFC3339)
 	expected := GetNullableTimeMap(time.RFC3339)
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -173,8 +173,8 @@ func TestToNullableTimeMapParsingError(t *testing.T) {
 	input["time3"] = nil
 
 	result, err := ToNullableTimeMap(input, time.RFC3339)
-	if err.InnerError == nil {
-		t.Errorf("The code should panic while parsing date time.")
+	if err == nil {
+		t.Errorf("The code should get error while parsing date time.")
 		expected := GetNullableTimeMap(time.RFC3339)
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -190,7 +190,7 @@ func TestToNullableTimeMapRFC1123(t *testing.T) {
 	input["time2"] = &time2
 	input["time3"] = nil
 
-	result,_ := ToNullableTimeMap(input, time.RFC1123)
+	result, _ := ToNullableTimeMap(input, time.RFC1123)
 
 	expected := GetNullableTimeMap(time.RFC1123)
 	if !reflect.DeepEqual(result, expected) {
@@ -206,7 +206,7 @@ func TestToNullableTimeMapDefault(t *testing.T) {
 	input["time2"] = &time2
 	input["time3"] = nil
 
-	result,_ := ToNullableTimeMap(input, DEFAULT_DATE)
+	result, _ := ToNullableTimeMap(input, DEFAULT_DATE)
 
 	expected := GetNullableTimeMap(DEFAULT_DATE)
 	if !reflect.DeepEqual(result, expected) {
@@ -215,7 +215,7 @@ func TestToNullableTimeMapDefault(t *testing.T) {
 }
 
 func TestToNullableTimeMapNil(t *testing.T) {
-	result,_ := ToNullableTimeMap(nil, DEFAULT_DATE)
+	result, _ := ToNullableTimeMap(nil, DEFAULT_DATE)
 	expected := map[string]*time.Time{}
 
 	if !reflect.DeepEqual(result, expected) {
@@ -225,7 +225,7 @@ func TestToNullableTimeMapNil(t *testing.T) {
 
 // ToTimeMap
 func TestToTimeMapNil(t *testing.T) {
-	result,_ := ToTimeMap(nil, time.UnixDate)
+	result, _ := ToTimeMap(nil, time.UnixDate)
 
 	expected := map[string]time.Time{}
 	if !reflect.DeepEqual(result, expected) {
@@ -239,8 +239,8 @@ func TestToTimeMapParsingError(t *testing.T) {
 		"time2": "2021-08-20T15:48:05",
 	}
 	result, err := ToTimeMap(input, time.RFC3339)
-	if err.InnerError == nil {
-		t.Errorf("The code should panic while parsing date time.")
+	if err == nil {
+		t.Errorf("The code should get error while parsing date time.")
 		expected := GetTimeMap(time.RFC3339)
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -253,7 +253,7 @@ func TestToTimeMapUnix(t *testing.T) {
 		"time1": 1660992485,
 		"time2": 1629456485,
 	}
-	result,_ := ToTimeMap(input, time.UnixDate)
+	result, _ := ToTimeMap(input, time.UnixDate)
 
 	expected := GetTimeMap(time.UnixDate)
 	if !reflect.DeepEqual(result, expected) {
@@ -266,7 +266,7 @@ func TestToTimeMapRFC3339(t *testing.T) {
 		"time1": "2022-08-20T15:48:05+05:00",
 		"time2": "2021-08-20T15:48:05+05:00",
 	}
-	result,_ := ToTimeMap(input, time.RFC3339)
+	result, _ := ToTimeMap(input, time.RFC3339)
 
 	expected := GetTimeMap(time.RFC3339)
 	if !reflect.DeepEqual(result, expected) {
@@ -279,7 +279,7 @@ func TestToTimeMapRFC1123(t *testing.T) {
 		"time1": "Sat, 20 Aug 2022 15:48:05 PKT",
 		"time2": "Fri, 20 Aug 2021 15:48:05 PKT",
 	}
-	result,_ := ToTimeMap(input, time.RFC1123)
+	result, _ := ToTimeMap(input, time.RFC1123)
 
 	expected := GetTimeMap(time.RFC1123)
 	if !reflect.DeepEqual(result, expected) {
@@ -292,7 +292,7 @@ func TestToTimeMapDefault(t *testing.T) {
 		"time1": "2022-08-20",
 		"time2": "2021-08-20",
 	}
-	result,_ := ToTimeMap(input, DEFAULT_DATE)
+	result, _ := ToTimeMap(input, DEFAULT_DATE)
 
 	expected := GetTimeMap(DEFAULT_DATE)
 
@@ -353,7 +353,7 @@ func TestDefaultTimeToStringSlice(t *testing.T) {
 
 // ToTimeSlice
 func TestToTimeSliceNil(t *testing.T) {
-	result,_ := ToTimeSlice(nil, time.UnixDate)
+	result, _ := ToTimeSlice(nil, time.UnixDate)
 
 	expected := []time.Time{}
 	if !reflect.DeepEqual(result, expected) {
@@ -365,8 +365,8 @@ func TestToTimeSliceParsingError(t *testing.T) {
 	slice := []string{"2022-08-20T15:48:05+05:00", "2021-08-20T"}
 	result, err := ToTimeSlice(slice, time.RFC3339)
 
-	if err.InnerError == nil {
-		t.Errorf("The code should panic while parsing date time.")
+	if err == nil {
+		t.Errorf("The code should get error while parsing date time.")
 		expected := GetTimeSlice(time.RFC3339)
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -376,7 +376,7 @@ func TestToTimeSliceParsingError(t *testing.T) {
 
 func TestToTimeSliceUnix(t *testing.T) {
 	slice := []int64{1660992485, 1629456485}
-	result,_ := ToTimeSlice(slice, time.UnixDate)
+	result, _ := ToTimeSlice(slice, time.UnixDate)
 
 	expected := GetTimeSlice(time.UnixDate)
 	if !reflect.DeepEqual(result, expected) {
@@ -386,7 +386,7 @@ func TestToTimeSliceUnix(t *testing.T) {
 
 func TestToTimeSliceRFC3339(t *testing.T) {
 	slice := []string{"2022-08-20T15:48:05+05:00", "2021-08-20T15:48:05+05:00"}
-	result,_ := ToTimeSlice(slice, time.RFC3339)
+	result, _ := ToTimeSlice(slice, time.RFC3339)
 
 	expected := GetTimeSlice(time.RFC3339)
 	if !reflect.DeepEqual(result, expected) {
@@ -396,7 +396,7 @@ func TestToTimeSliceRFC3339(t *testing.T) {
 
 func TestToTimeSliceRFC1123(t *testing.T) {
 	slice := []string{"Sat, 20 Aug 2022 15:48:05 PKT", "Fri, 20 Aug 2021 15:48:05 PKT"}
-	result,_ := ToTimeSlice(slice, time.RFC1123)
+	result, _ := ToTimeSlice(slice, time.RFC1123)
 
 	expected := GetTimeSlice(time.RFC1123)
 	if !reflect.DeepEqual(result, expected) {
@@ -406,7 +406,7 @@ func TestToTimeSliceRFC1123(t *testing.T) {
 
 func TestToTimeSliceDefault(t *testing.T) {
 	slice := []string{"2022-08-20", "2021-08-20"}
-	result,_ := ToTimeSlice(slice, DEFAULT_DATE)
+	result, _ := ToTimeSlice(slice, DEFAULT_DATE)
 
 	time1, _ := time.Parse(DEFAULT_DATE, "2022-08-20")
 	time2, _ := time.Parse(DEFAULT_DATE, "2021-08-20")
@@ -418,12 +418,12 @@ func TestToTimeSliceDefault(t *testing.T) {
 }
 
 // JsonDecoderToBooleanSlice
-func TestJsonDecoderToBooleanSlicePanic(t *testing.T) {
+func TestJsonDecoderToBooleanSliceError(t *testing.T) {
 	boolSlice := []bool{true, false}
 	result, err := JsonDecoderToBooleanSlice(GetJsonDecoded([]int{1, 2}))
 
-	if err.InnerError == nil {
-		t.Errorf("The code should panic while decoding.")
+	if err == nil {
+		t.Errorf("The code should get error while decoding.")
 		expected := boolSlice
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -433,7 +433,7 @@ func TestJsonDecoderToBooleanSlicePanic(t *testing.T) {
 
 func TestJsonDecoderToBooleanSlice(t *testing.T) {
 	boolSlice := []bool{true, false}
-	result,_ := JsonDecoderToBooleanSlice(GetJsonDecoded(boolSlice))
+	result, _ := JsonDecoderToBooleanSlice(GetJsonDecoded(boolSlice))
 
 	expected := boolSlice
 	if !reflect.DeepEqual(result, expected) {
@@ -443,7 +443,7 @@ func TestJsonDecoderToBooleanSlice(t *testing.T) {
 
 func TestJsonDecoderToBooleanSliceWithEmptySlice(t *testing.T) {
 	boolSlice := []bool{}
-	result,_ := JsonDecoderToBooleanSlice(GetJsonDecoded(boolSlice))
+	result, _ := JsonDecoderToBooleanSlice(GetJsonDecoded(boolSlice))
 
 	expected := boolSlice
 	if !reflect.DeepEqual(result, expected) {
@@ -452,11 +452,11 @@ func TestJsonDecoderToBooleanSliceWithEmptySlice(t *testing.T) {
 }
 
 // JsonDecoderToIntSlice
-func TestJsonDecoderToIntSlicePanic(t *testing.T) {
+func TestJsonDecoderToIntSliceError(t *testing.T) {
 	intSlice := []int{1, 2}
 	result, err := JsonDecoderToIntSlice(GetJsonDecoded([]bool{true, false}))
-	if err.InnerError == nil {
-		t.Errorf("The code should panic while decoding.")
+	if err == nil {
+		t.Errorf("The code should get error while decoding.")
 		expected := intSlice
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -466,7 +466,7 @@ func TestJsonDecoderToIntSlicePanic(t *testing.T) {
 
 func TestJsonDecoderToIntSlice(t *testing.T) {
 	intSlice := []int{1, 2}
-	result,_ := JsonDecoderToIntSlice(GetJsonDecoded(intSlice))
+	result, _ := JsonDecoderToIntSlice(GetJsonDecoded(intSlice))
 
 	expected := intSlice
 	if !reflect.DeepEqual(result, expected) {
@@ -476,7 +476,7 @@ func TestJsonDecoderToIntSlice(t *testing.T) {
 
 func TestJsonDecoderToIntSliceWithEmptySlice(t *testing.T) {
 	intSlice := []int{}
-	result,_ := JsonDecoderToIntSlice(GetJsonDecoded(intSlice))
+	result, _ := JsonDecoderToIntSlice(GetJsonDecoded(intSlice))
 
 	expected := intSlice
 	if !reflect.DeepEqual(result, expected) {
@@ -485,12 +485,12 @@ func TestJsonDecoderToIntSliceWithEmptySlice(t *testing.T) {
 }
 
 // JsonDecoderToStringSlice
-func TestJsonDecoderToStringSlicePanic(t *testing.T) {
+func TestJsonDecoderToStringSliceError(t *testing.T) {
 	stringSlice := []string{"GO", "APIMatic"}
 	result, err := JsonDecoderToStringSlice(GetJsonDecoded([]bool{true, false}))
 
-	if err.InnerError == nil {
-		t.Errorf("The code should panic while decoding.")
+	if err == nil {
+		t.Errorf("The code should get error while decoding.")
 		expected := stringSlice
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -500,7 +500,7 @@ func TestJsonDecoderToStringSlicePanic(t *testing.T) {
 
 func TestJsonDecoderToStringSlice(t *testing.T) {
 	stringSlice := []string{"GO", "APIMatic"}
-	result,_ := JsonDecoderToStringSlice(GetJsonDecoded(stringSlice))
+	result, _ := JsonDecoderToStringSlice(GetJsonDecoded(stringSlice))
 
 	expected := stringSlice
 	if !reflect.DeepEqual(result, expected) {
@@ -510,7 +510,7 @@ func TestJsonDecoderToStringSlice(t *testing.T) {
 
 func TestJsonDecoderToStringSliceWithEmptySlice(t *testing.T) {
 	stringSlice := []string{}
-	result,_ := JsonDecoderToStringSlice(GetJsonDecoded(stringSlice))
+	result, _ := JsonDecoderToStringSlice(GetJsonDecoded(stringSlice))
 
 	expected := stringSlice
 	if !reflect.DeepEqual(result, expected) {
@@ -519,11 +519,11 @@ func TestJsonDecoderToStringSliceWithEmptySlice(t *testing.T) {
 }
 
 // JsonDecoderToString
-func TestJsonDecoderToStringPanic(t *testing.T) {
+func TestJsonDecoderToStringError(t *testing.T) {
 	result, err := JsonDecoderToString(GetJsonDecoded(34))
 
-	if err.InnerError == nil {
-		t.Errorf("The code should panic while decoding.")
+	if err == nil {
+		t.Errorf("The code should get error while decoding.")
 		expected := "This is Core Library for Go."
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -532,7 +532,7 @@ func TestJsonDecoderToStringPanic(t *testing.T) {
 }
 
 func TestJsonDecoderToString(t *testing.T) {
-	result,_ := JsonDecoderToString(GetJsonDecoded("This is Core Library for Go."))
+	result, _ := JsonDecoderToString(GetJsonDecoded("This is Core Library for Go."))
 
 	expected := "This is Core Library for Go."
 	if !reflect.DeepEqual(result, expected) {
@@ -541,7 +541,7 @@ func TestJsonDecoderToString(t *testing.T) {
 }
 
 func TestJsonDecoderToStringWithEmptyString(t *testing.T) {
-	result,_ := JsonDecoderToString(GetJsonDecoded(""))
+	result, _ := JsonDecoderToString(GetJsonDecoded(""))
 
 	expected := ""
 	if !reflect.DeepEqual(result, expected) {
