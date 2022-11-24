@@ -62,9 +62,7 @@ func TestHttpClientExecuteError(t *testing.T) {
 	client := NewHttpClient()
 	response, err := client.Execute(&http.Request{})
 
-	if err == nil {
-		if response.StatusCode != 200 {
-			t.Errorf("Failed: Response not okay!\n %v", response)
-		}
+	if err == nil && response.StatusCode != 200 {	
+		t.Errorf("Failed: Response not okay!\n %v", response)
 	}
 }
