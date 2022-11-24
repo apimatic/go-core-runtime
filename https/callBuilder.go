@@ -33,22 +33,22 @@ type CallBuilder interface {
 	AppendTemplateParam(param string)
 	AppendTemplateParams(params interface{})
 	BaseUrl(arg string)
-	Method(httpMethodName string)
+	Method(httpMethodName string) error
 	Accept(acceptHeaderValue string)
 	ContentType(contentTypeHeaderValue string)
 	Header(name string, value interface{})
 	CombineHeaders(headersToMerge map[string]string)
-	QueryParam(name string, value interface{})
+	QueryParam(name string, value interface{}) error
 	QueryParams(parameters map[string]interface{})
-	FormParam(name string, value interface{})
-	FormData(fields map[string]interface{})
+	FormParam(name string, value interface{}) error
+	FormData(fields map[string]interface{}) error
 	Text(body string)
 	FileStream(file FileWrapper)
-	Json(data interface{})
+	Json(data interface{}) error
 	intercept(interceptor HttpInterceptor)
 	InterceptRequest(interceptor func(httpRequest *http.Request) *http.Request)
-	toRequest() *http.Request
-	Call() *HttpContext
+	toRequest() (*http.Request, error)
+	Call() (*HttpContext, error)
 	CallAsJson() (*json.Decoder, *http.Response, error)
 	CallAsText() (string, *http.Response, error)
 	CallAsStream() ([]byte, *http.Response, error)
@@ -137,7 +137,7 @@ func (cb *defaultCallBuilder) BaseUrl(server string) {
 	cb.baseUrlArg = server
 }
 
-func (cb *defaultCallBuilder) Method(httpMethodName string) {
+func (cb *defaultCallBuilder) Method(httpMethodName string) error {
 	if strings.EqualFold(httpMethodName, http.MethodGet) {
 		cb.httpMethod = http.MethodGet
 	} else if strings.EqualFold(httpMethodName, http.MethodPut) {
@@ -149,8 +149,9 @@ func (cb *defaultCallBuilder) Method(httpMethodName string) {
 	} else if strings.EqualFold(httpMethodName, http.MethodDelete) {
 		cb.httpMethod = http.MethodDelete
 	} else {
-		fmt.Println("Invalid HTTP method given!")
+		return fmt.Errorf("Invalid HTTP method given!")
 	}
+	return nil
 }
 
 func (cb *defaultCallBuilder) Accept(acceptHeaderValue string) {
@@ -178,11 +179,13 @@ func (cb *defaultCallBuilder) CombineHeaders(headersToMerge map[string]string) {
 func (cb *defaultCallBuilder) QueryParam(
 	name string,
 	value interface{},
-) {
+) error {
+	var err error = nil
 	if cb.query == nil {
 		cb.query = url.Values{}
 	}
-	cb.query, _ = PrepareFormFields(name, value, cb.query)
+	cb.query, err = PrepareFormFields(name, value, cb.query)
+	return err
 }
 
 func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
@@ -192,18 +195,22 @@ func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
 func (cb *defaultCallBuilder) FormParam(
 	name string,
 	value interface{},
-) {
+) error {
+	var err error = nil
 	if cb.form == nil {
 		cb.form = url.Values{}
 	}
-	cb.form, _ = PrepareFormFields(name, value, cb.form)
+	cb.form, err = PrepareFormFields(name, value, cb.form)
 	cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)
+	return err
 }
 
-func (cb *defaultCallBuilder) FormData(fields map[string]interface{}) {
+func (cb *defaultCallBuilder) FormData(fields map[string]interface{}) error {
 	var headerVal string
-	cb.formData, headerVal, _ = PrepareMultipartFields(fields)
+	var err error = nil
+	cb.formData, headerVal, err = PrepareMultipartFields(fields)
 	cb.setContentTypeIfNotSet(headerVal)
+	return err
 }
 
 func (cb *defaultCallBuilder) Text(body string) {
@@ -220,13 +227,14 @@ func (cb *defaultCallBuilder) FileStream(file FileWrapper) {
 	}
 }
 
-func (cb *defaultCallBuilder) Json(data interface{}) {
+func (cb *defaultCallBuilder) Json(data interface{}) error {
 	bytes, err := json.Marshal(data)
 	if err != nil {
-		fmt.Printf("Unable to marshal the given data: %v", err)
+		return fmt.Errorf("Unable to marshal the given data: %v", err)
 	}
 	cb.body = string(bytes)
 	cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
+	return nil
 }
 
 func (cb *defaultCallBuilder) setContentTypeIfNotSet(contentType string) {
@@ -254,12 +262,12 @@ func (cb *defaultCallBuilder) InterceptRequest(
 		})
 }
 
-func (cb *defaultCallBuilder) toRequest() *http.Request {
+func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 	request := http.Request{
 		Method: cb.httpMethod,
 	}
 
-	url, _ := url.Parse(mergePath(cb.baseUrlProvider(cb.baseUrlArg), cb.path))
+	url, err := url.Parse(mergePath(cb.baseUrlProvider(cb.baseUrlArg), cb.path))
 	if len(cb.query) > 0 {
 		url.RawQuery = encodeSpace(cb.query.Encode())
 	}
@@ -295,19 +303,13 @@ func (cb *defaultCallBuilder) toRequest() *http.Request {
 		request.Body = io.NopCloser(bytes.NewBuffer(cb.streamBody))
 	}
 
-	return &request
+	return &request, err
 }
 
-func (cb *defaultCallBuilder) Call() *HttpContext {
+func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
-		response, err := client.Execute(request)
-		if err != nil {
-			return HttpContext{
-				Request:  request,
-				Response: nil,
-			}
-		}
+		response, _ := client.Execute(request)
 		return HttpContext{
 			Request:  request,
 			Response: response,
@@ -315,8 +317,9 @@ func (cb *defaultCallBuilder) Call() *HttpContext {
 	}
 
 	pipeline := CallHttpInterceptors(cb.interceptors, f)
-	context := pipeline(cb.toRequest())
-	return &context
+	request, err := cb.toRequest()
+	context := pipeline(request)
+	return &context, err
 }
 
 func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error) {
@@ -326,8 +329,7 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 	}
 
 	cb.InterceptRequest(f)
-	result := cb.Call()
-	var err error
+	result, err := cb.Call()
 	if result.Response.Body == http.NoBody {
 		err = fmt.Errorf("Response body empty!")
 	}
@@ -336,8 +338,7 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 }
 
 func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
-	var err error
-	result := cb.Call()
+	result, err := cb.Call()
 	if result.Response.Body == http.NoBody {
 		err = fmt.Errorf("Response body empty!")
 	}
@@ -351,8 +352,7 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 }
 
 func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
-	var err error
-	result := cb.Call()
+	result, err := cb.Call()
 	if result.Response.Body == http.NoBody {
 		err = fmt.Errorf("Response body empty!")
 	}
