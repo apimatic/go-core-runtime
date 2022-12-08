@@ -11,7 +11,7 @@ func CheckResponseStatusCode(t *testing.T, respStatus int, expectedStatus int) {
 }
 
 func CheckResponseStatusRange(t *testing.T, respStatus int, expectedLowerLimit int, expectedUpperLimit int) {
-	if respStatus < expectedLowerLimit && respStatus > expectedUpperLimit {
+	if respStatus < expectedLowerLimit || respStatus > expectedUpperLimit {
 		t.Errorf("got %v but expected between %v and %v", respStatus, expectedLowerLimit, expectedUpperLimit)
 	}
 }
