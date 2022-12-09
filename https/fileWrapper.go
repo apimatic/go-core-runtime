@@ -15,7 +15,10 @@ type FileWrapper struct {
 }
 
 func GetFile(fileUrl string) FileWrapper {
-	url, _ := url.Parse(fileUrl)
+	url, err := url.Parse(fileUrl)
+	if err != nil {
+		log.Panic(err)
+	}
 	resp, err := http.Get(url.String())
 	if err != nil {
 		log.Panic(err)

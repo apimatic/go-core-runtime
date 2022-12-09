@@ -31,7 +31,7 @@ func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, c
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
-	if responseErr != nil && expectedErr != nil {
+	if responseErr != nil || expectedErr != nil {
 		test.Error("Error while Unmarshalling")
 	}
 
@@ -46,7 +46,7 @@ func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseObje
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
-	if responseErr != nil && expectedErr != nil {
+	if responseErr != nil || expectedErr != nil {
 		test.Error("Error while Unmarshalling")
 	}
 
