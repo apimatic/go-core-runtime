@@ -179,6 +179,23 @@ func TestKeysAndValuesBodyMatcherNestedObjectArrayCountError(t *testing.T) {
 	KeysAndValuesBodyMatcher(&testing.T{}, expected, result, true, false)
 }
 
+func TestKeysAndValuesBodyMatcherUnmarshallingError(t *testing.T) {
+	expected := `{
+        "isMap": false,
+        "attributes": {
+        },
+        "id": "5a9fcb01caacc310dc6bab50"
+    `
+	result := Response{
+		IsMap: false,
+		Attributes: Attributes{
+			Id: "5a9fcb01caacc310dc6bab51",
+		},
+		Id: "5a9fcb01caacc310dc6bab50",
+	}
+	KeysAndValuesBodyMatcher(&testing.T{}, expected, result, true, false)
+}
+
 //  Keys Body Matcher Tests
 func TestKeysBodyMatcherEmpty(t *testing.T) {
 	expected := `{}`
@@ -213,6 +230,14 @@ func TestKeysBodyMatcherNestedObject(t *testing.T) {
 
 func TestKeysBodyMatcherObjectError(t *testing.T) {
 	expected := `{"idd": "nil"}`
+	result := Attributes{
+		Id: "5a9fcb01caacc310dc6bab51",
+	}
+	KeysBodyMatcher(&testing.T{}, expected, result, false, false)
+}
+
+func TestKeysBodyMatcherUnmarshallingError(t *testing.T) {
+	expected := `{"idd": "nil"`
 	result := Attributes{
 		Id: "5a9fcb01caacc310dc6bab51",
 	}
