@@ -7,7 +7,6 @@ import (
 )
 
 //  Native Body Matcher Tests
-
 func TestNativeBodyMatcherNumber(t *testing.T) {
 	expected := `4`
 	var result int = 4
@@ -51,11 +50,10 @@ func TestNativeBodyMatcherIntSlice(t *testing.T) {
 func TestNativeBodyMatcherBooleanError(t *testing.T) {
 	expected := `nil`
 	var result bool = true
-	NativeBodyMatcher(t, expected, result)
+	NativeBodyMatcher(&testing.T{}, expected, result)
 }
 
 //  Raw Body Matcher Tests
-
 func TestRawBodyMatcherIntSlice(t *testing.T) {
 	expected := `[1,2,3,4,5]`
 	var result []int = []int{
@@ -71,35 +69,32 @@ func TestRawBodyMatcherBooleanError(t *testing.T) {
 }
 
 //  Is Same File Tests
-
 func TestIsSameFile(t *testing.T) {
-    expected := `http://localhost:3000/response/image`
+	expected := `http://localhost:3000/response/image`
 	result := https.GetFile(expected).File
-    IsSameFile(t, expected, result)
+	IsSameFile(t, expected, result)
 }
 
 func TestIsSameFileError(t *testing.T) {
-    expected := `http://localhost:3000/response/image`
+	expected := `http://localhost:3000/response/image`
 	result := []byte("Hello")
-    IsSameFile(&testing.T{}, expected, result)
+	IsSameFile(&testing.T{}, expected, result)
 }
 
 //  Slice to Comma Separated String Tests
-
 func TestSliceToCommaSeparatedString(t *testing.T) {
-    expected := `{"isMap": false,"id": "5a9fcb01caacc310dc6bab50"}`
-    SliceToCommaSeparatedString(expected)
+	expected := `{"isMap": false,"id": "5a9fcb01caacc310dc6bab50"}`
+	SliceToCommaSeparatedString(expected)
 }
 
 //  Keys And Values Body Matcher Tests
-
 type Response struct {
-    IsMap       bool        `json:"isMap"`       
-    Attributes  Attributes  `json:"attributes"`    
-    Id          string      `json:"id"`           
+	IsMap      bool       `json:"isMap"`
+	Attributes Attributes `json:"attributes"`
+	Id         string     `json:"id"`
 }
 type Attributes struct {
-    Id               string `json:"id"`               
+	Id string `json:"id"`
 }
 
 func TestKeysAndValuesBodyMatcherEmpty(t *testing.T) {
@@ -124,11 +119,11 @@ func TestKeysAndValuesBodyMatcherNestedObject(t *testing.T) {
         "id": "5a9fcb01caacc310dc6bab50"
     }`
 	result := Response{
-        IsMap: false,
-        Attributes: Attributes{
-          Id: "5a9fcb01caacc310dc6bab51",
-        },
-        Id: "5a9fcb01caacc310dc6bab50",
+		IsMap: false,
+		Attributes: Attributes{
+			Id: "5a9fcb01caacc310dc6bab51",
+		},
+		Id: "5a9fcb01caacc310dc6bab50",
 	}
 	KeysAndValuesBodyMatcher(t, expected, result, false, false)
 }
@@ -142,11 +137,11 @@ func TestKeysAndValuesBodyMatcherNestedObjectValueError(t *testing.T) {
         "id": "5a9fcb01caacc310dc6bab50"
     }`
 	result := Response{
-        IsMap: false,
-        Attributes: Attributes{
-          Id: "5a9fcb01caacc0dc6bab51",
-        },
-        Id: "5a9fcb01caacc310dc6bab50",
+		IsMap: false,
+		Attributes: Attributes{
+			Id: "5a9fcb01caacc0dc6bab51",
+		},
+		Id: "5a9fcb01caacc310dc6bab50",
 	}
 	KeysAndValuesBodyMatcher(&testing.T{}, expected, result, false, false)
 }
@@ -158,11 +153,11 @@ func TestKeysAndValuesBodyMatcherNestedObjectTypeError(t *testing.T) {
         "id": "5a9fcb01caacc310dc6bab50"
     }`
 	result := Response{
-        IsMap: false,
-        Attributes: Attributes{
-          Id: "5a9fcb01caacc0dc6bab51",
-        },
-        Id: "5a9fcb01caacc310dc6bab50",
+		IsMap: false,
+		Attributes: Attributes{
+			Id: "5a9fcb01caacc0dc6bab51",
+		},
+		Id: "5a9fcb01caacc310dc6bab50",
 	}
 	KeysAndValuesBodyMatcher(&testing.T{}, expected, result, false, false)
 }
@@ -175,17 +170,16 @@ func TestKeysAndValuesBodyMatcherNestedObjectArrayCountError(t *testing.T) {
         "id": "5a9fcb01caacc310dc6bab50"
     }`
 	result := Response{
-        IsMap: false,
-        Attributes: Attributes{
-          Id: "5a9fcb01caacc310dc6bab51",
-        },
-        Id: "5a9fcb01caacc310dc6bab50",
+		IsMap: false,
+		Attributes: Attributes{
+			Id: "5a9fcb01caacc310dc6bab51",
+		},
+		Id: "5a9fcb01caacc310dc6bab50",
 	}
 	KeysAndValuesBodyMatcher(&testing.T{}, expected, result, true, false)
 }
 
 //  Keys Body Matcher Tests
-
 func TestKeysBodyMatcherEmpty(t *testing.T) {
 	expected := `{}`
 	KeysBodyMatcher(t, expected, nil, false, false)
@@ -208,11 +202,11 @@ func TestKeysBodyMatcherNestedObject(t *testing.T) {
         "id": "5a9fcb01caacc310dc6bab50"
     }`
 	result := Response{
-        IsMap: false,
-        Attributes: Attributes{
-          Id: "5a9fcb01caacc310dc6bab51",
-        },
-        Id: "5a9fcb01caacc310dc6bab50",
+		IsMap: false,
+		Attributes: Attributes{
+			Id: "5a9fcb01caacc310dc6bab51",
+		},
+		Id: "5a9fcb01caacc310dc6bab50",
 	}
 	KeysBodyMatcher(t, expected, result, false, false)
 }
