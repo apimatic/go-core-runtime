@@ -25,9 +25,7 @@ func GetFile(fileUrl string) FileWrapper {
 	}
 
 	body, err := ReadBytes(resp.Body)
-	if err != nil {
-		log.Panic(err)
-	}
+
 	file := FileWrapper{
 		File:        body,
 		FileName:    path.Base(url.Path),
