@@ -155,7 +155,7 @@ func TestMethodDelete(t *testing.T) {
 // }
 
 func TestAcceptContentTypeHeaders(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Accept("acceptHeaderValue")
 	request.ContentType("contentTypeHeaderValue")
 	result, _ := request.toRequest()
@@ -167,7 +167,7 @@ func TestAcceptContentTypeHeaders(t *testing.T) {
 }
 
 func TestHeaders(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Header(ACCEPT_HEADER, "acceptHeaderValue")
 	request.Header("", "empty")
 	result, _ := request.toRequest()
@@ -178,7 +178,7 @@ func TestHeaders(t *testing.T) {
 }
 
 func TestCombineHeaders(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Header(ACCEPT_HEADER, "acceptHeaderValue")
 	request.CombineHeaders(map[string]string{CONTENT_TYPE_HEADER: "contentTypeHeaderValue"})
 	result, _ := request.toRequest()
@@ -190,7 +190,7 @@ func TestCombineHeaders(t *testing.T) {
 }
 
 func TestQueryParam(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.QueryParam("param", "query")
 	result, _ := request.toRequest()
 
@@ -200,7 +200,7 @@ func TestQueryParam(t *testing.T) {
 }
 
 func TestQueryParams(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
 	result, _ := request.toRequest()
 
@@ -215,7 +215,7 @@ func TestAuthenticate(t *testing.T) {
 }
 
 func TestFormData(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.FormData(map[string]interface{}{"param": "form", "param1": "form"})
 	result, _ := request.toRequest()
 
@@ -225,7 +225,7 @@ func TestFormData(t *testing.T) {
 }
 
 func TestText(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Text("Body Text")
 	result, _ := request.toRequest()
 
@@ -238,7 +238,7 @@ func TestText(t *testing.T) {
 }
 
 func TestJson(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Json("Json")
 	result, _ := request.toRequest()
 
