@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -159,7 +158,7 @@ func (cb *defaultCallBuilder) validateMethod() error {
 	} else if strings.EqualFold(cb.httpMethod, http.MethodDelete) {
 		cb.httpMethod = http.MethodDelete
 	} else {
-		return internalError{Body: "invalid HTTP method given", FileInfo: log.Lshortfile}
+		return internalError{Body: "invalid HTTP method given", FileInfo: "CallBuilder.go/validateMethod"}
 	}
 	return nil
 }
@@ -204,7 +203,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 		for key, value := range queryParams {
 			cb.query, err = PrepareFormFields(key, value, cb.query)
 			if err != nil {
-				return internalError{Body: err.Error(), FileInfo: log.Lshortfile}
+				return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
 			}
 		}
 	}
@@ -233,7 +232,7 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 		for key, value := range formParams {
 			cb.form, err = PrepareFormFields(key, value, cb.form)
 			if err != nil {
-				return internalError{Body: err.Error(), FileInfo: log.Lshortfile}
+				return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
 			}
 			cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)
 		}
@@ -255,7 +254,7 @@ func (cb *defaultCallBuilder) validateFormData() error {
 	if formData != nil {
 		cb.formData, headerVal, err = PrepareMultipartFields(formData)
 		if err != nil {
-			return internalError{Body: err.Error(), FileInfo: log.Lshortfile}
+			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
 		}
 		cb.setContentTypeIfNotSet(headerVal)
 	}
@@ -286,13 +285,14 @@ func (cb *defaultCallBuilder) validateJson() error {
 	if jsonData != nil {
 		bytes, err := json.Marshal(jsonData)
 		if err != nil {
-			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: log.Lshortfile}
+			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
 		}
 		cb.body = string(bytes)
 		cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
 	}
 	return nil
 }
+
 func (cb *defaultCallBuilder) setContentTypeIfNotSet(contentType string) {
 	if cb.headers == nil {
 		cb.headers = make(map[string]string)
@@ -427,7 +427,7 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 	cb.InterceptRequest(f)
 	result, err := cb.Call()
 	if err != nil {
-		return nil, result.Response, err
+		return nil, nil, err
 	}
 
 	if result.Response.Body == http.NoBody {
@@ -440,7 +440,7 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 	result, err := cb.Call()
 	if err != nil {
-		return "", result.Response, err
+		return "", nil, err
 	}
 	if result.Response.Body == http.NoBody {
 		return "", result.Response, fmt.Errorf("response body empty")
@@ -459,7 +459,7 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 	result, err := cb.Call()
 	if err != nil {
-		return nil, result.Response, err
+		return nil, nil, err
 	}
 
 	if result.Response.Body == http.NoBody {

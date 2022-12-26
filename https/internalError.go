@@ -4,7 +4,7 @@ import "fmt"
 
 type internalError struct {
 	Body     string
-	FileInfo int
+	FileInfo string
 }
 
 func (e internalError) Error() string {
