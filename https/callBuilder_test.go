@@ -3,7 +3,6 @@ package https
 import (
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"strings"
 	"testing"
@@ -146,14 +145,14 @@ func TestMethodDelete(t *testing.T) {
 	}
 }
 
-func TestMethodEmpty(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
-	err := request.Method("")
-	if err == nil {
-				t.Errorf("The code should get error because Invalid HTTP method given!")
-			
-	}
-}
+// func TestMethodEmpty(t *testing.T) {
+// 	request := GetCallBuilder("", "", nil)
+// 	err := request.Method("")
+// 	if err == nil {
+// 				t.Errorf("The code should get error because Invalid HTTP method given!")
+
+// 	}
+// }
 
 func TestAcceptContentTypeHeaders(t *testing.T) {
 	request := GetCallBuilder("", "", nil)
@@ -251,13 +250,13 @@ func TestJson(t *testing.T) {
 	}
 }
 
-func TestJsonPanic(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
-	err := request.Json(math.Inf(2))
-	if err == nil {
-		t.Errorf("The code should get error because request is empty.")
-	}
-}
+// func TestJsonPanic(t *testing.T) {
+// 	request := GetCallBuilder("", "", nil)
+// 	err := request.Json(math.Inf(2))
+// 	if err == nil {
+// 		t.Errorf("The code should get error because request is empty.")
+// 	}
+// }
 
 func TestFileStream(t *testing.T) {
 	request := GetCallBuilder("GET", "/response/binary", nil)
