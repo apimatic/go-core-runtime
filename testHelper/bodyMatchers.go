@@ -84,7 +84,7 @@ func RawBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
 	responseBytes, _ := json.Marshal(responseObject)
 	responseBody := string(responseBytes)
 
-	if responseBody != expectedBody {
+	if !strings.Contains(responseBody, expectedBody) {
 		test.Errorf("got \n%v \nbut expected %v", responseBody, expectedBody)
 	}
 }
@@ -95,7 +95,7 @@ func IsSameFile(test *testing.T, expectedFileURL string, responseFile https.File
 		err = fmt.Errorf("GetFile failed: %v", err)
 	}
 
-	if !reflect.DeepEqual(responseFile, expectedFile.File) {
+	if !reflect.DeepEqual(responseFile, expectedFile) {
 		test.Error("Response File does not match the File received")
 	}
 }
