@@ -82,6 +82,21 @@ func TestAppendTemplateParamsIntegers(t *testing.T) {
 	}
 }
 
+func TestBaseUrlValue(t *testing.T) {
+	request := GetCallBuilder("", "/response/integer", nil)
+	request.BaseUrl("https://github.com/apimatic")
+	request.Method("GET")
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
+	expected := 200
+
+	if response.StatusCode != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+	}
+}
+
 func TestMethodGet(t *testing.T) {
 	request := GetCallBuilder("", "/response/integer", nil)
 	request.Method("GET")
@@ -145,14 +160,16 @@ func TestMethodDelete(t *testing.T) {
 	}
 }
 
-// func TestMethodEmpty(t *testing.T) {
-// 	request := GetCallBuilder("", "", nil)
-// 	err := request.Method("")
-// 	if err == nil {
-// 				t.Errorf("The code should get error because Invalid HTTP method given!")
+func TestMethodEmpty(t *testing.T) {
+	request := GetCallBuilder("", "", nil)
+	request.Method("")
+	result, _ := request.toRequest()
 
-// 	}
-// }
+	expected := ""
+	if result.Method != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Method)
+	}
+}
 
 func TestAcceptContentTypeHeaders(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
@@ -199,6 +216,17 @@ func TestQueryParam(t *testing.T) {
 	}
 }
 
+// func TestQueryParamPointerValue(t *testing.T) {
+// 	request := GetCallBuilder("GET", "", nil)
+// 	floatV := math.Inf(1)
+// 	request.QueryParam("param", &(floatV))
+// 	result, err := request.toRequest()
+
+// 	if err == nil {
+// 		t.Errorf("Failed:\nExpected: nil\n Got: %v", result)
+// 	}
+// }
+
 func TestQueryParams(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
@@ -223,6 +251,16 @@ func TestFormData(t *testing.T) {
 		t.Errorf("Failed:\nExpected form data in body")
 	}
 }
+
+// func TestFormDataWithPointerValue(t *testing.T) {
+//  	request := GetCallBuilder("GET", "", nil)
+//  	floatV := math.Inf(1)
+//  	request.FormData(map[string]interface{}{"param": &(floatV), "param1": "form"})
+//  	result, err := request.toRequest()
+//  	if err == nil {
+//  		t.Errorf("Failed:\nExpected: nil\n Got: %v", result)
+//  	}
+// }
 
 func TestText(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)

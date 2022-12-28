@@ -308,8 +308,27 @@ func TestPrepareFormFieldsFloat64Slice(t *testing.T) {
 	}
 }
 
+
+func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
+	floatV := math.Inf(1)
+	result, err := PrepareFormFields("param", &(floatV), nil)
+
+	if err == nil {
+		t.Errorf("Failed:\nExpected: nil \nGot: %v", result)
+	}
+}
+
 func TestPrepareMultipartFields(t *testing.T) {
 	bytes, str, _ := PrepareMultipartFields(map[string]interface{}{"param": "value"})
+
+	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
+		t.Errorf("Failed:\nGot: %v", bytes.String())
+	}
+}
+
+func TestPrepareMultipartFieldsWithPointer(t *testing.T) {
+	floatV := math.Inf(0)
+	bytes, str, _ := PrepareMultipartFields(map[string]interface{}{"param": &floatV})
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
