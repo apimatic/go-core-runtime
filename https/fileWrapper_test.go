@@ -17,28 +17,15 @@ func TestGetFile(t *testing.T) {
 }
 
 func TestGetFileErrorParsingUrl(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code should panic because file url is empty.")
-		}
-	}()
-	file, err := GetFile("")
-	if err != nil {
+	_, err := GetFile("")
+	if err == nil {
 		t.Errorf("GetFile failed: %v", err)
-	}
-
-	if file.FileName != "googles-new-logo" || len(file.File) <= 0 {
-		t.Errorf("Expected Image File not recieved ")
 	}
 }
 
 func TestGetFileErrorParsingUrlWithSpecialChar(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-		}
-	}()
 	_, err := GetFile("hhhh%#")
-	if err != nil {
+	if err == nil {
 		t.Errorf("GetFile failed: %v", err)
 	}
 }
@@ -46,13 +33,13 @@ func TestGetFileErrorParsingUrlWithSpecialChar(t *testing.T) {
 type errReader int
 
 func (errReader) Read(p []byte) (n int, err error) {
-    return 0, errors.New("test error")
+	return 0, errors.New("test error")
 }
 
 func TestReadBytesInvalidResponse(t *testing.T) {
- 	bytes, err := ReadBytes(errReader(0))
+	bytes, err := ReadBytes(errReader(0))
 
- 	if len(bytes) != 0 {
- 		t.Error(err)
- 	}
+	if len(bytes) != 0 {
+		t.Error(err)
+	}
 }
