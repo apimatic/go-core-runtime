@@ -17,12 +17,12 @@ type FileWrapper struct {
 func GetFile(fileUrl string) (FileWrapper, error) {
 	url, err := url.Parse(fileUrl)
 	if err != nil {
-		err = fmt.Errorf("Error parsing file: %v", err)
+		return FileWrapper{}, internalError{Body: "Error parsing file", FileInfo: "fileWrapper.go/GetFile"}
 	}
 
 	resp, err := http.Get(url.String())
 	if err != nil {
-		err = fmt.Errorf("Error fetching file: %v", err)
+		return FileWrapper{}, internalError{Body: "Error fetching file", FileInfo: "fileWrapper.go/GetFile"}
 	}
 
 	body, err := ReadBytes(resp.Body)
