@@ -288,7 +288,7 @@ func TestJson(t *testing.T) {
 	}
 }
 
-// func TestJsonPanic(t *testing.T) {
+// func TestJsonError(t *testing.T) {
 // 	request := GetCallBuilder("", "", nil)
 // 	err := request.Json(math.Inf(2))
 // 	if err == nil {
