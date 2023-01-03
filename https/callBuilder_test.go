@@ -130,10 +130,10 @@ func TestMethodPost(t *testing.T) {
 func TestMethodPut(t *testing.T) {
 	request := GetCallBuilder("", "", nil)
 	request.Method("PUT")
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
 	expected := http.MethodPut
-	if result.Method != expected {
+	if result.Method != expected || err != nil {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Method)
 	}
 }
@@ -141,10 +141,10 @@ func TestMethodPut(t *testing.T) {
 func TestMethodPatch(t *testing.T) {
 	request := GetCallBuilder("", "", nil)
 	request.Method("PATCH")
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
 	expected := http.MethodPatch
-	if result.Method != expected {
+	if result.Method != expected || err != nil {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Method)
 	}
 }
@@ -152,10 +152,10 @@ func TestMethodPatch(t *testing.T) {
 func TestMethodDelete(t *testing.T) {
 	request := GetCallBuilder("", "", nil)
 	request.Method("DELETE")
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
 	expected := http.MethodDelete
-	if result.Method != expected {
+	if result.Method != expected || err != nil {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Method)
 	}
 }
@@ -175,9 +175,9 @@ func TestAcceptContentTypeHeaders(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.Accept("acceptHeaderValue")
 	request.ContentType("contentTypeHeaderValue")
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" &&
+	if err != nil || result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" &&
 		result.Header.Get(CONTENT_TYPE_HEADER) != "contentTypeHeaderValue" {
 		t.Errorf("Failed:\nExpected headers not received")
 	}
@@ -187,9 +187,9 @@ func TestHeaders(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.Header(ACCEPT_HEADER, "acceptHeaderValue")
 	request.Header("", "empty")
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" {
+	if result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" || err != nil {
 		t.Errorf("Failed:\nExpected headers not received")
 	}
 }
@@ -198,9 +198,9 @@ func TestCombineHeaders(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.Header(ACCEPT_HEADER, "acceptHeaderValue")
 	request.CombineHeaders(map[string]string{CONTENT_TYPE_HEADER: "contentTypeHeaderValue"})
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" &&
+	if err != nil || result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" &&
 		result.Header.Get(CONTENT_TYPE_HEADER) != "contentTypeHeaderValue" {
 		t.Errorf("Failed:\nExpected headers not received")
 	}
@@ -209,9 +209,9 @@ func TestCombineHeaders(t *testing.T) {
 func TestQueryParam(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.QueryParam("param", "query")
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.URL.RawQuery != "param=query" {
+	if result.URL.RawQuery != "param=query" || err != nil {
 		t.Errorf("Failed:\nExpected query param missing")
 	}
 }
@@ -230,9 +230,9 @@ func TestQueryParam(t *testing.T) {
 func TestQueryParams(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.URL.RawQuery != "param=query&param1=query" {
+	if result.URL.RawQuery != "param=query&param1=query" || err != nil {
 		t.Errorf("Failed:\nExpected query params missing")
 	}
 }
@@ -245,9 +245,9 @@ func TestAuthenticate(t *testing.T) {
 func TestFormData(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.FormData(map[string]interface{}{"param": "form", "param1": "form"})
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.Body == nil {
+	if result.Body == nil || err != nil {
 		t.Errorf("Failed:\nExpected form data in body")
 	}
 }
@@ -265,12 +265,12 @@ func TestFormData(t *testing.T) {
 func TestText(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.Text("Body Text")
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
 	stringBuilder := new(strings.Builder)
 	io.Copy(stringBuilder, result.Body)
 
-	if stringBuilder.String() != "Body Text" {
+	if stringBuilder.String() != "Body Text" || err != nil {
 		t.Errorf("Failed:\nExpected text in body")
 	}
 }
@@ -278,12 +278,12 @@ func TestText(t *testing.T) {
 func TestJson(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.Json("Json")
-	result, _ := request.toRequest()
+	result, err := request.toRequest()
 
 	stringBuilder := new(strings.Builder)
 	io.Copy(stringBuilder, result.Body)
 
-	if stringBuilder.String() != `"Json"` {
+	if stringBuilder.String() != `"Json"` || err != nil {
 		t.Errorf("Failed:\nExpected json in body")
 	}
 }
