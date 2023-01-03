@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -35,24 +34,29 @@ type CallBuilder interface {
 	AppendTemplateParams(params interface{})
 	BaseUrl(arg string)
 	Method(httpMethodName string)
+	validateMethod() error
 	Accept(acceptHeaderValue string)
 	ContentType(contentTypeHeaderValue string)
 	Header(name string, value interface{})
 	CombineHeaders(headersToMerge map[string]string)
 	QueryParam(name string, value interface{})
+	validateQueryParams() error
 	QueryParams(parameters map[string]interface{})
 	FormParam(name string, value interface{})
+	validateFormParams() error
 	FormData(fields map[string]interface{})
+	validateFormData() error
 	Text(body string)
 	FileStream(file FileWrapper)
 	Json(data interface{})
+	validateJson() error
 	intercept(interceptor HttpInterceptor)
 	InterceptRequest(interceptor func(httpRequest *http.Request) *http.Request)
-	toRequest() *http.Request
-	Call() *HttpContext
-	CallAsJson() (*json.Decoder, *http.Response)
-	CallAsText() (string, *http.Response)
-	CallAsStream() ([]byte, *http.Response)
+	toRequest() (*http.Request, error)
+	Call() (*HttpContext, error)
+	CallAsJson() (*json.Decoder, *http.Response, error)
+	CallAsText() (string, *http.Response, error)
+	CallAsStream() ([]byte, *http.Response, error)
 	Authenticate(requiresAuth bool)
 }
 
@@ -100,7 +104,7 @@ func (cb *defaultCallBuilder) addAuthentication() {
 
 func (cb *defaultCallBuilder) Authenticate(requiresAuth bool) {
 	cb.requiresAuth = requiresAuth
-	if cb.requiresAuth == true {
+	if cb.requiresAuth {
 		cb.addAuthentication()
 	}
 }
@@ -139,19 +143,24 @@ func (cb *defaultCallBuilder) BaseUrl(server string) {
 }
 
 func (cb *defaultCallBuilder) Method(httpMethodName string) {
-	if strings.EqualFold(httpMethodName, http.MethodGet) {
+	cb.httpMethod = httpMethodName
+}
+
+func (cb *defaultCallBuilder) validateMethod() error {
+	if strings.EqualFold(cb.httpMethod, http.MethodGet) {
 		cb.httpMethod = http.MethodGet
-	} else if strings.EqualFold(httpMethodName, http.MethodPut) {
+	} else if strings.EqualFold(cb.httpMethod, http.MethodPut) {
 		cb.httpMethod = http.MethodPut
-	} else if strings.EqualFold(httpMethodName, http.MethodPost) {
+	} else if strings.EqualFold(cb.httpMethod, http.MethodPost) {
 		cb.httpMethod = http.MethodPost
-	} else if strings.EqualFold(httpMethodName, http.MethodPatch) {
+	} else if strings.EqualFold(cb.httpMethod, http.MethodPatch) {
 		cb.httpMethod = http.MethodPatch
-	} else if strings.EqualFold(httpMethodName, http.MethodDelete) {
+	} else if strings.EqualFold(cb.httpMethod, http.MethodDelete) {
 		cb.httpMethod = http.MethodDelete
 	} else {
-		log.Panic("Invalid HTTP method given!")
+		return internalError{Body: "invalid HTTP method given", FileInfo: "CallBuilder.go/validateMethod"}
 	}
+	return nil
 }
 
 func (cb *defaultCallBuilder) Accept(acceptHeaderValue string) {
@@ -176,35 +185,80 @@ func (cb *defaultCallBuilder) CombineHeaders(headersToMerge map[string]string) {
 	MergeHeaders(cb.headers, headersToMerge)
 }
 
+var queryParams map[string]interface{} = make(map[string]interface{})
+
 func (cb *defaultCallBuilder) QueryParam(
 	name string,
 	value interface{},
 ) {
-	if cb.query == nil {
-		cb.query = url.Values{}
+	queryParams[name] = value
+}
+
+func (cb *defaultCallBuilder) validateQueryParams() error {
+	var err error = nil
+	if queryParams != nil {
+		if cb.query == nil {
+			cb.query = url.Values{}
+		}
+		for key, value := range queryParams {
+			cb.query, err = PrepareFormFields(key, value, cb.query)
+			if err != nil {
+				return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
+			}
+		}
 	}
-	cb.query = PrepareFormFields(name, value, cb.query)
+	return nil
 }
 
 func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
 	cb.query = utilities.PrepareQueryParams(cb.query, parameters)
 }
 
+var formParams map[string]interface{} = make(map[string]interface{})
+
 func (cb *defaultCallBuilder) FormParam(
 	name string,
 	value interface{},
 ) {
-	if cb.form == nil {
-		cb.form = url.Values{}
-	}
-	cb.form = PrepareFormFields(name, value, cb.form)
-	cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)
+	formParams[name] = value
 }
 
+func (cb *defaultCallBuilder) validateFormParams() error {
+	var err error = nil
+	if formParams != nil {
+		if cb.form == nil {
+			cb.form = url.Values{}
+		}
+		for key, value := range formParams {
+			cb.form, err = PrepareFormFields(key, value, cb.form)
+			if err != nil {
+				return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
+			}
+			cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)
+		}
+	}
+	return nil
+}
+
+var formData map[string]interface{}
+
 func (cb *defaultCallBuilder) FormData(fields map[string]interface{}) {
+	if fields != nil {
+		formData = fields
+	}
+}
+
+func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
-	cb.formData, headerVal = PrepareMultipartFields(fields)
-	cb.setContentTypeIfNotSet(headerVal)
+	var err error = nil
+	if formData != nil {
+		cb.formData, headerVal, err = PrepareMultipartFields(formData)
+		if err != nil {
+			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
+		}
+		cb.setContentTypeIfNotSet(headerVal)
+	}
+	return nil
 }
 
 func (cb *defaultCallBuilder) Text(body string) {
@@ -221,13 +275,22 @@ func (cb *defaultCallBuilder) FileStream(file FileWrapper) {
 	}
 }
 
+var jsonData interface{}
+
 func (cb *defaultCallBuilder) Json(data interface{}) {
-	bytes, err := json.Marshal(data)
-	if err != nil {
-		log.Panic(err)
+	jsonData = data
+}
+
+func (cb *defaultCallBuilder) validateJson() error {
+	if jsonData != nil {
+		bytes, err := json.Marshal(jsonData)
+		if err != nil {
+			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
+		}
+		cb.body = string(bytes)
+		cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
 	}
-	cb.body = string(bytes)
-	cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
+	return nil
 }
 
 func (cb *defaultCallBuilder) setContentTypeIfNotSet(contentType string) {
@@ -255,15 +318,31 @@ func (cb *defaultCallBuilder) InterceptRequest(
 		})
 }
 
-func (cb *defaultCallBuilder) toRequest() *http.Request {
-	request := http.Request{
-		Method: cb.httpMethod,
+func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
+	var err error = nil
+	request := http.Request{}
+
+	err = cb.validateMethod()
+	if err != nil {
+		return &request, err
+	} else {
+		request.Method = cb.httpMethod
 	}
 
-	url, _ := url.Parse(mergePath(cb.baseUrlProvider(cb.baseUrlArg), cb.path))
-	if len(cb.query) > 0 {
-		url.RawQuery = encodeSpace(cb.query.Encode())
+	url, err := url.Parse(mergePath(cb.baseUrlProvider(cb.baseUrlArg), cb.path))
+	if err != nil {
+		return &request, err
 	}
+
+	err = cb.validateQueryParams()
+	if err != nil {
+		return &request, err
+	} else {
+		if len(cb.query) > 0 {
+			url.RawQuery = encodeSpace(cb.query.Encode())
+		}
+	}
+
 	request.URL = url
 
 	request.Header = make(http.Header)
@@ -283,27 +362,47 @@ func (cb *defaultCallBuilder) toRequest() *http.Request {
 		}
 	}
 
-	if strings.TrimSpace(cb.body) != "" {
-		request.Body = io.NopCloser(bytes.NewBuffer([]byte(cb.body)))
-		defer request.Body.Close()
-	} else if cb.formData.Bytes() != nil {
-		request.Body = io.NopCloser(&cb.formData)
-	} else if len(cb.form) > 0 {
-		request.Form = cb.form
-		replaced := encodeSpace(cb.form.Encode())
-		request.Body = io.NopCloser(bytes.NewBuffer([]byte(replaced)))
-	} else if cb.streamBody != nil {
+	err = cb.validateJson()
+	if err != nil {
+		return &request, err
+	} else {
+		if strings.TrimSpace(cb.body) != "" {
+			request.Body = io.NopCloser(bytes.NewBuffer([]byte(cb.body)))
+			defer request.Body.Close()
+		}
+	}
+
+	err = cb.validateFormData()
+	if err != nil {
+		return &request, err
+	} else {
+		if cb.formData.Bytes() != nil {
+			request.Body = io.NopCloser(&cb.formData)
+		}
+	}
+
+	err = cb.validateFormParams()
+	if err != nil {
+		return &request, err
+	} else {
+		if len(cb.form) > 0 {
+			request.Form = cb.form
+			replaced := encodeSpace(cb.form.Encode())
+			request.Body = io.NopCloser(bytes.NewBuffer([]byte(replaced)))
+		}
+	}
+
+	if cb.streamBody != nil {
 		request.Body = io.NopCloser(bytes.NewBuffer(cb.streamBody))
 	}
 
-	return &request
+	return &request, err
 }
 
-func (cb *defaultCallBuilder) Call() *HttpContext {
+func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
-		response := client.Execute(request)
-
+		response, _ := client.Execute(request)
 		return HttpContext{
 			Request:  request,
 			Response: response,
@@ -311,51 +410,68 @@ func (cb *defaultCallBuilder) Call() *HttpContext {
 	}
 
 	pipeline := CallHttpInterceptors(cb.interceptors, f)
-	context := pipeline(cb.toRequest())
-	return &context
+	request, err := cb.toRequest()
+	if err != nil {
+		return nil, err
+	}
+	context := pipeline(request)
+	return &context, err
 }
 
-func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response) {
+func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error) {
 	f := func(request *http.Request) *http.Request {
 		request.Header.Set(ACCEPT_HEADER, JSON_CONTENT_TYPE)
 		return request
 	}
 
 	cb.InterceptRequest(f)
-	result := cb.Call()
-	if result.Response.Body == http.NoBody {
-		log.Panic("Response body empty!")
+	result, err := cb.Call()
+	if err != nil {
+		return nil, nil, err
 	}
 
-	return json.NewDecoder(result.Response.Body), result.Response
+	if result.Response.Body == http.NoBody {
+		err = fmt.Errorf("response body empty")
+	}
+
+	return json.NewDecoder(result.Response.Body), result.Response, err
 }
 
-func (cb *defaultCallBuilder) CallAsText() (string, *http.Response) {
-	result := cb.Call()
+func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
+	result, err := cb.Call()
+	if err != nil {
+		return "", nil, err
+	}
 	if result.Response.Body == http.NoBody {
-		log.Panic("Response body empty!")
+		return "", result.Response, fmt.Errorf("response body empty")
 	}
 
 	body, err := ioutil.ReadAll(result.Response.Body)
 	if err != nil {
-		log.Panic(err)
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(result.Response.Body)
+		return buf.String(), result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
 	}
 
-	return string(body), result.Response
+	return string(body), result.Response, err
 }
 
-func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response) {
-	result := cb.Call()
+func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
+	result, err := cb.Call()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	if result.Response.Body == http.NoBody {
-		log.Panic("Response body empty!")
+		return nil, result.Response, fmt.Errorf("response body empty")
 	}
 
 	bytes, err := ioutil.ReadAll(result.Response.Body)
 	if err != nil {
-		log.Panic(err)
+		return nil, result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
 	}
 
-	return bytes, result.Response
+	return bytes, result.Response, err
 }
 
 func mergePath(left, right string) string {

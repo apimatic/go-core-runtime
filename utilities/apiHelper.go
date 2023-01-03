@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"runtime"
 	"strconv"
@@ -25,59 +24,59 @@ func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) url
 	return queryParams
 }
 
-func JsonDecoderToString(dec *json.Decoder) string {
+func JsonDecoderToString(dec *json.Decoder) (string, error) {
 	var str string
 	for {
 		if err := dec.Decode(&str); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Panic(err)
+			return "", err
 		}
 	}
-	return str
+	return str, nil
 }
 
-func JsonDecoderToStringSlice(dec *json.Decoder) []string {
+func JsonDecoderToStringSlice(dec *json.Decoder) ([]string, error) {
 	var arr []string
 	for {
 		if err := dec.Decode(&arr); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Panic(err)
+			return nil, err
 		}
 	}
-	return arr
+	return arr, nil
 }
 
-func JsonDecoderToIntSlice(dec *json.Decoder) []int {
+func JsonDecoderToIntSlice(dec *json.Decoder) ([]int, error) {
 	var arr []int
 	for {
 		if err := dec.Decode(&arr); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Panic(err)
+			return nil, err
 		}
 	}
-	return arr
+	return arr, nil
 }
 
-func JsonDecoderToBooleanSlice(dec *json.Decoder) []bool {
+func JsonDecoderToBooleanSlice(dec *json.Decoder) ([]bool, error) {
 	var arr []bool
 	for {
 		if err := dec.Decode(&arr); err == io.EOF {
 			break
 		} else if err != nil {
-			log.Panic(err)
+			return nil, err
 		}
 	}
-	return arr
+	return arr, nil
 }
 
 // ToTimeSlice is used to make a time.Time slice from a string slice.
-func ToTimeSlice(slice interface{}, format string) []time.Time {
+func ToTimeSlice(slice interface{}, format string) ([]time.Time, error) {
 	result := make([]time.Time, 0)
 	if slice == nil {
-		return []time.Time{}
+		return []time.Time{}, nil
 	}
 
 	if format == time.UnixDate {
@@ -89,12 +88,12 @@ func ToTimeSlice(slice interface{}, format string) []time.Time {
 		for _, val := range slice.([]string) {
 			date, err := time.Parse(format, val)
 			if err != nil {
-				log.Panic("Error parsing the date: ", err)
+				return nil, fmt.Errorf("error parsing the date: %v", err)
 			}
 			result = append(result, date)
 		}
 	}
-	return result
+	return result, nil
 }
 
 // TimeToStringSlice is used to make a string slice from a time.Time slice.
@@ -117,10 +116,10 @@ func TimeToStringSlice(slice []time.Time, format string) []string {
 }
 
 // ToTimeMap is used to make a time.Time map from a string map.
-func ToTimeMap(dict interface{}, format string) map[string]time.Time {
+func ToTimeMap(dict interface{}, format string) (map[string]time.Time, error) {
 	result := make(map[string]time.Time, 0)
 	if dict == nil {
-		return map[string]time.Time{}
+		return map[string]time.Time{}, nil
 	}
 
 	if format == time.UnixDate {
@@ -132,19 +131,19 @@ func ToTimeMap(dict interface{}, format string) map[string]time.Time {
 		for key, val := range dict.(map[string]string) {
 			date, err := time.Parse(format, val)
 			if err != nil {
-				log.Panic("Error parsing the date: ", err)
+				return nil, fmt.Errorf("error parsing the date: %v", err)
 			}
 			result[key] = date
 		}
 	}
-	return result
+	return result, nil
 }
 
 // ToNullableTimeMap is used to make a nullable time.Time map from a string map.
-func ToNullableTimeMap(dict interface{}, format string) map[string]*time.Time {
+func ToNullableTimeMap(dict interface{}, format string) (map[string]*time.Time, error) {
 	result := make(map[string]*time.Time, 0)
 	if dict == nil {
-		return map[string]*time.Time{}
+		return map[string]*time.Time{}, nil
 	}
 
 	if format == time.UnixDate {
@@ -163,13 +162,13 @@ func ToNullableTimeMap(dict interface{}, format string) map[string]*time.Time {
 			} else {
 				date, err := time.Parse(format, *val)
 				if err != nil {
-					log.Panic("Error parsing the date: ", err)
+					return nil, fmt.Errorf("error parsing the date: %v", err)
 				}
 				result[key] = &date
 			}
 		}
 	}
-	return result
+	return result, nil
 }
 
 // TimeToStringMap is used to make a string map from a time.Time map.

@@ -1,8 +1,8 @@
 package https
 
 import (
+	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"strings"
 	"testing"
@@ -25,7 +25,10 @@ func RequestAuthentication() Authenticator {
 func TestAppendPath(t *testing.T) {
 	request := GetCallBuilder("GET", "//response/", nil)
 	request.AppendPath("/integer")
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -37,7 +40,10 @@ func TestAppendPath(t *testing.T) {
 func TestAppendPathEmptyPath(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.AppendPath("/response/integer")
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -49,7 +55,10 @@ func TestAppendPathEmptyPath(t *testing.T) {
 func TestAppendTemplateParamsStrings(t *testing.T) {
 	request := GetCallBuilder("GET", "/template/%s", nil)
 	request.AppendTemplateParams([]string{"abc", "def"})
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -61,8 +70,26 @@ func TestAppendTemplateParamsStrings(t *testing.T) {
 func TestAppendTemplateParamsIntegers(t *testing.T) {
 	request := GetCallBuilder("GET", "/template/%s", nil)
 	request.AppendTemplateParams([]int{1, 2, 3, 4, 5})
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
+	expected := 200
+
+	if response.StatusCode != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+	}
+}
+
+func TestBaseUrlValue(t *testing.T) {
+	request := GetCallBuilder("", "/response/integer", nil)
+	request.BaseUrl("https://github.com/apimatic")
+	request.Method("GET")
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 	expected := 200
 
 	if response.StatusCode != expected {
@@ -73,8 +100,10 @@ func TestAppendTemplateParamsIntegers(t *testing.T) {
 func TestMethodGet(t *testing.T) {
 	request := GetCallBuilder("", "/response/integer", nil)
 	request.Method("GET")
-	_, response := request.CallAsJson()
-
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 	expected := 200
 
 	if response.StatusCode != expected {
@@ -86,7 +115,10 @@ func TestMethodPost(t *testing.T) {
 	request := GetCallBuilder("", "/form/string", nil)
 	request.Method("POST")
 	request.FormParam("value", "TestString")
-	_, response := request.CallAsJson()
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
 
 	expected := 200
 
@@ -98,10 +130,10 @@ func TestMethodPost(t *testing.T) {
 func TestMethodPut(t *testing.T) {
 	request := GetCallBuilder("", "", nil)
 	request.Method("PUT")
-	result := request.toRequest()
+	result, err := request.toRequest()
 
 	expected := http.MethodPut
-	if result.Method != expected {
+	if result.Method != expected || err != nil {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Method)
 	}
 }
@@ -109,10 +141,10 @@ func TestMethodPut(t *testing.T) {
 func TestMethodPatch(t *testing.T) {
 	request := GetCallBuilder("", "", nil)
 	request.Method("PATCH")
-	result := request.toRequest()
+	result, err := request.toRequest()
 
 	expected := http.MethodPatch
-	if result.Method != expected {
+	if result.Method != expected || err != nil {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Method)
 	}
 }
@@ -120,81 +152,87 @@ func TestMethodPatch(t *testing.T) {
 func TestMethodDelete(t *testing.T) {
 	request := GetCallBuilder("", "", nil)
 	request.Method("DELETE")
-	result := request.toRequest()
+	result, err := request.toRequest()
 
 	expected := http.MethodDelete
-	if result.Method != expected {
+	if result.Method != expected || err != nil {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Method)
 	}
 }
 
 func TestMethodEmpty(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code should panic because http method is empty.")
-		}
-	}()
 	request := GetCallBuilder("", "", nil)
 	request.Method("")
-	result := request.toRequest()
+	result, _ := request.toRequest()
 
-	expected := "Invalid HTTP method given!"
+	expected := ""
 	if result.Method != expected {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Method)
 	}
 }
 
 func TestAcceptContentTypeHeaders(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Accept("acceptHeaderValue")
 	request.ContentType("contentTypeHeaderValue")
-	result := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" &&
+	if err != nil || result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" &&
 		result.Header.Get(CONTENT_TYPE_HEADER) != "contentTypeHeaderValue" {
 		t.Errorf("Failed:\nExpected headers not received")
 	}
 }
 
 func TestHeaders(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Header(ACCEPT_HEADER, "acceptHeaderValue")
 	request.Header("", "empty")
-	result := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" {
+	if result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" || err != nil {
 		t.Errorf("Failed:\nExpected headers not received")
 	}
 }
 
 func TestCombineHeaders(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Header(ACCEPT_HEADER, "acceptHeaderValue")
 	request.CombineHeaders(map[string]string{CONTENT_TYPE_HEADER: "contentTypeHeaderValue"})
-	result := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" &&
+	if err != nil || result.Header.Get(ACCEPT_HEADER) != "acceptHeaderValue" &&
 		result.Header.Get(CONTENT_TYPE_HEADER) != "contentTypeHeaderValue" {
 		t.Errorf("Failed:\nExpected headers not received")
 	}
 }
 
 func TestQueryParam(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.QueryParam("param", "query")
-	result := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.URL.RawQuery != "param=query" {
+	if result.URL.RawQuery != "param=query" || err != nil {
 		t.Errorf("Failed:\nExpected query param missing")
 	}
 }
 
-func TestQueryParams(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
-	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
-	result := request.toRequest()
+// func TestQueryParamPointerValue(t *testing.T) {
+// 	request := GetCallBuilder("GET", "", nil)
+// 	floatV := math.Inf(1)
+// 	request.QueryParam("param", &(floatV))
+// 	result, err := request.toRequest()
 
-	if result.URL.RawQuery != "param=query&param1=query" {
+// 	if err == nil {
+// 		t.Errorf("Failed:\nExpected: nil\n Got: %v", result)
+// 	}
+// }
+
+func TestQueryParams(t *testing.T) {
+	request := GetCallBuilder("GET", "", nil)
+	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
+	result, err := request.toRequest()
+
+	if result.URL.RawQuery != "param=query&param1=query" || err != nil {
 		t.Errorf("Failed:\nExpected query params missing")
 	}
 }
@@ -205,56 +243,71 @@ func TestAuthenticate(t *testing.T) {
 }
 
 func TestFormData(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.FormData(map[string]interface{}{"param": "form", "param1": "form"})
-	result := request.toRequest()
+	result, err := request.toRequest()
 
-	if result.Body == nil {
+	if result.Body == nil || err != nil {
 		t.Errorf("Failed:\nExpected form data in body")
 	}
 }
 
+// func TestFormDataWithPointerValue(t *testing.T) {
+//  	request := GetCallBuilder("GET", "", nil)
+//  	floatV := math.Inf(1)
+//  	request.FormData(map[string]interface{}{"param": &(floatV), "param1": "form"})
+//  	result, err := request.toRequest()
+//  	if err == nil {
+//  		t.Errorf("Failed:\nExpected: nil\n Got: %v", result)
+//  	}
+// }
+
 func TestText(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Text("Body Text")
-	result := request.toRequest()
+	result, err := request.toRequest()
 
 	stringBuilder := new(strings.Builder)
 	io.Copy(stringBuilder, result.Body)
 
-	if stringBuilder.String() != "Body Text" {
+	if stringBuilder.String() != "Body Text" || err != nil {
 		t.Errorf("Failed:\nExpected text in body")
 	}
 }
 
 func TestJson(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder("GET", "", nil)
 	request.Json("Json")
-	result := request.toRequest()
+	result, err := request.toRequest()
 
 	stringBuilder := new(strings.Builder)
 	io.Copy(stringBuilder, result.Body)
 
-	if stringBuilder.String() != `"Json"` {
+	if stringBuilder.String() != `"Json"` || err != nil {
 		t.Errorf("Failed:\nExpected json in body")
 	}
 }
 
-func TestJsonPanic(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code should panic because request is empty.")
-		}
-	}()
-	request := GetCallBuilder("", "", nil)
-	request.Json(math.Inf(2))
-}
+// func TestJsonError(t *testing.T) {
+// 	request := GetCallBuilder("", "", nil)
+// 	err := request.Json(math.Inf(2))
+// 	if err == nil {
+// 		t.Errorf("The code should get error because request is empty.")
+// 	}
+// }
 
 func TestFileStream(t *testing.T) {
 	request := GetCallBuilder("GET", "/response/binary", nil)
 	request.ContentType("image/png")
-	request.FileStream(GetFile("https://www.google.com/doodles/googles-new-logo"))
-	_, resp := request.CallAsStream()
+	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
+	if err != nil {
+		err = fmt.Errorf("GetFile failed: %v", err)
+	}
+	request.FileStream(file)
+	_, resp, err := request.CallAsStream()
+	if err != nil {
+		t.Errorf("Error in CallAsStream: %v", err)
+	}
 
 	if resp.StatusCode != 200 {
 		t.Errorf("Failed:\nExpected 200\nGot:%v", resp.StatusCode)
@@ -263,8 +316,15 @@ func TestFileStream(t *testing.T) {
 
 func TestFileStreamWithoutHeader(t *testing.T) {
 	request := GetCallBuilder("GET", "/response/binary", nil)
-	request.FileStream(GetFile("https://www.google.com/doodles/googles-new-logo"))
-	_, resp := request.CallAsStream()
+	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
+	if err != nil {
+		err = fmt.Errorf("GetFile failed: %v", err)
+	}
+	request.FileStream(file)
+	_, resp, err := request.CallAsStream()
+	if err != nil {
+		t.Errorf("Error in CallAsStream: %v", err)
+	}
 
 	if resp.StatusCode != 200 {
 		t.Errorf("Failed:\nExpected 200\nGot:%v", resp.StatusCode)

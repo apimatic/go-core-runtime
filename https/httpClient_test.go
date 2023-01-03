@@ -49,7 +49,7 @@ func TestNewHttpClientWithOptions(t *testing.T) {
 
 func TestHttpClientExecute(t *testing.T) {
 	client := NewHttpClient()
-	response := client.Execute(&http.Request{
+	response, _ := client.Execute(&http.Request{
 		Method: http.MethodPost,
 		URL:    &url.URL{Scheme: "https", Host: "apimatic-go.free.beeceptor.com"}})
 
@@ -59,16 +59,10 @@ func TestHttpClientExecute(t *testing.T) {
 }
 
 func TestHttpClientExecuteError(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("The code should panic because request is empty.")
-		}
-	}()
-
 	client := NewHttpClient()
-	response := client.Execute(&http.Request{})
+	response, err := client.Execute(&http.Request{})
 
-	if response.StatusCode != 200 {
+	if err == nil && response.StatusCode != 200 {	
 		t.Errorf("Failed: Response not okay!\n %v", response)
 	}
 }

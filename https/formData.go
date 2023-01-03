@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/url"
 	"reflect"
@@ -22,18 +21,18 @@ func structToMap(data interface{}) (map[string]interface{}, error) {
 	return mapData, err
 }
 
-func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{}) []map[string]interface{} {
+func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{}) ([]map[string]interface{}, error) {
 	if keys == nil {
 		keys = &[]map[string]interface{}{}
 	}
 
 	if value == nil {
-		return append(*keys, make(map[string]interface{}))
+		return append(*keys, make(map[string]interface{})), nil
 	} else if reflect.TypeOf(value).Kind() == reflect.Struct ||
 		reflect.TypeOf(value).Kind() == reflect.Ptr {
 		structMap, err := structToMap(value)
 		if err != nil {
-			log.Panic(err)
+			return nil, err
 		}
 		for k, v := range structMap {
 			var fullName string = k
@@ -66,10 +65,10 @@ func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{
 		*keys = append(*keys, map[string]interface{}{name: fmt.Sprintf("%v", value)})
 	}
 
-	return *keys
+	return *keys, nil
 }
 
-func PrepareFormFields(key string, value interface{}, form url.Values) url.Values {
+func PrepareFormFields(key string, value interface{}, form url.Values) (url.Values, error) {
 	if form == nil {
 		form = url.Values{}
 	}
@@ -108,8 +107,11 @@ func PrepareFormFields(key string, value interface{}, form url.Values) url.Value
 			form.Add(key, fmt.Sprintf("%v", val))
 		}
 	default:
-		k := formEncodeMap(key, value, nil)
+		k, err := formEncodeMap(key, value, nil)
 
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing the date: %v", err)
+		}
 		for num := range k {
 			for key, val := range k[num] {
 				form.Add(key, fmt.Sprintf("%v", val))
@@ -117,10 +119,10 @@ func PrepareFormFields(key string, value interface{}, form url.Values) url.Value
 		}
 	}
 
-	return form
+	return form, nil
 }
 
-func PrepareMultipartFields(fields map[string]interface{}) (bytes.Buffer, string) {
+func PrepareMultipartFields(fields map[string]interface{}) (bytes.Buffer, string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -129,27 +131,27 @@ func PrepareMultipartFields(fields map[string]interface{}) (bytes.Buffer, string
 		case FileWrapper:
 			fw, err := writer.CreateFormFile(key, x.FileName)
 			if err != nil {
-				panic(err)
+				return *body, writer.FormDataContentType(), err
 			}
 			_, err = io.Copy(fw, bytes.NewReader(x.File))
 			if err != nil {
-				panic(err)
+				return *body, writer.FormDataContentType(), err
 			}
 		default:
 			fw, err := writer.CreateFormField(key)
 			if err != nil {
-				panic(err)
+				return *body, writer.FormDataContentType(), err
 			}
 			marshalledBytes, err := json.Marshal(x)
 			if err != nil {
-				panic(err)
+				return *body, writer.FormDataContentType(), err
 			}
 			_, err = io.Copy(fw, strings.NewReader(string(marshalledBytes)))
 			if err != nil {
-				panic(err)
+				return *body, writer.FormDataContentType(), err
 			}
 		}
 	}
 	writer.Close()
-	return *body, writer.FormDataContentType()
+	return *body, writer.FormDataContentType(), nil
 }
