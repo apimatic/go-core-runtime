@@ -7,10 +7,10 @@ assignees: ''
 
 ---
 
-**Describe the** 🐛
+**Describe the bug**
 A clear and concise description of what the bug is.
 
-**Where did you find this 🐛?**
+**Where did you find this bug?**
  - [ ] ApiError Package 
  - [ ] Https Package
  - [ ] TestHelper Package
