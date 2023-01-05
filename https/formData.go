@@ -28,8 +28,9 @@ func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{
 
 	if value == nil {
 		return append(*keys, make(map[string]interface{})), nil
-	} else if reflect.TypeOf(value).Kind() == reflect.Struct ||
-		reflect.TypeOf(value).Kind() == reflect.Ptr {
+	}
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Struct, reflect.Ptr:
 		structMap, err := structToMap(value)
 		if err != nil {
 			return nil, err
@@ -41,7 +42,7 @@ func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{
 			}
 			formEncodeMap(fullName, v, keys)
 		}
-	} else if reflect.TypeOf(value).Kind() == reflect.Map {
+	case reflect.Map:
 		for k, v := range value.(map[string]interface{}) {
 			var fullName string = k
 			if name != "" {
@@ -49,19 +50,20 @@ func formEncodeMap(name string, value interface{}, keys *[]map[string]interface{
 			}
 			formEncodeMap(fullName, v, keys)
 		}
-	} else if reflect.TypeOf(value).Kind() == reflect.Slice {
+	case reflect.Slice:
 		if reflect.TypeOf(value).Elem().Kind() == reflect.Interface {
 			for num, val := range value.([]interface{}) {
 				fullName := name + "[" + fmt.Sprintf("%v", num) + "]"
 				formEncodeMap(fullName, val, keys)
 			}
 		} else {
-			for num, val := range value.([]string) {
+			reflectValue := reflect.ValueOf(value)
+			for num := 0; num < reflectValue.Len(); num++ {
 				fullName := name + "[" + fmt.Sprintf("%v", num) + "]"
-				formEncodeMap(fullName, val, keys)
+				formEncodeMap(fullName, reflectValue.Index(num).Interface(), keys)
 			}
 		}
-	} else {
+	default:
 		*keys = append(*keys, map[string]interface{}{name: fmt.Sprintf("%v", value)})
 	}
 

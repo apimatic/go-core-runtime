@@ -354,14 +354,6 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 		request.Header.Add(CONTENT_TYPE_HEADER, cb.contentTypeHeaderValue)
 	}
 
-	for key, val := range cb.headers {
-		if request.Header.Get(key) != "" {
-			continue
-		} else {
-			request.Header.Add(key, val)
-		}
-	}
-
 	err = cb.validateJson()
 	if err != nil {
 		return &request, err
@@ -394,6 +386,14 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 
 	if cb.streamBody != nil {
 		request.Body = io.NopCloser(bytes.NewBuffer(cb.streamBody))
+	}
+
+	for key, val := range cb.headers {
+		if request.Header.Get(key) != "" {
+			continue
+		} else {
+			request.Header.Add(key, val)
+		}
 	}
 
 	return &request, err
