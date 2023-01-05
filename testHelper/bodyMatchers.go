@@ -89,14 +89,17 @@ func RawBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
 	}
 }
 
-func IsSameFile(test *testing.T, expectedFileURL string, responseFile https.FileWrapper) {
+func IsSameAsFile(test *testing.T, expectedFileURL string, responseFileBytes []byte) {
 	expectedFile, err := https.GetFile(expectedFileURL)
 	if err != nil {
-		test.Errorf("GetFile failed: %v", err)
+		test.Errorf("Cannot get the file: %v", err)
 	}
+	IsSameInputBytes(test, expectedFile.File, responseFileBytes)
+}
 
-	if !reflect.DeepEqual(responseFile.File, expectedFile.File) {
-		test.Error("Response File does not match the File received")
+func IsSameInputBytes(test *testing.T, expectedBytes []byte, receivedBytes []byte) {
+	if !reflect.DeepEqual(expectedBytes, receivedBytes) {
+		test.Error("Recieved bytes donot match the bytes expected")
 	}
 }
 
