@@ -72,13 +72,13 @@ func TestRawBodyMatcherBooleanError(t *testing.T) {
 func TestIsSameFile(t *testing.T) {
 	expected := `http://localhost:3000/response/image`
 	result, _ := https.GetFile(expected)
-	IsSameFile(t, expected, result)
+	IsSameAsFile(t, expected, result.File)
 }
 
 func TestIsSameFileError(t *testing.T) {
 	expected := `http://localhost:3000/response/image`
 	result, _ := https.GetFile("https://play.google.com/store/apps/dev?id=5700313618786177705&hl=en_US&gl=US")
-	IsSameFile(&testing.T{}, expected, result)
+	IsSameAsFile(&testing.T{}, expected, result.File)
 }
 
 //  Slice to Comma Separated String Tests
