@@ -680,6 +680,24 @@ func TestUpdateUserAgentWrongArguments(t *testing.T) {
 	}
 }
 
+func TestDecodeResultsString(t *testing.T) {
+	expected := "This is Core Library for Go."
+	decoder := GetJsonDecoded(expected)
+	result, _ := DecodeResults[string](decoder)
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
+	}
+}
+
+func TestDecodeResultsInt(t *testing.T) {
+	expected := "This is Core Library for Go."
+	decoder := GetJsonDecoded(expected)
+	result, _ := DecodeResults[int](decoder)
+	if reflect.DeepEqual(result, expected) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
+	}
+}
+
 // Helper methods
 func GetTimeMap(format string) map[string]time.Time {
 	var time1, time2 time.Time
