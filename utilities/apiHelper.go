@@ -13,6 +13,18 @@ import (
 
 const DEFAULT_DATE = "2006-01-02"
 
+func DecodeResults[T any](decoder *json.Decoder) (T, error) {
+	var result T
+	for {
+		if err := decoder.Decode(&result); err == io.EOF {
+			break
+		} else if err != nil {
+			return result, err
+		}
+	}
+	return result, nil
+}
+
 func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) url.Values {
 	if queryParams == nil {
 		queryParams = url.Values{}
