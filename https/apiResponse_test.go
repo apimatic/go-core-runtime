@@ -7,10 +7,10 @@ import (
 )
 
 func TestApiResponse(t *testing.T) {
-	apiResponse := ApiResponse[string] {
-		Data: "This is error body",
+	apiResponse := ApiResponse[string]{
+		Data:     "This is data",
 		Response: &http.Response{}}
-	expected := NewApiResponse("This is error body", &http.Response{})
+	expected := NewApiResponse("This is data", &http.Response{})
 	if !reflect.DeepEqual(apiResponse, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, apiResponse)
 	}
