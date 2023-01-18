@@ -81,6 +81,12 @@ func TestIsSameFileError(t *testing.T) {
 	IsSameAsFile(&testing.T{}, expected, result.File)
 }
 
+func TestIsSameFileErrorURL(t *testing.T) {
+	expected := `http://response/image`
+	result, _ := https.GetFile(`http://localhost:3000/response/image`)
+	IsSameAsFile(&testing.T{}, expected, result.File)
+}
+
 //  Slice to Comma Separated String Tests
 func TestSliceToCommaSeparatedString(t *testing.T) {
 	expected := `{"isMap": false,"id": "5a9fcb01caacc310dc6bab50"}`
