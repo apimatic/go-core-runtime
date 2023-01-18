@@ -8,7 +8,6 @@ type ApiResponse[T any] struct {
 }
 
 func NewApiResponse[T any](data T, response *http.Response) ApiResponse[T] {
-
 	apiResponse := ApiResponse[T]{
 		Data:     data,
 		Response: response,
