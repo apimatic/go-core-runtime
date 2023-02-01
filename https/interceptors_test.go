@@ -21,6 +21,7 @@ func TestPassThroughInterceptor(t *testing.T) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Request)
 	}
 }
+
 func TestPassThroughInterceptorNilNext(t *testing.T) {
 	request, _ := http.NewRequest(http.MethodGet, "www.google.com", nil)
 
@@ -36,9 +37,9 @@ func TestPassThroughInterceptorNilNext(t *testing.T) {
 }
 
 func TestCallHttpInterceptors(t *testing.T) {
-	client := NewHttpClient()
+	client := NewHttpClient(NewHttpConfiguration())
 	callBuilder := CreateCallBuilderFactory(
-		func(server string) string { return "https://apimatic-go.free.beeceptor.com" }, nil, client)
+		func(server string) string { return "https://apimatic-go.free.beeceptor.com" }, nil, client, NewRetryConfiguration())
 
 	req := callBuilder("POST", "/interceptors")
 	interceptor1 := func(request *http.Request, next HttpCallExecutor) HttpContext {

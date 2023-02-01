@@ -4,14 +4,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strings"
 	"testing"
 )
 
 func GetCallBuilder(method, path string, auth Authenticator) CallBuilder {
-	client := NewHttpClient()
+	client := NewHttpClient(NewHttpConfiguration())
 	callBuilder := CreateCallBuilderFactory(
-		func(server string) string { return GetTestingServer().URL }, auth, client)
+		func(server string) string {
+			return GetTestingServer().URL
+		},
+		auth,
+		client,
+		NewRetryConfiguration(),
+	)
 
 	return callBuilder(method, path)
 }
@@ -216,17 +223,6 @@ func TestQueryParam(t *testing.T) {
 	}
 }
 
-// func TestQueryParamPointerValue(t *testing.T) {
-// 	request := GetCallBuilder("GET", "", nil)
-// 	floatV := math.Inf(1)
-// 	request.QueryParam("param", &(floatV))
-// 	result, err := request.toRequest()
-
-// 	if err == nil {
-// 		t.Errorf("Failed:\nExpected: nil\n Got: %v", result)
-// 	}
-// }
-
 func TestQueryParams(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
@@ -251,16 +247,6 @@ func TestFormData(t *testing.T) {
 		t.Errorf("Failed:\nExpected form data in body")
 	}
 }
-
-// func TestFormDataWithPointerValue(t *testing.T) {
-//  	request := GetCallBuilder("GET", "", nil)
-//  	floatV := math.Inf(1)
-//  	request.FormData(map[string]interface{}{"param": &(floatV), "param1": "form"})
-//  	result, err := request.toRequest()
-//  	if err == nil {
-//  		t.Errorf("Failed:\nExpected: nil\n Got: %v", result)
-//  	}
-// }
 
 func TestText(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
@@ -328,5 +314,15 @@ func TestFileStreamWithoutHeader(t *testing.T) {
 
 	if resp.StatusCode != 200 {
 		t.Errorf("Failed:\nExpected 200\nGot:%v", resp.StatusCode)
+	}
+}
+
+func TestRequestRetryOption(t *testing.T) {
+	request := GetCallBuilder("GET", "/retry", nil)
+	request.RequestRetryOption(Disable)
+
+	request2 := GetCallBuilder("GET", "/retry", nil)
+	if reflect.DeepEqual(request, request2) {
+		t.Error("Failed:\nExpected different retry option setting for both requests but got same for both.")
 	}
 }

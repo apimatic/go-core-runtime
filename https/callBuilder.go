@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/apimatic/go-core-runtime/utilities"
 )
@@ -58,6 +59,7 @@ type CallBuilder interface {
 	CallAsText() (string, *http.Response, error)
 	CallAsStream() ([]byte, *http.Response, error)
 	Authenticate(requiresAuth bool)
+	RequestRetryOption(option RequestRetryOption)
 }
 
 type defaultCallBuilder struct {
@@ -77,6 +79,9 @@ type defaultCallBuilder struct {
 	interceptors           []HttpInterceptor
 	requiresAuth           bool
 	authProvider           Authenticator
+	retryOption            RequestRetryOption
+	retryConfig            RetryConfiguration
+	clientError            error
 }
 
 func newDefaultCallBuilder(
@@ -85,6 +90,7 @@ func newDefaultCallBuilder(
 	path string,
 	baseUrlProvider baseUrlProvider,
 	authProvider Authenticator,
+	retryConfig RetryConfiguration,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
 		httpClient:      httpClient,
@@ -92,7 +98,11 @@ func newDefaultCallBuilder(
 		httpMethod:      httpMethod,
 		authProvider:    authProvider,
 		baseUrlProvider: baseUrlProvider,
+		retryOption:     RequestRetryOption(Default),
+		clientError:     nil,
+		retryConfig:     retryConfig,
 	}
+	cb.addRetryInterceptor()
 	return &cb
 }
 
@@ -107,6 +117,10 @@ func (cb *defaultCallBuilder) Authenticate(requiresAuth bool) {
 	if cb.requiresAuth {
 		cb.addAuthentication()
 	}
+}
+
+func (cb *defaultCallBuilder) RequestRetryOption(option RequestRetryOption) {
+	cb.retryOption = option
 }
 
 func (cb *defaultCallBuilder) AppendPath(path string) {
@@ -402,7 +416,8 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
-		response, _ := client.Execute(request)
+		response, err := client.Execute(request)
+		cb.clientError = err
 		return HttpContext{
 			Request:  request,
 			Response: response,
@@ -430,11 +445,17 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 		return nil, nil, err
 	}
 
-	if result.Response.Body == http.NoBody {
-		err = fmt.Errorf("response body empty")
-	}
+	if result.Response != nil {
+		if result.Response.Body == http.NoBody {
+			err = fmt.Errorf("response body empty")
+		}
 
-	return json.NewDecoder(result.Response.Body), result.Response, err
+		return json.NewDecoder(result.Response.Body), result.Response, err
+	}
+	if cb.clientError != nil {
+		return nil, nil, cb.clientError
+	}
+	return nil, nil, err
 }
 
 func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
@@ -442,18 +463,24 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	if result.Response.Body == http.NoBody {
-		return "", result.Response, fmt.Errorf("response body empty")
-	}
+	if result.Response != nil {
+		if result.Response.Body == http.NoBody {
+			return "", result.Response, fmt.Errorf("response body empty")
+		}
 
-	body, err := ioutil.ReadAll(result.Response.Body)
-	if err != nil {
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(result.Response.Body)
-		return buf.String(), result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
-	}
+		body, err := ioutil.ReadAll(result.Response.Body)
+		if err != nil {
+			buf := new(bytes.Buffer)
+			buf.ReadFrom(result.Response.Body)
+			return buf.String(), result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
+		}
 
-	return string(body), result.Response, err
+		return string(body), result.Response, err
+	}
+	if cb.clientError != nil {
+		return "", nil, cb.clientError
+	}
+	return "", nil, err
 }
 
 func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
@@ -462,16 +489,56 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 		return nil, nil, err
 	}
 
-	if result.Response.Body == http.NoBody {
-		return nil, result.Response, fmt.Errorf("response body empty")
-	}
+	if result.Response != nil {
+		if result.Response.Body == http.NoBody {
+			return nil, result.Response, fmt.Errorf("response body empty")
+		}
 
-	bytes, err := ioutil.ReadAll(result.Response.Body)
-	if err != nil {
-		return nil, result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
-	}
+		bytes, err := ioutil.ReadAll(result.Response.Body)
+		if err != nil {
+			return nil, result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
+		}
 
-	return bytes, result.Response, err
+		return bytes, result.Response, err
+	}
+	if cb.clientError != nil {
+		return nil, nil, cb.clientError
+	}
+	return nil, nil, err
+}
+
+func (cb *defaultCallBuilder) addRetryInterceptor() {
+	cb.intercept(
+		func(
+			req *http.Request,
+			next HttpCallExecutor,
+		) HttpContext {
+			var context HttpContext
+			allowedWaitTime := cb.retryConfig.maximumRetryWaitTime
+			if allowedWaitTime == 0 {
+				allowedWaitTime = 1<<63 - 1
+			}
+			shouldRetry := cb.retryConfig.ShouldRetry(cb.retryOption, req.Method)
+			retryCount := 0
+			var waitTime time.Duration
+
+			for ok := true; ok; ok = waitTime > 0 {
+				context = next(req)
+				if retryCount > 0 {
+					allowedWaitTime -= waitTime
+				}
+				if shouldRetry {
+					waitTime = cb.retryConfig.GetRetryWaitTime(
+						allowedWaitTime,
+						int64(retryCount),
+						context.Response,
+						cb.clientError)
+					time.Sleep(time.Duration(waitTime) * time.Second)
+					retryCount++
+				}
+			}
+			return context
+		})
 }
 
 func mergePath(left, right string) string {
@@ -500,6 +567,7 @@ func CreateCallBuilderFactory(
 	baseUrlProvider baseUrlProvider,
 	auth Authenticator,
 	httpClient HttpClient,
+	retryConfig RetryConfiguration,
 ) CallBuilderFactory {
 	return func(
 		httpMethod,
@@ -511,6 +579,7 @@ func CreateCallBuilderFactory(
 			path,
 			baseUrlProvider,
 			auth,
+			retryConfig,
 		)
 	}
 }
