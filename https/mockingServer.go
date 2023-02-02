@@ -25,12 +25,7 @@ func GetTestingServer() *httptest.Server {
 			if r.URL.Path == "/form/string" {
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(`4`))
-
 			}
-		} else if r.Method == "PUT" || r.Method == "PATCH" || r.Method == "DELETE" {
-			w.WriteHeader(http.StatusOK)
-		} else if r.Method == "" {
-			r.Method = "Invalid HTTP method given!"
 		}
 	}))
 }

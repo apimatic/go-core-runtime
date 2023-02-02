@@ -6,14 +6,22 @@ import (
 	"testing"
 )
 
+func getHttpConfig() HttpConfiguration {
+	return NewHttpConfiguration(
+		WithTimeout(100),
+		WithTransport(http.DefaultTransport),
+		WithRetryConfiguration(getRetryConfiguration()))
+}
 func TestDefaultConfig(t *testing.T) {
-	expected := HttpConfiguration{
-		Timeout:   0,
-		Transport: http.DefaultTransport,
-	}
-	got := DefaultHttpConfiguration()
+	got := getHttpConfig()
 
-	if !reflect.DeepEqual(expected, got) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, got)
+	if got.Timeout() != 100 {
+		t.Errorf("Failed:\nExpected Timeout: %v\nGot: %v", 100, got.Timeout())
+	}
+	if !reflect.DeepEqual(got.Transport(), http.DefaultTransport) {
+		t.Errorf("Failed:\nExpected Transport: %v\nGot: %v", http.DefaultTransport, got.Transport())
+	}
+	if !reflect.DeepEqual(got.RetryConfiguration(), getRetryConfiguration()) {
+		t.Errorf("Failed:\nExpected Retry Configuration: %v\nGot: %v", getRetryConfiguration(), got.RetryConfiguration())
 	}
 }
