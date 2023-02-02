@@ -470,9 +470,7 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 
 		body, err := ioutil.ReadAll(result.Response.Body)
 		if err != nil {
-			buf := new(bytes.Buffer)
-			buf.ReadFrom(result.Response.Body)
-			return buf.String(), result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
+			return "", result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
 		}
 
 		return string(body), result.Response, err
