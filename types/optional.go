@@ -1,4 +1,4 @@
-package utilities
+package types
 
 import "encoding/json"
 
