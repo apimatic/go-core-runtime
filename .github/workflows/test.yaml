@@ -33,3 +33,6 @@ jobs:
       with:
         coverageCommand: go test ./... -coverprofile coverage.out
         coverageLocations: ${{github.workspace}}/coverage.out
+        
+    - name: View Coverage Report
+      run: echo "${{github.workspace}}/coverage.out"
