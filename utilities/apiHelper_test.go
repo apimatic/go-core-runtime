@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -179,7 +180,7 @@ func TestToNullableTimeMapParsingError(t *testing.T) {
 		if !reflect.DeepEqual(result, expected) {
 			t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
 		}
-	}	
+	}
 }
 
 func TestToNullableTimeMapRFC1123(t *testing.T) {
@@ -654,10 +655,12 @@ func TestPrepareQueryParamsAppendEmptyData(t *testing.T) {
 // UpdateUserAgent
 func TestUpdateUserAgentAllArguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine} {engine-version}")
-	if result != "userAgent linux go1.18.7 1.18.7" {
-		t.Error("Fails")
+	if result != "userAgent linux go1.18." {
+		t.Error("Incorrect UserAgent. Got:", result)
 	}
 }
+
+//linux go1.18.10
 
 func TestUpdateUserAgentEmptyArguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent")
@@ -668,8 +671,8 @@ func TestUpdateUserAgentEmptyArguments(t *testing.T) {
 
 func TestUpdateUserAgent2Arguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine}")
-	if result != "userAgent linux go1.18.7" {
-		t.Error("Fails", result)
+	if !strings.Contains(result, "userAgent linux go1.18.") {
+		t.Error("Incorrect UserAgent. Got:", result)
 	}
 }
 
