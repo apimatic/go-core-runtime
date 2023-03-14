@@ -38,6 +38,6 @@ jobs:
       id: coverage
       uses: juliangruber/read-file-action@v1
       with:
-        path: ./coverage.out
+        path: ${{github.workspace}}/coverage.out
     - name: Echo coverage.out
       run: echo "${{ steps.coverage.outputs.content }}"
