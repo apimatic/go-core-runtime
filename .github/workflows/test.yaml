@@ -34,10 +34,13 @@ jobs:
         coverageCommand: go test ./... -coverprofile coverage.out
         coverageLocations: ${{github.workspace}}/coverage.out
         
-    - name: Read coverage.out
-      id: coverage
-      uses: juliangruber/read-file-action@v1
+    - name: Check file existence
+      id: check_files
+      uses: andstor/file-existence-action@v2
       with:
-        path: ${{github.workspace}}/coverage.out
-    - name: Echo coverage.out
-      run: echo "${{ steps.coverage.outputs.content }}"
+        files: "coverage.out"
+
+    - name: File exists
+      if: steps.check_files.outputs.files_exists == 'true'
+      # Only runs if all of the files exists
+      run: echo All files exists!
