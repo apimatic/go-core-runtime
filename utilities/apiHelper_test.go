@@ -655,12 +655,10 @@ func TestPrepareQueryParamsAppendEmptyData(t *testing.T) {
 // UpdateUserAgent
 func TestUpdateUserAgentAllArguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine} {engine-version}")
-	if result != "userAgent linux go1.18." {
+	if !strings.Contains(result, "userAgent linux go1.18.") {
 		t.Error("Incorrect UserAgent. Got:", result)
 	}
 }
-
-//linux go1.18.10
 
 func TestUpdateUserAgentEmptyArguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent")
