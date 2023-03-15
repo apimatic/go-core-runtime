@@ -24,6 +24,12 @@ jobs:
           GOPATH=${{ github.workspace }}
           PATH=$PATH:${{ env.GOPATH }}/bin
 
+    - name: Generate Coverage Report
+      run: |
+        go test -v -coverprofile=coverage.out
+        go tool cover -html=coverage.out -o coverage.html
+        gocov convert coverage.out | gocov-xml > coverage.xml
+
     - name: Install Codeclimate Test Reporter
       run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter && chmod +x ./cc-test-reporter
 
@@ -33,5 +39,6 @@ jobs:
         CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
       run: |
         ./cc-test-reporter before-build
-        go test -coverprofile=coverage.out ./...
+        ./cc-test-reporter format-coverage -t lcov -o codeclimate.lcov coverage.xml
+        ./cc-test-reporter upload-coverage
         ./cc-test-reporter after-build --exit-code $?
