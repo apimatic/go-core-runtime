@@ -25,11 +25,11 @@ jobs:
         chmod +x ./cc-test-reporter
 
     - name: Run Tests with Coverage
-      run: go test -v -coverprofile=coverage.out ./...
+      run: go test -v -coverprofile=coverage ./...
 
     - name: Upload to CodeClimate
       env:
         CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
       run: |
-        ./cc-test-reporter format-coverage -t gocov coverage.out
+        ./cc-test-reporter format-coverage -t gocov coverage
         ./cc-test-reporter upload-coverage
