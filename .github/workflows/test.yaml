@@ -19,28 +19,17 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.18
+    - name: Install CodeClimate Test Reporter
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
 
-    - name: Build Current Repo
-      run: go build -v ./...
+    - name: Run Tests with Coverage
+      run: go test -v -coverprofile=coverage.out ./...
 
-    - name: Runing Test Cases for Current Repo
-      run: go test -v ./...
-      
-    - name: Upload coverage report
-      uses: paambaati/codeclimate-action@v2.7.1
+    - name: Upload to CodeClimate
       env:
         CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
-      with:
-        coverageCommand: go test ./... -coverprofile coverage.out
-        coverageLocations: ${{github.workspace}}/coverage.out
-        
-    - name: Check file existence
-      id: check_files
-      uses: andstor/file-existence-action@v2
-      with:
-        files: "coverage.out"
-
-    - name: File exists
-      if: steps.check_files.outputs.files_exists == 'true'
-      # Only runs if all of the files exists
-      run: echo All files exists!
+      run: |
+        ./cc-test-reporter format-coverage -t gocov coverage.out
+        ./cc-test-reporter upload-coverage
