@@ -7,31 +7,31 @@ on: workflow_dispatch
 #  pull_request:
 #    branches: [ main ]
 
+
 jobs:
   upload_coverage:
     name: Upload Coverage
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout Current Repo
+    - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Setting Up Go Env
+    - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.18
-    - name: Install CodeClimate Test Reporter
-      run: |
-        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-        chmod +x ./cc-test-reporter
+        go-version: '1.18'
+        env: |
+          GOPATH=${{ github.workspace }}
+          PATH=$PATH:${{ env.GOPATH }}/bin
 
-    - name: Run Tests with Coverage
-      run: go test -v -coverprofile=coverage ./...
+    - name: Install Codeclimate Test Reporter
+      run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter && chmod +x ./cc-test-reporter
 
-    - name: Upload to CodeClimate
+    - name: Upload Test Coverage
       working-directory: ${{ github.workspace }}
       env:
         CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
       run: |
-        ./cc-test-reporter format-coverage -t gocov coverage
-        ./cc-test-reporter upload-coverage
+        ./cc-test-reporter before-build
+        go test -coverprofile=coverage.out ./...
+        ./cc-test-reporter after-build --exit-code $?
