@@ -26,7 +26,7 @@ jobs:
 
     - name: Generate Coverage Report
       run: |
-        go test -v -coverprofile=coverage.out
+        go test -v -coverprofile=coverage.out ./...
         go tool cover -html=coverage.out -o coverage.html
         gocov convert coverage.out | gocov-xml > coverage.xml
 
