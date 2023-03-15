@@ -19,9 +19,7 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: '1.18'
-        env: |
-          GOPATH=${{ github.workspace }}
-          PATH=$PATH:${{ env.GOPATH }}/bin
+        path: ${{ github.workspace }}/bin
 
     - name: Install gocov tool
       run: go get -u github.com/axw/gocov/gocov
