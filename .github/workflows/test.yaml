@@ -1,6 +1,6 @@
 name: Upload Coverage
 
-on: push
+on: workflow_dispatch
 
 jobs:
   upload_coverage:
