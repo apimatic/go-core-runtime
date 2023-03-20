@@ -179,10 +179,12 @@ func (cb *defaultCallBuilder) validateMethod() error {
 
 func (cb *defaultCallBuilder) Accept(acceptHeaderValue string) {
 	cb.acceptHeaderValue = acceptHeaderValue
+	cb.setAcceptIfNotSet(acceptHeaderValue)
 }
 
 func (cb *defaultCallBuilder) ContentType(contentTypeHeaderValue string) {
 	cb.contentTypeHeaderValue = contentTypeHeaderValue
+	cb.setContentTypeIfNotSet(contentTypeHeaderValue)
 }
 
 func (cb *defaultCallBuilder) Header(
@@ -282,11 +284,7 @@ func (cb *defaultCallBuilder) Text(body string) {
 
 func (cb *defaultCallBuilder) FileStream(file FileWrapper) {
 	cb.streamBody = file.File
-	if cb.contentTypeHeaderValue != "" {
-		cb.Header(CONTENT_TYPE_HEADER, cb.contentTypeHeaderValue)
-	} else {
-		cb.Header(CONTENT_TYPE_HEADER, "application/octet-stream")
-	}
+	cb.setContentTypeIfNotSet("application/octet-stream")
 }
 
 var jsonData interface{}
@@ -313,6 +311,15 @@ func (cb *defaultCallBuilder) setContentTypeIfNotSet(contentType string) {
 	}
 	if cb.headers[CONTENT_TYPE_HEADER] == "" {
 		cb.headers[CONTENT_TYPE_HEADER] = contentType
+	}
+}
+
+func (cb *defaultCallBuilder) setAcceptIfNotSet(accept string) {
+	if cb.headers == nil {
+		cb.headers = make(map[string]string)
+	}
+	if cb.headers[ACCEPT_HEADER] == "" {
+		cb.headers[ACCEPT_HEADER] = accept
 	}
 }
 
@@ -360,13 +367,6 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 	request.URL = url
 
 	request.Header = make(http.Header)
-	if strings.TrimSpace(cb.acceptHeaderValue) != "" {
-		request.Header.Add(ACCEPT_HEADER, cb.acceptHeaderValue)
-	}
-
-	if strings.TrimSpace(cb.contentTypeHeaderValue) != "" {
-		request.Header.Add(CONTENT_TYPE_HEADER, cb.contentTypeHeaderValue)
-	}
 
 	err = cb.validateJson()
 	if err != nil {

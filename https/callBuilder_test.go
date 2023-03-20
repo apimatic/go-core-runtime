@@ -274,14 +274,6 @@ func TestJson(t *testing.T) {
 	}
 }
 
-// func TestJsonError(t *testing.T) {
-// 	request := GetCallBuilder("", "", nil)
-// 	err := request.Json(math.Inf(2))
-// 	if err == nil {
-// 		t.Errorf("The code should get error because request is empty.")
-// 	}
-// }
-
 func TestFileStream(t *testing.T) {
 	request := GetCallBuilder("GET", "/response/binary", nil)
 	request.ContentType("image/png")
