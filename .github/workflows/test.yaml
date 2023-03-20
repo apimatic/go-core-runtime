@@ -23,10 +23,6 @@ jobs:
     - name: Generate Coverage Report
       run: |
         go test -v -coverprofile=coverage.out ./...
-      working-directory: ${{ github.workspace }}
-
-    - name: Format Coverage
-      run: |
         ./cc-test-reporter format-coverage -t gocov -o coverage/codeclimate.json coverage.out
       working-directory: ${{ github.workspace }}
 
