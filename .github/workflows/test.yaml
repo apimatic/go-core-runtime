@@ -1,7 +1,7 @@
-name: Tests
+name: Upload Go Coverage Report to Codeclimate
 
-on: workflow_dispatch
-#on:
+on:
+  workflow_dispatch
 #  push:
 #    branches: [ main ]
 #  pull_request:
@@ -12,38 +12,28 @@ jobs:
     name: Upload Coverage
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Go
-      id: setup-go
-      uses: actions/setup-go@v2
-      with:
-        go-version: '1.18'
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.18'
+      
+      - name: Install Codeclimate Test Reporter
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
 
-    - name: Install gocov tool
-      run: go get -u github.com/axw/gocov/gocov
+      - name: Generate Coverage Report
+        run: |
+          go test -v -coverprofile=coverage.out ./...
+          ./cc-test-reporter format-coverage -t lcov -o codeclimate.lcov coverage.out
 
-    - name: Install gocov-xml tool
-      run: go get -u github.com/AlekSi/gocov-xml
-
-    - name: Generate Coverage Report
-      run: |
-        go test -v -coverprofile=coverage.out ./...
-        go tool cover -html=coverage.out -o coverage.html
-        gocov convert coverage.out | gocov-xml > coverage.xml
-    - name: Install Codeclimate Test Reporter
-      run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter && chmod +x ./cc-test-reporter
-
-    - name: Add go bin directory to PATH
-      run: echo "PATH=\$PATH:${{ steps.setup-go.outputs.path }}/bin" >> $GITHUB_ENV
-
-    - name: Upload Test Coverage
-      working-directory: ${{ github.workspace }}
-      env:
-        CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
-      run: |
-        ./cc-test-reporter before-build
-        ./cc-test-reporter format-coverage -t lcov -o codeclimate.lcov coverage.xml
-        ./cc-test-reporter upload-coverage
-        ./cc-test-reporter after-build --exit-code $?
+      - name: Upload Test Coverage
+        env:
+          CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
+        run: |
+          ./cc-test-reporter before-build
+          ./cc-test-reporter upload-coverage -i codeclimate.lcov
+          ./cc-test-reporter after-build --exit-code $?
