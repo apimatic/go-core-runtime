@@ -1,39 +1,40 @@
-name: Upload Go Coverage Report to Codeclimate
+name: Upload Coverage
 
-on:
-  workflow_dispatch
-#  push:
-#    branches: [ main ]
-#  pull_request:
-#    branches: [ main ]
+on: push
 
 jobs:
   upload_coverage:
     name: Upload Coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: '1.18'
-      
-      - name: Install Codeclimate Test Reporter
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: '1.18'
 
-      - name: Generate Coverage Report
-        run: |
-          go test -v -coverprofile=coverage.out ./...
-          ./cc-test-reporter format-coverage -t lcov -o codeclimate.lcov coverage.out
+    - name: Install Codeclimate Test Reporter
+      run: |
+        curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+        chmod +x ./cc-test-reporter
 
-      - name: Upload Test Coverage
-        env:
-          CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
-        run: |
-          ./cc-test-reporter before-build
-          ./cc-test-reporter upload-coverage -i codeclimate.lcov
-          ./cc-test-reporter after-build --exit-code $?
+    - name: Generate Coverage Report
+      run: |
+        go test -v -coverprofile=coverage.out ./...
+      working-directory: ${{ github.workspace }}
+
+    - name: Format Coverage
+      run: |
+        ./cc-test-reporter format-coverage -t gocov -o coverage/codeclimate.json coverage.out
+      working-directory: ${{ github.workspace }}
+
+    - name: Upload Test Coverage
+      env:
+        CC_TEST_REPORTER_ID: c591af7ef134a8179907e90b31c20a54c088abf769a8179256cad273a9da4f79
+      run: |
+        ./cc-test-reporter before-build
+        ./cc-test-reporter upload-coverage -r
+        ./cc-test-reporter after-build --exit-code $?
+      working-directory: ${{ github.workspace }}
