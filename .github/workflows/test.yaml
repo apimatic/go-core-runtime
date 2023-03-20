@@ -27,12 +27,14 @@ jobs:
     - name: Install gocov-xml tool
       run: go get -u github.com/AlekSi/gocov-xml
 
+    - name: Add go bin directory to PATH
+      run: echo "::add-path::${{ go env GOPATH }}/bin"
+
     - name: Generate Coverage Report
       run: |
         go test -v -coverprofile=coverage.out ./...
         go tool cover -html=coverage.out -o coverage.html
         gocov convert coverage.out | gocov-xml > coverage.xml
-
     - name: Install Codeclimate Test Reporter
       run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter && chmod +x ./cc-test-reporter
 
