@@ -16,6 +16,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Set up Go
+      id: setup-go
       uses: actions/setup-go@v2
       with:
         go-version: '1.18'
@@ -26,9 +27,6 @@ jobs:
     - name: Install gocov-xml tool
       run: go get -u github.com/AlekSi/gocov-xml
 
-    - name: Add go bin directory to PATH
-      run: echo "::add-path::${{ runner.workspace }}/go/bin"
-
     - name: Generate Coverage Report
       run: |
         go test -v -coverprofile=coverage.out ./...
@@ -36,6 +34,9 @@ jobs:
         gocov convert coverage.out | gocov-xml > coverage.xml
     - name: Install Codeclimate Test Reporter
       run: curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter && chmod +x ./cc-test-reporter
+
+    - name: Add go bin directory to PATH
+      run: echo "PATH=\$PATH:${{ steps.setup-go.outputs.path }}/bin" >> $GITHUB_ENV
 
     - name: Upload Test Coverage
       working-directory: ${{ github.workspace }}
