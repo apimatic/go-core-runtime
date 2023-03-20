@@ -23,12 +23,12 @@ func EmptyOptional() Optional[any] {
 	}
 }
 
-func (o *Optional[T]) Value() T {
-	return *o.value
+func (o *Optional[T]) Value() *T {
+	return o.value
 }
 
-func (o *Optional[T]) SetValue(value T) {
-	o.value = &value
+func (o *Optional[T]) SetValue(value *T) {
+	o.value = value
 }
 
 func (o *Optional[T]) ShouldSetValue(set bool) {

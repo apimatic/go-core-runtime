@@ -29,7 +29,7 @@ func TestGetterSetters(t *testing.T) {
 	value := "Optional Value"
 	expected := Optional[string]{value: &value, set: true}
 	result := Optional[string]{value: nil, set: false}
-	result.SetValue(value)
+	result.SetValue(&value)
 	result.ShouldSetValue(true)
 
 	sameValue := expected.Value() == result.Value()
