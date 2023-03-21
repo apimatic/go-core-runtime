@@ -2,8 +2,9 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/apimatic/go-core-runtime.svg)](https://pkg.go.dev/github.com/apimatic/go-core-runtime)
 [![GitHub release](https://img.shields.io/github/v/release/apimatic/go-core-runtime)](https://pkg.go.dev/github.com/apimatic/go-core-runtime?tab=versions)
 [![Licence][license-badge]][license-url]
-[![Tests Passing](https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml/badge.svg)](https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml)
+[![Tests][test-badge]][test-url]
 [![Test Coverage](https://api.codeclimate.com/v1/badges/2c5a5f8dca8e970ac36e/test_coverage)](https://codeclimate.com/github/apimatic/go-core-runtime/test_coverage)
+[![Maintainability](https://api.codeclimate.com/v1/badges/2c5a5f8dca8e970ac36e/maintainability)](https://codeclimate.com/github/apimatic/go-core-runtime/maintainability)
 
 ## Introduction
 
@@ -65,5 +66,7 @@ Each package contains its test files and code coverage reports as well.
 
 
 
-[license-badge]: https://img.shields.io/badge/licence-APIMATIC-blue
+[license-badge]: https://img.shields.io/badge/licence-MIT-blue
 [license-url]: LICENSE
+[test-badge]: https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml/badge.svg
+[test-url]: https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml
