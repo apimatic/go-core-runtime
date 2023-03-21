@@ -1,7 +1,6 @@
 package https
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -277,7 +276,7 @@ func TestFileStream(t *testing.T) {
 	request.ContentType("image/png")
 	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
 	if err != nil {
-		err = fmt.Errorf("GetFile failed: %v", err)
+		t.Errorf("GetFile failed: %v", err)
 	}
 	request.FileStream(file)
 	_, resp, err := request.CallAsStream()
@@ -294,7 +293,7 @@ func TestFileStreamWithoutHeader(t *testing.T) {
 	request := GetCallBuilder("GET", "/response/binary", nil)
 	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
 	if err != nil {
-		err = fmt.Errorf("GetFile failed: %v", err)
+		t.Errorf("GetFile failed: %v", err)
 	}
 	request.FileStream(file)
 	_, resp, err := request.CallAsStream()
