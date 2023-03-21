@@ -3,8 +3,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/apimatic/go-core-runtime)](https://pkg.go.dev/github.com/apimatic/go-core-runtime?tab=versions)
 [![Licence][license-badge]][license-url]
 [![Tests Passing](https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml/badge.svg)](https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/90aa03dca1ef28d9cef3/test_coverage)](https://codeclimate.com/github/apimatic/go-core-runtime/test_coverage)
-
+[![Test Coverage](https://api.codeclimate.com/v1/badges/2c5a5f8dca8e970ac36e/test_coverage)](https://codeclimate.com/github/apimatic/go-core-runtime/test_coverage)
 
 ## Introduction
 
