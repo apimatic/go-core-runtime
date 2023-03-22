@@ -1,6 +1,7 @@
 name: Tests
 
-on: workflow_dispatch
+on:
+  workflow_dispatch
 
 jobs:
   test:
@@ -16,7 +17,9 @@ jobs:
       - name: Add $GOPATH/bin to PATH
         run: echo 'export PATH="$PATH:$GOPATH/bin"' >> $GITHUB_ENV
       - name: Run Static Check
-        run: staticcheck ./...
+        run: |
+          export PATH="$PATH:$GOPATH/bin"
+          staticcheck ./...
       - name: Upload coverage report to CodeClimate
         uses: paambaati/codeclimate-action@v3.2.0
         env:
