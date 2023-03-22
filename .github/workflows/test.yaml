@@ -12,14 +12,10 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: '1.18'
-      - name: Install staticcheck
-        run: go get -u honnef.co/go/tools/cmd/staticcheck
-      - name: Add $GOPATH/bin to PATH
-        run: echo 'export PATH="$PATH:$GOPATH/bin"' >> $GITHUB_ENV
       - name: Run Static Check
-        run: |
-          export PATH="$PATH:$GOPATH/bin"
-          staticcheck ./...
+        uses: dominikh/staticcheck-action@v1.3.0
+        with:
+          version: '2021.1.6'
       - name: Upload coverage report to CodeClimate
         uses: paambaati/codeclimate-action@v3.2.0
         env:
