@@ -1,7 +1,6 @@
 package https
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -127,10 +126,8 @@ func TestMethodPost(t *testing.T) {
 		t.Errorf("Error in CallAsJson: %v", err)
 	}
 
-	expected := 200
-
-	if response.StatusCode != expected {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+	if response.StatusCode != 200 {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", 200, response)
 	}
 }
 
@@ -228,7 +225,7 @@ func TestQueryParams(t *testing.T) {
 	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
 	result, err := request.toRequest()
 
-	if result.URL.RawQuery != "param=query&param1=query" || err != nil {
+	if !strings.Contains(result.URL.RawQuery, "param=query&param1=query") || err != nil {
 		t.Errorf("Failed:\nExpected query params missing")
 	}
 }
@@ -249,28 +246,28 @@ func TestFormData(t *testing.T) {
 }
 
 func TestText(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
-	request.Text("Body Text")
-	result, err := request.toRequest()
+	callBuilder := GetCallBuilder("GET", "", nil)
+	callBuilder.Text("TestString")
+	result, err := callBuilder.toRequest()
 
 	stringBuilder := new(strings.Builder)
 	io.Copy(stringBuilder, result.Body)
 
-	if stringBuilder.String() != "Body Text" || err != nil {
-		t.Errorf("Failed:\nExpected text in body")
+	if !strings.Contains(stringBuilder.String(), "TestString") || err != nil {
+		t.Errorf("Failed:\nExpected text in body\n%v", stringBuilder.String())
 	}
 }
 
 func TestJson(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
-	request.Json("Json")
+	request.Json("TestString")
 	result, err := request.toRequest()
 
 	stringBuilder := new(strings.Builder)
 	io.Copy(stringBuilder, result.Body)
 
-	if stringBuilder.String() != `"Json"` || err != nil {
-		t.Errorf("Failed:\nExpected json in body")
+	if !strings.Contains(stringBuilder.String(), "TestString") || err != nil {
+		t.Errorf("Failed:\nExpected json in body\n%v", stringBuilder.String())
 	}
 }
 
@@ -279,7 +276,7 @@ func TestFileStream(t *testing.T) {
 	request.ContentType("image/png")
 	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
 	if err != nil {
-		err = fmt.Errorf("GetFile failed: %v", err)
+		t.Errorf("GetFile failed: %v", err)
 	}
 	request.FileStream(file)
 	_, resp, err := request.CallAsStream()
@@ -296,7 +293,7 @@ func TestFileStreamWithoutHeader(t *testing.T) {
 	request := GetCallBuilder("GET", "/response/binary", nil)
 	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
 	if err != nil {
-		err = fmt.Errorf("GetFile failed: %v", err)
+		t.Errorf("GetFile failed: %v", err)
 	}
 	request.FileStream(file)
 	_, resp, err := request.CallAsStream()

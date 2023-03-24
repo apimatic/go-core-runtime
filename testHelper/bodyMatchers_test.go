@@ -70,8 +70,11 @@ func TestRawBodyMatcherBooleanError(t *testing.T) {
 
 //  Is Same File Tests
 func TestIsSameFile(t *testing.T) {
-	expected := `http://localhost:3000/response/image`
-	result, _ := https.GetFile(expected)
+	expected := `https://www.gstatic.com/webp/gallery/1.jpg`
+	result, err := https.GetFile(expected)
+	if err != nil {
+		t.Error("Error fetching File from ", expected)
+	}
 	IsSameAsFile(t, expected, result.File)
 }
 

@@ -2,7 +2,6 @@ package https
 
 import (
 	"net/http"
-	"net/url"
 	"reflect"
 	"testing"
 )
@@ -20,11 +19,10 @@ func TestNewHttpClient(t *testing.T) {
 
 func TestHttpClientExecute(t *testing.T) {
 	client := NewHttpClient(NewHttpConfiguration())
-	response, _ := client.Execute(&http.Request{
-		Method: http.MethodPost,
-		URL:    &url.URL{Scheme: "https", Host: "apimatic-go.free.beeceptor.com"}})
+	request, _ := http.NewRequest(http.MethodGet, "https://apimatic-goo.free.beeceptor.com", nil)
+	response, _ := client.Execute(request)
 
-	if response.StatusCode != 200 {
+	if response == nil || response.StatusCode != 200 {
 		t.Errorf("Failed: Response not okay!\n %v", response)
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -468,7 +467,7 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 			return "", result.Response, fmt.Errorf("response body empty")
 		}
 
-		body, err := ioutil.ReadAll(result.Response.Body)
+		body, err := io.ReadAll(result.Response.Body)
 		if err != nil {
 			return "", result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
 		}
@@ -492,7 +491,7 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 			return nil, result.Response, fmt.Errorf("response body empty")
 		}
 
-		bytes, err := ioutil.ReadAll(result.Response.Body)
+		bytes, err := io.ReadAll(result.Response.Body)
 		if err != nil {
 			return nil, result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
 		}
