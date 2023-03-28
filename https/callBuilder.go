@@ -81,10 +81,6 @@ type defaultCallBuilder struct {
 	retryOption            RequestRetryOption
 	retryConfig            RetryConfiguration
 	clientError            error
-	jsonData               interface{}
-	formFields             map[string]interface{}
-	formParams             map[string]interface{}
-	queryParams            map[string]interface{}
 }
 
 func newDefaultCallBuilder(
@@ -104,9 +100,6 @@ func newDefaultCallBuilder(
 		retryOption:     RequestRetryOption(Default),
 		clientError:     nil,
 		retryConfig:     retryConfig,
-		formFields:      make(map[string]interface{}),
-		formParams:      make(map[string]interface{}),
-		queryParams:     make(map[string]interface{}),
 	}
 	cb.addRetryInterceptor()
 	return &cb
@@ -207,20 +200,22 @@ func (cb *defaultCallBuilder) CombineHeaders(headersToMerge map[string]string) {
 	MergeHeaders(cb.headers, headersToMerge)
 }
 
+var queryParams map[string]interface{} = make(map[string]interface{})
+
 func (cb *defaultCallBuilder) QueryParam(
 	name string,
 	value interface{},
 ) {
-	cb.queryParams[name] = value
+	queryParams[name] = value
 }
 
 func (cb *defaultCallBuilder) validateQueryParams() error {
 	var err error = nil
-	if len(cb.queryParams) != 0 {
+	if queryParams != nil {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		for key, value := range cb.queryParams {
+		for key, value := range queryParams {
 			cb.query, err = PrepareFormFields(key, value, cb.query)
 			if err != nil {
 				return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
@@ -234,20 +229,22 @@ func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
 	cb.query = utilities.PrepareQueryParams(cb.query, parameters)
 }
 
+var formParams map[string]interface{} = make(map[string]interface{})
+
 func (cb *defaultCallBuilder) FormParam(
 	name string,
 	value interface{},
 ) {
-	cb.formParams[name] = value
+	formParams[name] = value
 }
 
 func (cb *defaultCallBuilder) validateFormParams() error {
 	var err error = nil
-	if len(cb.formParams) != 0 {
+	if formParams != nil {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		for key, value := range cb.formParams {
+		for key, value := range formParams {
 			cb.form, err = PrepareFormFields(key, value, cb.form)
 			if err != nil {
 				return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
@@ -258,17 +255,19 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 	return nil
 }
 
+var formData map[string]interface{}
+
 func (cb *defaultCallBuilder) FormData(fields map[string]interface{}) {
 	if fields != nil {
-		cb.formFields = fields
+		formData = fields
 	}
 }
 
 func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
 	var err error = nil
-	if len(cb.formFields) != 0 {
-		cb.formData, headerVal, err = PrepareMultipartFields(cb.formFields)
+	if formData != nil {
+		cb.formData, headerVal, err = PrepareMultipartFields(formData)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
 		}
@@ -287,13 +286,15 @@ func (cb *defaultCallBuilder) FileStream(file FileWrapper) {
 	cb.setContentTypeIfNotSet("application/octet-stream")
 }
 
+var jsonData interface{}
+
 func (cb *defaultCallBuilder) Json(data interface{}) {
-	cb.jsonData = data
+	jsonData = data
 }
 
 func (cb *defaultCallBuilder) validateJson() error {
-	if cb.jsonData != nil {
-		bytes, err := json.Marshal(cb.jsonData)
+	if jsonData != nil {
+		bytes, err := json.Marshal(jsonData)
 		if err != nil {
 			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
 		}
