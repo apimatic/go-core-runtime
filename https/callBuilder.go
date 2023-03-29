@@ -200,7 +200,7 @@ func (cb *defaultCallBuilder) Header(
 	if cb.headers == nil {
 		cb.headers = make(map[string]string)
 	}
-	SetHeaders(cb.headers, name, fmt.Sprintf("%v", value))
+	SetHeaders(cb.headers, strings.ToLower(name), fmt.Sprintf("%v", value))
 }
 
 func (cb *defaultCallBuilder) CombineHeaders(headersToMerge map[string]string) {
