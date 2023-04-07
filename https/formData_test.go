@@ -2,6 +2,7 @@ package https
 
 import (
 	"math"
+	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
@@ -328,8 +329,20 @@ func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 	}
 }
 
+func TestPrepareMultipartFieldsString(t *testing.T) {
+	header := http.Header{}
+	header.Add("Content-Type", TEXT_CONTENT_TYPE)
+	bytes, str, _ := prepareMultipartFields([]FormParam{{"param", "value", header}})
+
+	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
+		t.Errorf("Failed:\nGot: %v", bytes.String())
+	}
+}
+
 func TestPrepareMultipartFields(t *testing.T) {
-	bytes, str, _ := prepareMultipartFields([]FormParam{{"param", "value", nil}})
+	header := http.Header{}
+	header.Add("Content-Type", TEXT_CONTENT_TYPE)
+	bytes, str, _ := prepareMultipartFields([]FormParam{{"param", 40, header}})
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -350,7 +363,9 @@ func TestPrepareMultipartFieldsWithFile(t *testing.T) {
 	if err != nil {
 		t.Errorf("GetFile failed: %v", err)
 	}
-	bytes, _, _ := prepareMultipartFields([]FormParam{{"param", file, nil}})
+	header := http.Header{}
+	header.Add("Content-Type", "image/png")
+	bytes, _, _ := prepareMultipartFields([]FormParam{{"param", file, header}})
 
 	if !strings.Contains(bytes.String(), `filename=googles-new-logo`) {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
