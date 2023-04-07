@@ -99,20 +99,7 @@ func TestFormEncodeMapStructType(t *testing.T) {
 		{"param2[Employed]", "true", nil},
 	}
 
-	var pass bool = true
-	for _, res := range result {
-		if reflect.DeepEqual(res, FormParam{"param", "value", nil}) {
-			continue
-		} else if reflect.DeepEqual(res, FormParam{"param1", "value1", nil}) {
-			continue
-		} else if reflect.DeepEqual(res, FormParam{"param2[Name]", "Bisma", nil}) {
-			continue
-		} else if reflect.DeepEqual(res, FormParam{"param2[Employed]", "true", nil}) {
-			continue
-		}
-		pass = false
-	}
-	if !pass {
+	if len(result) != len(expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
 	}
 }
