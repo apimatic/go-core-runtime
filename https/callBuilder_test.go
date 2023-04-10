@@ -237,7 +237,11 @@ func TestAuthenticate(t *testing.T) {
 
 func TestFormData(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
-	request.FormData(map[string]interface{}{"param": "form", "param1": "form"})
+	formFields := []FormParam{
+		FormParam{"param", "form", nil},
+		FormParam{"param1", "form", nil},
+	}
+	request.FormData(formFields)
 	result, err := request.toRequest()
 
 	if result.Body == nil || err != nil {
