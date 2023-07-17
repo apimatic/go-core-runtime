@@ -1,6 +1,7 @@
 package https
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"reflect"
@@ -10,6 +11,7 @@ import (
 
 func GetCallBuilder(method, path string, auth Authenticator) CallBuilder {
 	client := NewHttpClient(NewHttpConfiguration())
+	ctx := context.WithValue(context.Background(), "Test Key", "Test Value")
 	callBuilder := CreateCallBuilderFactory(
 		func(server string) string {
 			return GetTestingServer().URL
@@ -19,7 +21,7 @@ func GetCallBuilder(method, path string, auth Authenticator) CallBuilder {
 		NewRetryConfiguration(),
 	)
 
-	return callBuilder(method, path)
+	return callBuilder(ctx, method, path)
 }
 
 func RequestAuthentication() Authenticator {
@@ -238,8 +240,8 @@ func TestAuthenticate(t *testing.T) {
 func TestFormData(t *testing.T) {
 	request := GetCallBuilder("GET", "", nil)
 	formFields := []FormParam{
-		FormParam{"param", "form", nil},
-		FormParam{"param1", "form", nil},
+		{"param", "form", nil},
+		{"param1", "form", nil},
 	}
 	request.FormData(formFields)
 	result, err := request.toRequest()
@@ -317,5 +319,14 @@ func TestRequestRetryOption(t *testing.T) {
 	request2 := GetCallBuilder("GET", "/retry", nil)
 	if reflect.DeepEqual(request, request2) {
 		t.Error("Failed:\nExpected different retry option setting for both requests but got same for both.")
+	}
+}
+
+func TestContextPropagationInRequests(t *testing.T) {
+	request := GetCallBuilder("GET", "", nil)
+	result, err := request.toRequest()
+
+	if err != nil && result.Context().Value("Test Key") == "Test Value" {
+		t.Errorf("Failed:\nExpected context not found within the request.")
 	}
 }

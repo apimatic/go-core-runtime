@@ -1,6 +1,7 @@
 package https
 
 import (
+	"context"
 	"net/http"
 	"reflect"
 	"testing"
@@ -41,7 +42,7 @@ func TestCallHttpInterceptors(t *testing.T) {
 	callBuilder := CreateCallBuilderFactory(
 		func(server string) string { return "https://apimatic-goo.free.beeceptor.com" }, nil, client, NewRetryConfiguration())
 
-	req := callBuilder("POST", "/interceptors")
+	req := callBuilder(context.Background(), "POST", "/interceptors")
 	interceptor1 := func(request *http.Request, next HttpCallExecutor) HttpContext {
 		request.Header.Set("apimatic", "go-sdk")
 		return next(request)

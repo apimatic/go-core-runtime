@@ -2,6 +2,7 @@ package https
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,7 +26,7 @@ const XML_CONTENT_TYPE = "application/xml"
 const MULTIPART_CONTENT_TYPE = "multipart/form-data"
 
 type Authenticator func(bool) HttpInterceptor
-type CallBuilderFactory func(httpMethod, path string) CallBuilder
+type CallBuilderFactory func(ctx context.Context, httpMethod, path string) CallBuilder
 type baseUrlProvider func(server string) string
 
 type CallBuilder interface {
@@ -62,6 +63,7 @@ type CallBuilder interface {
 }
 
 type defaultCallBuilder struct {
+	ctx                    context.Context
 	path                   string
 	baseUrlArg             string
 	baseUrlProvider        baseUrlProvider
@@ -88,6 +90,7 @@ type defaultCallBuilder struct {
 }
 
 func newDefaultCallBuilder(
+	ctx context.Context,
 	httpClient HttpClient,
 	httpMethod,
 	path string,
@@ -104,6 +107,7 @@ func newDefaultCallBuilder(
 		retryOption:     RequestRetryOption(Default),
 		clientError:     nil,
 		retryConfig:     retryConfig,
+		ctx:             ctx,
 	}
 	cb.addRetryInterceptor()
 	return &cb
@@ -406,7 +410,7 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 		}
 	}
 
-	return &request, err
+	return request.WithContext(cb.ctx), err
 }
 
 func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
@@ -564,10 +568,12 @@ func CreateCallBuilderFactory(
 	retryConfig RetryConfiguration,
 ) CallBuilderFactory {
 	return func(
+		ctx context.Context,
 		httpMethod,
 		path string,
 	) CallBuilder {
 		return newDefaultCallBuilder(
+			ctx,
 			httpClient,
 			httpMethod,
 			path,
