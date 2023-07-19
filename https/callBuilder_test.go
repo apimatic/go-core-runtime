@@ -323,12 +323,13 @@ func TestRequestRetryOption(t *testing.T) {
 	}
 }
 
-func TestContextPropagationInRequests(t *testing.T) {
-	ctx = context.WithValue(ctx, "Test Key", "Test Value")
+func TestContextPropagationInRequests(t *testing.T) {	
+	key := "Test Key"
+	ctx = context.WithValue(ctx, &key, "Test Value")
 	request := GetCallBuilder(ctx, "GET", "", nil)
 	result, err := request.toRequest()
 
-	if err != nil && result.Context().Value("Test Key") == "Test Value" {
+	if err != nil && result.Context().Value(&key) == "Test Value" {
 		t.Errorf("Failed:\nExpected context not found within the request.")
 	}
 }

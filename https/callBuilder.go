@@ -523,7 +523,7 @@ func (cb *defaultCallBuilder) addRetryInterceptor() {
 			for ok := true; ok; ok = waitTime > 0 {
 				select {
 				case <-req.Context().Done():
-					cb.clientError = fmt.Errorf("Request cancelled: %v", req.Context().Err())
+					cb.clientError = fmt.Errorf("request cancelled: %v", req.Context().Err())
 					return HttpContext{Request: req}
 				default:
 				}
