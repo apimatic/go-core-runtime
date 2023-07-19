@@ -1,6 +1,7 @@
 package https
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"reflect"
@@ -8,7 +9,9 @@ import (
 	"testing"
 )
 
-func GetCallBuilder(method, path string, auth Authenticator) CallBuilder {
+var ctx context.Context = context.Background()
+
+func GetCallBuilder(ctx context.Context, method, path string, auth Authenticator) CallBuilder {
 	client := NewHttpClient(NewHttpConfiguration())
 	callBuilder := CreateCallBuilderFactory(
 		func(server string) string {
@@ -19,7 +22,7 @@ func GetCallBuilder(method, path string, auth Authenticator) CallBuilder {
 		NewRetryConfiguration(),
 	)
 
-	return callBuilder(method, path)
+	return callBuilder(ctx, method, path)
 }
 
 func RequestAuthentication() Authenticator {
@@ -29,7 +32,7 @@ func RequestAuthentication() Authenticator {
 }
 
 func TestAppendPath(t *testing.T) {
-	request := GetCallBuilder("GET", "//response/", nil)
+	request := GetCallBuilder(ctx, "GET", "//response/", nil)
 	request.AppendPath("/integer")
 	_, response, err := request.CallAsJson()
 	if err != nil {
@@ -44,7 +47,7 @@ func TestAppendPath(t *testing.T) {
 }
 
 func TestAppendPathEmptyPath(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
+	request := GetCallBuilder(ctx, "GET", "", nil)
 	request.AppendPath("/response/integer")
 	_, response, err := request.CallAsJson()
 	if err != nil {
@@ -59,7 +62,7 @@ func TestAppendPathEmptyPath(t *testing.T) {
 }
 
 func TestAppendTemplateParamsStrings(t *testing.T) {
-	request := GetCallBuilder("GET", "/template/%s", nil)
+	request := GetCallBuilder(ctx, "GET", "/template/%s", nil)
 	request.AppendTemplateParams([]string{"abc", "def"})
 	_, response, err := request.CallAsJson()
 	if err != nil {
@@ -74,7 +77,7 @@ func TestAppendTemplateParamsStrings(t *testing.T) {
 }
 
 func TestAppendTemplateParamsIntegers(t *testing.T) {
-	request := GetCallBuilder("GET", "/template/%s", nil)
+	request := GetCallBuilder(ctx, "GET", "/template/%s", nil)
 	request.AppendTemplateParams([]int{1, 2, 3, 4, 5})
 	_, response, err := request.CallAsJson()
 	if err != nil {
@@ -89,7 +92,7 @@ func TestAppendTemplateParamsIntegers(t *testing.T) {
 }
 
 func TestBaseUrlValue(t *testing.T) {
-	request := GetCallBuilder("", "/response/integer", nil)
+	request := GetCallBuilder(ctx, "", "/response/integer", nil)
 	request.BaseUrl("https://github.com/apimatic")
 	request.Method("GET")
 	_, response, err := request.CallAsJson()
@@ -104,7 +107,7 @@ func TestBaseUrlValue(t *testing.T) {
 }
 
 func TestMethodGet(t *testing.T) {
-	request := GetCallBuilder("", "/response/integer", nil)
+	request := GetCallBuilder(ctx, "", "/response/integer", nil)
 	request.Method("GET")
 	_, response, err := request.CallAsJson()
 	if err != nil {
@@ -118,7 +121,7 @@ func TestMethodGet(t *testing.T) {
 }
 
 func TestMethodPost(t *testing.T) {
-	request := GetCallBuilder("", "/form/string", nil)
+	request := GetCallBuilder(ctx, "", "/form/string", nil)
 	request.Method("POST")
 	request.FormParam("value", "TestString")
 	_, response, err := request.CallAsJson()
@@ -132,7 +135,7 @@ func TestMethodPost(t *testing.T) {
 }
 
 func TestMethodPut(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder(ctx, "", "", nil)
 	request.Method("PUT")
 	result, err := request.toRequest()
 
@@ -143,7 +146,7 @@ func TestMethodPut(t *testing.T) {
 }
 
 func TestMethodPatch(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder(ctx, "", "", nil)
 	request.Method("PATCH")
 	result, err := request.toRequest()
 
@@ -154,7 +157,7 @@ func TestMethodPatch(t *testing.T) {
 }
 
 func TestMethodDelete(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder(ctx, "", "", nil)
 	request.Method("DELETE")
 	result, err := request.toRequest()
 
@@ -165,7 +168,7 @@ func TestMethodDelete(t *testing.T) {
 }
 
 func TestMethodEmpty(t *testing.T) {
-	request := GetCallBuilder("", "", nil)
+	request := GetCallBuilder(ctx, "", "", nil)
 	request.Method("")
 	result, _ := request.toRequest()
 
@@ -176,7 +179,7 @@ func TestMethodEmpty(t *testing.T) {
 }
 
 func TestAcceptContentTypeHeaders(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
+	request := GetCallBuilder(ctx, "GET", "", nil)
 	request.Accept("acceptHeaderValue")
 	request.ContentType("contentTypeHeaderValue")
 	result, err := request.toRequest()
@@ -188,7 +191,7 @@ func TestAcceptContentTypeHeaders(t *testing.T) {
 }
 
 func TestHeaders(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
+	request := GetCallBuilder(ctx, "GET", "", nil)
 	request.Header(ACCEPT_HEADER, "acceptHeaderValue")
 	request.Header("", "empty")
 	result, err := request.toRequest()
@@ -199,7 +202,7 @@ func TestHeaders(t *testing.T) {
 }
 
 func TestCombineHeaders(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
+	request := GetCallBuilder(ctx, "GET", "", nil)
 	request.Header(ACCEPT_HEADER, "acceptHeaderValue")
 	request.CombineHeaders(map[string]string{CONTENT_TYPE_HEADER: "contentTypeHeaderValue"})
 	result, err := request.toRequest()
@@ -211,7 +214,7 @@ func TestCombineHeaders(t *testing.T) {
 }
 
 func TestQueryParam(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
+	request := GetCallBuilder(ctx, "GET", "", nil)
 	request.QueryParam("param", "query")
 	result, err := request.toRequest()
 
@@ -221,7 +224,7 @@ func TestQueryParam(t *testing.T) {
 }
 
 func TestQueryParams(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
+	request := GetCallBuilder(ctx, "GET", "", nil)
 	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
 	result, err := request.toRequest()
 
@@ -231,15 +234,15 @@ func TestQueryParams(t *testing.T) {
 }
 
 func TestAuthenticate(t *testing.T) {
-	request := GetCallBuilder("GET", "/auth", RequestAuthentication())
+	request := GetCallBuilder(ctx, "GET", "/auth", RequestAuthentication())
 	request.Authenticate(true)
 }
 
 func TestFormData(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
+	request := GetCallBuilder(ctx, "GET", "", nil)
 	formFields := []FormParam{
-		FormParam{"param", "form", nil},
-		FormParam{"param1", "form", nil},
+		{"param", "form", nil},
+		{"param1", "form", nil},
 	}
 	request.FormData(formFields)
 	result, err := request.toRequest()
@@ -250,7 +253,7 @@ func TestFormData(t *testing.T) {
 }
 
 func TestText(t *testing.T) {
-	callBuilder := GetCallBuilder("GET", "", nil)
+	callBuilder := GetCallBuilder(ctx, "GET", "", nil)
 	callBuilder.Text("TestString")
 	result, err := callBuilder.toRequest()
 
@@ -263,7 +266,7 @@ func TestText(t *testing.T) {
 }
 
 func TestJson(t *testing.T) {
-	request := GetCallBuilder("GET", "", nil)
+	request := GetCallBuilder(ctx, "GET", "", nil)
 	request.Json("TestString")
 	result, err := request.toRequest()
 
@@ -276,7 +279,7 @@ func TestJson(t *testing.T) {
 }
 
 func TestFileStream(t *testing.T) {
-	request := GetCallBuilder("GET", "/response/binary", nil)
+	request := GetCallBuilder(ctx, "GET", "/response/binary", nil)
 	request.ContentType("image/png")
 	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
 	if err != nil {
@@ -294,7 +297,7 @@ func TestFileStream(t *testing.T) {
 }
 
 func TestFileStreamWithoutHeader(t *testing.T) {
-	request := GetCallBuilder("GET", "/response/binary", nil)
+	request := GetCallBuilder(ctx, "GET", "/response/binary", nil)
 	file, err := GetFile("https://www.google.com/doodles/googles-new-logo")
 	if err != nil {
 		t.Errorf("GetFile failed: %v", err)
@@ -311,11 +314,35 @@ func TestFileStreamWithoutHeader(t *testing.T) {
 }
 
 func TestRequestRetryOption(t *testing.T) {
-	request := GetCallBuilder("GET", "/retry", nil)
+	request := GetCallBuilder(ctx, "GET", "/retry", nil)
 	request.RequestRetryOption(Disable)
 
-	request2 := GetCallBuilder("GET", "/retry", nil)
+	request2 := GetCallBuilder(ctx, "GET", "/retry", nil)
 	if reflect.DeepEqual(request, request2) {
 		t.Error("Failed:\nExpected different retry option setting for both requests but got same for both.")
+	}
+}
+
+func TestContextPropagationInRequests(t *testing.T) {	
+	key := "Test Key"
+	ctx = context.WithValue(ctx, &key, "Test Value")
+	request := GetCallBuilder(ctx, "GET", "", nil)
+	result, err := request.toRequest()
+
+	if err != nil && result.Context().Value(&key) == "Test Value" {
+		t.Errorf("Failed:\nExpected context not found within the request.")
+	}
+}
+
+func TestRequestCancellation(t *testing.T) {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	cancel()
+
+	request := GetCallBuilder(ctx, "GET", "", nil)
+	_, _, err := request.CallAsJson()
+
+	if err == nil {
+		t.Errorf("Failed:\nExpected error due to request cancellation.")
 	}
 }
