@@ -12,12 +12,15 @@ import (
 	"reflect"
 )
 
+// FormParam is a struct that represents a key-value pair for form parameters.
+// It contains the key, value, and headers associated with the form parameter.
 type FormParam struct {
 	Key     string
 	Value   any
 	Headers http.Header
 }
 
+// structToMap converts a given data structure to a map.
 func structToMap(data interface{}) (map[string]interface{}, error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
@@ -28,6 +31,9 @@ func structToMap(data interface{}) (map[string]interface{}, error) {
 	return mapData, err
 }
 
+// formEncodeMap recursively encodes the form parameters from a nested data structure.
+// It processes the FormParam field and appends the result to the formParams slice.
+// This function is used to handle nested data structures in form parameters.
 func formEncodeMap(field FormParam, formParams *[]FormParam) ([]FormParam, error) {
 	if formParams == nil {
 		formParams = &[]FormParam{}
@@ -81,6 +87,8 @@ func formEncodeMap(field FormParam, formParams *[]FormParam) ([]FormParam, error
 	return *formParams, nil
 }
 
+// prepareFormFields prepares the form fields from the given FormParam and adds them to the provided url.Values.
+// It processes the FormParam field and encodes the value according to its data type.
 func prepareFormFields(field FormParam, form url.Values) (url.Values, error) {
 	if form == nil {
 		form = url.Values{}
@@ -133,6 +141,8 @@ func prepareFormFields(field FormParam, form url.Values) (url.Values, error) {
 	return form, nil
 }
 
+// prepareMultipartFields prepares the multipart fields from the given FormParam and
+// returns the body as a bytes.Buffer, along with the Content-Type header for the multipart form data.
 func prepareMultipartFields(fields []FormParam) (bytes.Buffer, string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)

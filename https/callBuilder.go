@@ -15,6 +15,7 @@ import (
 	"github.com/apimatic/go-core-runtime/utilities"
 )
 
+// Constants for commonly used HTTP headers and content types.
 const CONTENT_TYPE_HEADER = "content-type"
 const ACCEPT_HEADER = "accept"
 const CONTENT_LENGTH_HEADER = "content-length"
@@ -25,10 +26,16 @@ const TEXT_CONTENT_TYPE = "text/plain; charset=utf-8"
 const XML_CONTENT_TYPE = "application/xml"
 const MULTIPART_CONTENT_TYPE = "multipart/form-data"
 
+// Authenticator is a function type used to generate HTTP interceptors for handling authentication.
 type Authenticator func(bool) HttpInterceptor
+
+// CallBuilderFactory is a function type used to create CallBuilder instances for making API calls.
 type CallBuilderFactory func(ctx context.Context, httpMethod, path string) CallBuilder
+
+// baseUrlProvider is a function type used to provide the base URL for API calls based on the server name.
 type baseUrlProvider func(server string) string
 
+// CallBuilder is an interface that defines methods for building and executing HTTP requests for API calls.
 type CallBuilder interface {
 	AppendPath(path string)
 	AppendTemplateParam(param string)
@@ -62,6 +69,7 @@ type CallBuilder interface {
 	RequestRetryOption(option RequestRetryOption)
 }
 
+// defaultCallBuilder is a struct that implements the CallBuilder interface for making API calls.
 type defaultCallBuilder struct {
 	ctx                    context.Context
 	path                   string
@@ -89,6 +97,7 @@ type defaultCallBuilder struct {
 	queryParams            []FormParam
 }
 
+// newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
 func newDefaultCallBuilder(
 	ctx context.Context,
 	httpClient HttpClient,
@@ -113,12 +122,17 @@ func newDefaultCallBuilder(
 	return &cb
 }
 
+// addAuthentication adds authentication interceptors to the CallBuilder.
+// If authentication is required (requiresAuth is true), it invokes the authProvider function to get the HTTP interceptor
+// that handles authentication. The interceptor is then added to the list of interceptors in the CallBuilder.
 func (cb *defaultCallBuilder) addAuthentication() {
 	if cb.authProvider != nil {
 		cb.intercept(cb.authProvider(cb.requiresAuth))
 	}
 }
 
+// Authenticate sets the authentication requirement for the API call.
+// If requiresAuth is true, it adds the authentication interceptor to the CallBuilder.
 func (cb *defaultCallBuilder) Authenticate(requiresAuth bool) {
 	cb.requiresAuth = requiresAuth
 	if cb.requiresAuth {
@@ -126,10 +140,13 @@ func (cb *defaultCallBuilder) Authenticate(requiresAuth bool) {
 	}
 }
 
+// RequestRetryOption sets the retry option for the API call.
+// It allows users to configure the retry behavior for the request.
 func (cb *defaultCallBuilder) RequestRetryOption(option RequestRetryOption) {
 	cb.retryOption = option
 }
 
+// AppendPath appends the provided path to the existing path in the CallBuilder.
 func (cb *defaultCallBuilder) AppendPath(path string) {
 	if cb.path != "" {
 		cb.path = sanitizePath(mergePath(cb.path, path))
@@ -138,6 +155,7 @@ func (cb *defaultCallBuilder) AppendPath(path string) {
 	}
 }
 
+// AppendTemplateParam appends the provided parameter to the existing path in the CallBuilder as a URL template parameter.
 func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
 	if strings.Contains(cb.path, "%s") {
 		cb.path = fmt.Sprintf(cb.path, "/"+url.QueryEscape(param))
@@ -146,6 +164,8 @@ func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
 	}
 }
 
+// AppendTemplateParams appends the provided parameters to the existing path in the CallBuilder as URL template parameters.
+// It accepts a slice of strings or a slice of integers as the params argument.
 func (cb *defaultCallBuilder) AppendTemplateParams(params interface{}) {
 	switch x := params.(type) {
 	case []string:
@@ -159,14 +179,20 @@ func (cb *defaultCallBuilder) AppendTemplateParams(params interface{}) {
 	}
 }
 
+// BaseUrl sets the base URL for the API call.
+// It takes the server name as an argument and uses the baseUrlProvider function to get the actual base URL.
 func (cb *defaultCallBuilder) BaseUrl(server string) {
 	cb.baseUrlArg = server
 }
 
+// Method sets the HTTP method for the API call.
+// It validates the provided HTTP method and stores it in the CallBuilder.
 func (cb *defaultCallBuilder) Method(httpMethodName string) {
 	cb.httpMethod = httpMethodName
 }
 
+// validateMethod validates the HTTP method set in the CallBuilder.
+// If the method is not one of the standard HTTP methods, it returns an error.
 func (cb *defaultCallBuilder) validateMethod() error {
 	if strings.EqualFold(cb.httpMethod, http.MethodGet) {
 		cb.httpMethod = http.MethodGet
@@ -184,16 +210,22 @@ func (cb *defaultCallBuilder) validateMethod() error {
 	return nil
 }
 
+// Accept sets the "Accept" header for the API call.
+// It takes the acceptHeaderValue as an argument and sets it as the value for the "Accept" header in the CallBuilder.
 func (cb *defaultCallBuilder) Accept(acceptHeaderValue string) {
 	cb.acceptHeaderValue = acceptHeaderValue
 	cb.setAcceptIfNotSet(acceptHeaderValue)
 }
 
+// ContentType sets the "Content-Type" header for the API call.
+// It takes the contentTypeHeaderValue as an argument and sets it as the value for the "Content-Type" header in the CallBuilder.
 func (cb *defaultCallBuilder) ContentType(contentTypeHeaderValue string) {
 	cb.contentTypeHeaderValue = contentTypeHeaderValue
 	cb.setContentTypeIfNotSet(contentTypeHeaderValue)
 }
 
+// Header sets a custom header for the API call.
+// It takes the name of the header and the value of the header as arguments.
 func (cb *defaultCallBuilder) Header(
 	name string,
 	value interface{},
@@ -204,10 +236,13 @@ func (cb *defaultCallBuilder) Header(
 	SetHeaders(cb.headers, strings.ToLower(name), fmt.Sprintf("%v", value))
 }
 
+// CombineHeaders combines the provided headers with the existing headers in the CallBuilder.
 func (cb *defaultCallBuilder) CombineHeaders(headersToMerge map[string]string) {
 	MergeHeaders(cb.headers, headersToMerge)
 }
 
+// QueryParam adds a query parameter to the API call.
+// It takes the name and value of the query parameter as arguments.
 func (cb *defaultCallBuilder) QueryParam(
 	name string,
 	value interface{},
@@ -215,6 +250,7 @@ func (cb *defaultCallBuilder) QueryParam(
 	cb.queryParams = append(cb.queryParams, FormParam{name, value, nil})
 }
 
+// validateQueryParams validates the query parameters in the CallBuilder.
 func (cb *defaultCallBuilder) validateQueryParams() error {
 	var err error = nil
 	if len(cb.queryParams) != 0 {
@@ -231,10 +267,14 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 	return nil
 }
 
+// QueryParams sets multiple query parameters for the API call.
+// It takes a map of string keys and interface{} values representing the query parameters.
 func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
 	cb.query = utilities.PrepareQueryParams(cb.query, parameters)
 }
 
+// FormParam adds a form parameter to the API call.
+// It takes the name and value of the form parameter as arguments.
 func (cb *defaultCallBuilder) FormParam(
 	name string,
 	value interface{},
@@ -242,6 +282,8 @@ func (cb *defaultCallBuilder) FormParam(
 	cb.formParams = append(cb.formParams, FormParam{name, value, nil})
 }
 
+// validateFormParams validates the form parameters in the CallBuilder.
+// Additionally, it sets the "Content-Type" header to "application/x-www-form-urlencoded" if not already set.
 func (cb *defaultCallBuilder) validateFormParams() error {
 	var err error = nil
 	if len(cb.formParams) != 0 {
@@ -259,12 +301,16 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 	return nil
 }
 
+// FormData sets form fields for the API call.
+// It takes a slice of FormParam representing the form fields.
 func (cb *defaultCallBuilder) FormData(fields []FormParam) {
 	if fields != nil {
 		cb.formFields = fields
 	}
 }
 
+// validateFormData validates the form fields in the CallBuilder.
+// Additionally, it sets the "Content-Type" header to the appropriate value for multipart form data if not already set.
 func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
 	var err error = nil
@@ -279,20 +325,31 @@ func (cb *defaultCallBuilder) validateFormData() error {
 	return nil
 }
 
+// Text sets the request body for the API call as plain text.
+// It takes the body string as an argument.
+// Additionally, it sets the "Content-Type" header to "text/plain; charset=utf-8" if not already set.
 func (cb *defaultCallBuilder) Text(body string) {
 	cb.body = body
 	cb.setContentTypeIfNotSet(TEXT_CONTENT_TYPE)
 }
 
+// FileStream sets the request body for the API call as a file stream.
+// It takes a FileWrapper struct containing the file content as an argument.
+// Additionally, it sets the "Content-Type" header to "application/octet-stream" if not already set.
 func (cb *defaultCallBuilder) FileStream(file FileWrapper) {
 	cb.streamBody = file.File
 	cb.setContentTypeIfNotSet("application/octet-stream")
 }
 
+// Json sets the request body for the API call as JSON.
 func (cb *defaultCallBuilder) Json(data interface{}) {
 	cb.jsonData = data
 }
 
+// validateJson validates the JSON data in the CallBuilder.
+// It marshals the JSON data into a byte array and stores it as the request body.
+// Additionally, it sets the "Content-Type" header to "application/json" if not already set.
+// If there is an error during marshaling, it returns an internalError.
 func (cb *defaultCallBuilder) validateJson() error {
 	if cb.jsonData != nil {
 		bytes, err := json.Marshal(cb.jsonData)
@@ -305,6 +362,9 @@ func (cb *defaultCallBuilder) validateJson() error {
 	return nil
 }
 
+// setContentTypeIfNotSet sets the "Content-Type" header if it is not already set in the CallBuilder.
+// It takes the contentType as an argument and sets it as the value for the "Content-Type" header.
+// If the headers map is nil, it initializes it before setting the header.
 func (cb *defaultCallBuilder) setContentTypeIfNotSet(contentType string) {
 	if cb.headers == nil {
 		cb.headers = make(map[string]string)
@@ -314,6 +374,9 @@ func (cb *defaultCallBuilder) setContentTypeIfNotSet(contentType string) {
 	}
 }
 
+// setAcceptIfNotSet sets the "Accept" header if it is not already set in the CallBuilder.
+// It takes the accept header value as an argument and sets it as the value for the "Accept" header.
+// If the headers map is nil, it initializes it before setting the header.
 func (cb *defaultCallBuilder) setAcceptIfNotSet(accept string) {
 	if cb.headers == nil {
 		cb.headers = make(map[string]string)
@@ -323,10 +386,16 @@ func (cb *defaultCallBuilder) setAcceptIfNotSet(accept string) {
 	}
 }
 
+// intercept adds the provided HTTP interceptor to the list of interceptors in the CallBuilder.
+// This allows users to add custom HTTP interceptors for modifying the request and response.
 func (cb *defaultCallBuilder) intercept(interceptor HttpInterceptor) {
 	cb.interceptors = append(cb.interceptors, interceptor)
 }
 
+// InterceptRequest adds an interceptor function for modifying the request before sending.
+// The interceptor function takes the original http.Request as input and returns a modified http.Request.
+// The modified request is used for making the API call.
+// Use this method to customize the request headers, query parameters, or other attributes.
 func (cb *defaultCallBuilder) InterceptRequest(
 	interceptor func(httpRequest *http.Request) *http.Request,
 ) {
@@ -339,6 +408,9 @@ func (cb *defaultCallBuilder) InterceptRequest(
 		})
 }
 
+// toRequest converts the CallBuilder configuration into an http.Request object.
+// It prepares the request by setting the HTTP method, URL, headers, and request body.
+// If there are any validation errors, it returns an error along with an empty request.
 func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 	var err error
 	request := http.Request{}
@@ -413,6 +485,8 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 	return request.WithContext(cb.ctx), err
 }
 
+// Call executes the API call and returns the HttpContext that contains the request and response.
+// It iterates through the interceptors to execute them in sequence before making the API call.
 func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
@@ -433,6 +507,9 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	return &context, err
 }
 
+// CallAsJson executes the API call and returns a JSON decoder and the HTTP response.
+// It sets the "Accept" header to "application/json" and calls the Call method to make the API call.
+// The JSON decoder allows users to parse the response body as JSON data directly.
 func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error) {
 	f := func(request *http.Request) *http.Request {
 		request.Header.Set(ACCEPT_HEADER, JSON_CONTENT_TYPE)
@@ -458,6 +535,9 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 	return nil, nil, err
 }
 
+// CallAsText executes the API call and returns the response body as a string and the HTTP response.
+// It calls the Call method to make the API call and reads the response body as a byte array.
+// The byte array is then converted to a string and returned as the response body.
 func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 	result, err := cb.Call()
 	if err != nil {
@@ -481,6 +561,8 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 	return "", nil, err
 }
 
+// CallAsStream executes the API call and returns the response body as a byte array and the HTTP response.
+// It calls the Call method to make the API call and reads the response body as a byte array.
 func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 	result, err := cb.Call()
 	if err != nil {
@@ -505,6 +587,11 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 	return nil, nil, err
 }
 
+// addRetryInterceptor adds a retry interceptor to the call builder. This interceptor will handle retrying the API call
+// based on the provided retry configuration. It checks if the call should be retried, and if so, waits for the specified
+// amount of time before making the next retry attempt. The retry logic continues until either the maximum retry wait time
+// is exceeded or the request is successfully executed.
+// The result of the last API call is returned in the HttpContext through the interceptor.
 func (cb *defaultCallBuilder) addRetryInterceptor() {
 	cb.intercept(
 		func(
@@ -546,6 +633,7 @@ func (cb *defaultCallBuilder) addRetryInterceptor() {
 		})
 }
 
+// mergePath combines two URL paths to create a valid URL path.
 func mergePath(left, right string) string {
 	if right == "" {
 		return left
@@ -560,14 +648,21 @@ func mergePath(left, right string) string {
 	}
 }
 
+// sanitizePath removes any duplicate slashes in the given path to create a valid URL path.
 func sanitizePath(path string) string {
 	return strings.Replace(path, "//", "/", -1)
 }
 
+// encodeSpace replaces all occurrences of the plus sign "+" with "%20" in the given string.
+// This function is used to encode spaces in query parameters.
 func encodeSpace(str string) string {
 	return strings.ReplaceAll(str, "+", "%20")
 }
 
+// CreateCallBuilderFactory creates a new CallBuilderFactory based on the provided parameters.
+// It takes a baseUrlProvider, Authenticator, HttpClient, and RetryConfiguration as inputs.
+// The returned CallBuilderFactory function creates a new CallBuilder with the provided
+// context, httpMethod, and path using the inputs.
 func CreateCallBuilderFactory(
 	baseUrlProvider baseUrlProvider,
 	auth Authenticator,
