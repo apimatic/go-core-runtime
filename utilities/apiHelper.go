@@ -1,3 +1,5 @@
+// Package utilities provides various utility functions and helpers for common operations.
+// Copyright (c) APIMatic. All rights reserved.
 package utilities
 
 import (
@@ -13,6 +15,7 @@ import (
 
 const DEFAULT_DATE = "2006-01-02"
 
+// DecodeResults decodes JSON data from the provided json.Decoder into a given type T.
 func DecodeResults[T any](decoder *json.Decoder) (T, error) {
 	var result T
 	for {
@@ -25,6 +28,7 @@ func DecodeResults[T any](decoder *json.Decoder) (T, error) {
 	return result, nil
 }
 
+// PrepareQueryParams adds key-value pairs from the data map to the existing URL query parameters.
 func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) url.Values {
 	if queryParams == nil {
 		queryParams = url.Values{}
@@ -36,6 +40,7 @@ func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) url
 	return queryParams
 }
 
+// JsonDecoderToString decodes a JSON value from the provided json.Decoder into a string.
 func JsonDecoderToString(dec *json.Decoder) (string, error) {
 	var str string
 	for {
@@ -48,6 +53,7 @@ func JsonDecoderToString(dec *json.Decoder) (string, error) {
 	return str, nil
 }
 
+// JsonDecoderToStringSlice decodes a JSON array from the provided json.Decoder into a string slice.
 func JsonDecoderToStringSlice(dec *json.Decoder) ([]string, error) {
 	var arr []string
 	for {
@@ -60,6 +66,7 @@ func JsonDecoderToStringSlice(dec *json.Decoder) ([]string, error) {
 	return arr, nil
 }
 
+// JsonDecoderToIntSlice decodes a JSON array from the provided json.Decoder into an int slice.
 func JsonDecoderToIntSlice(dec *json.Decoder) ([]int, error) {
 	var arr []int
 	for {
@@ -72,6 +79,7 @@ func JsonDecoderToIntSlice(dec *json.Decoder) ([]int, error) {
 	return arr, nil
 }
 
+// JsonDecoderToBooleanSlice decodes a JSON array from the provided json.Decoder into a bool slice.
 func JsonDecoderToBooleanSlice(dec *json.Decoder) ([]bool, error) {
 	var arr []bool
 	for {
@@ -84,7 +92,7 @@ func JsonDecoderToBooleanSlice(dec *json.Decoder) ([]bool, error) {
 	return arr, nil
 }
 
-// ToTimeSlice is used to make a time.Time slice from a string slice.
+// ToTimeSlice converts a slice of strings or int64 values to a slice of time.Time values using the specified format.
 func ToTimeSlice(slice interface{}, format string) ([]time.Time, error) {
 	result := make([]time.Time, 0)
 	if slice == nil {
@@ -108,7 +116,7 @@ func ToTimeSlice(slice interface{}, format string) ([]time.Time, error) {
 	return result, nil
 }
 
-// TimeToStringSlice is used to make a string slice from a time.Time slice.
+// TimeToStringSlice converts a slice of time.Time values to a slice of strings using the specified format.
 func TimeToStringSlice(slice []time.Time, format string) []string {
 	result := make([]string, 0)
 	if slice == nil {
@@ -127,7 +135,7 @@ func TimeToStringSlice(slice []time.Time, format string) []string {
 	return result
 }
 
-// ToTimeMap is used to make a time.Time map from a string map.
+// ToTimeMap converts a map with string or int64 values to a map with time.Time values using the specified format.
 func ToTimeMap(dict interface{}, format string) (map[string]time.Time, error) {
 	result := make(map[string]time.Time, 0)
 	if dict == nil {
@@ -151,7 +159,7 @@ func ToTimeMap(dict interface{}, format string) (map[string]time.Time, error) {
 	return result, nil
 }
 
-// ToNullableTimeMap is used to make a nullable time.Time map from a string map.
+// ToNullableTimeMap converts a map with nullable string or int64 values to a map with nullable time.Time values using the specified format.
 func ToNullableTimeMap(dict interface{}, format string) (map[string]*time.Time, error) {
 	result := make(map[string]*time.Time, 0)
 	if dict == nil {
@@ -183,7 +191,7 @@ func ToNullableTimeMap(dict interface{}, format string) (map[string]*time.Time, 
 	return result, nil
 }
 
-// TimeToStringMap is used to make a string map from a time.Time map.
+// TimeToStringMap converts a map with time.Time values to a map with strings using the specified format.
 func TimeToStringMap(dict map[string]time.Time, format string) map[string]string {
 	result := make(map[string]string, 0)
 	if dict == nil {
@@ -202,7 +210,7 @@ func TimeToStringMap(dict map[string]time.Time, format string) map[string]string
 	return result
 }
 
-// NullableTimeToStringMap is used to make a nullable string map from a time.Time map.
+// NullableTimeToStringMap converts a map with nullable time.Time values to a map with nullable strings using the specified format.
 func NullableTimeToStringMap(dict map[string]*time.Time, format string) map[string]*string {
 	result := make(map[string]*string, 0)
 	if dict == nil {
@@ -225,6 +233,7 @@ func NullableTimeToStringMap(dict map[string]*time.Time, format string) map[stri
 	return result
 }
 
+// UpdateUserAgent replaces placeholders in the user agent string with the actual values.
 func UpdateUserAgent(userAgent string) string {
 	updatedAgent := userAgent
 	updatedAgent = strings.Replace(updatedAgent, "{os-info}", runtime.GOOS, -1)
