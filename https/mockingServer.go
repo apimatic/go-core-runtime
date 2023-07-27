@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 )
 
+// GetTestingServer creates and returns an httptest.Server instance for testing purposes.
 func GetTestingServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" {

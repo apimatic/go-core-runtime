@@ -5,12 +5,14 @@ import (
 	"testing"
 )
 
+// TestHeader represents a test header with Name, Value, and CheckValue fields.
 type TestHeader struct {
 	CheckValue bool   `json:"CheckValue"`
 	Name       string `json:"Name"`
 	Value      string `json:"Value"`
 }
 
+// NewTestHeader creates and returns a new TestHeader with the given values.
 func NewTestHeader(checkValue bool, name, value string) TestHeader {
 	return TestHeader{
 		CheckValue: checkValue,
@@ -19,6 +21,8 @@ func NewTestHeader(checkValue bool, name, value string) TestHeader {
 	}
 }
 
+// CheckResponseHeaders checks if the responseHeaders contain the expected headers specified in expectedHeadersList.
+// If allowExtraHeaders is set to false, it also verifies that no extra headers are present in the responseHeaders.
 func CheckResponseHeaders(t *testing.T, responseHeaders http.Header, expectedHeadersList []TestHeader, allowExtraHeaders bool) {
 	for _, expectedHeader := range expectedHeadersList {
 		respValue := responseHeaders.Get(expectedHeader.Name)

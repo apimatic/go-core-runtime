@@ -1,3 +1,5 @@
+// Package testHelper provides helper functions for testing purposes.
+// Copyright (c) APIMatic. All rights reserved.
 package testHelper
 
 import (
@@ -10,6 +12,7 @@ import (
 	"github.com/apimatic/go-core-runtime/https"
 )
 
+// NativeBodyMatcher compares the JSON response body with the expected JSON body.
 func NativeBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
 	responseBytes, _ := json.Marshal(responseObject)
 	var expected, response interface{}
@@ -25,6 +28,8 @@ func NativeBodyMatcher(test *testing.T, expectedBody string, responseObject any)
 	}
 }
 
+// KeysBodyMatcher compares the JSON response body with the expected JSON body using keys only.
+// The responseObject and expectedBody should have the same keys.
 func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(responseObject)
 	var response, expected map[string]interface{}
@@ -40,6 +45,8 @@ func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, c
 	}
 }
 
+// KeysAndValuesBodyMatcher compares the JSON response body with the expected JSON body using keys and values.
+// The responseObject and expectedBody should have the same keys and their corresponding values should be equal.
 func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseObject any, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(responseObject)
 	var response, expected map[string]interface{}
@@ -55,6 +62,8 @@ func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseObje
 	}
 }
 
+// matchKeysAndValues is a helper function used by KeysBodyMatcher and KeysAndValuesBodyMatcher
+// to compare the JSON keys and values.
 func matchKeysAndValues(response, expected map[string]interface{}, checkArrayCount, checkArrayOrder, checkValues bool) bool {
 	if checkArrayCount && len(expected) != len(response) {
 		return false
@@ -80,6 +89,7 @@ func matchKeysAndValues(response, expected map[string]interface{}, checkArrayCou
 	return true
 }
 
+// RawBodyMatcher checks if the expectedBody is contained within the JSON response body.
 func RawBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
 	responseBytes, _ := json.Marshal(responseObject)
 	responseBody := string(responseBytes)
@@ -89,6 +99,7 @@ func RawBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
 	}
 }
 
+// IsSameAsFile checks if the responseFileBytes is the same as the content of the file fetched from the expectedFileURL.
 func IsSameAsFile(test *testing.T, expectedFileURL string, responseFileBytes []byte) {
 	expectedFile, err := https.GetFile(expectedFileURL)
 	if err != nil {
@@ -97,12 +108,14 @@ func IsSameAsFile(test *testing.T, expectedFileURL string, responseFileBytes []b
 	IsSameInputBytes(test, expectedFile.File, responseFileBytes)
 }
 
+// IsSameInputBytes checks if the receivedBytes are equal to the expectedBytes.
 func IsSameInputBytes(test *testing.T, expectedBytes []byte, receivedBytes []byte) {
 	if !reflect.DeepEqual(expectedBytes, receivedBytes) {
 		test.Error("Recieved bytes donot match the bytes expected")
 	}
 }
 
+// SliceToCommaSeparatedString converts a slice to a comma-separated string representation.
 func SliceToCommaSeparatedString(slice interface{}) string {
 	return strings.Join(strings.Split(fmt.Sprint(slice), " "), ",")
 }
