@@ -1,3 +1,5 @@
+// Package apiError provides a structure to represent error responses from API calls.
+// Copyright (c) APIMatic. All rights reserved.
 package apiError
 
 import (
@@ -5,7 +7,8 @@ import (
 	"net/http"
 )
 
-// This is the base struct for all exceptions that represent an error response from the server.
+// ApiError is the base struct for all error responses from the server.
+// It holds information about the original HTTP request, the status code, headers, and response body.
 type ApiError struct {
 	Request    http.Request      `json:"Request"`
 	StatusCode int               `json:"StatusCode"`
@@ -13,7 +16,8 @@ type ApiError struct {
 	Body       string            `json:"Body"`
 }
 
-// Constructor for ApiError.
+// NewApiError is the constructor function for ApiError.
+// It creates and returns a pointer to an ApiError instance with the given status code and response body.
 func NewApiError(
 	statusCode int,
 	body string) *ApiError {
@@ -23,7 +27,8 @@ func NewApiError(
 	}
 }
 
-// Implementing the Error method for the error interface.
+// Error implements the Error method for the error interface.
+// It returns a string representation of the ApiError instance when used in an error context.
 func (a *ApiError) Error() string {
 	return fmt.Sprintf("ApiError occured %v", a.Body)
 }
