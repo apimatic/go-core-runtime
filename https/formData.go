@@ -86,8 +86,10 @@ func (fp *FormParams) Add(formParam FormParam) {
 
 // prepareFormFields prepares the form fields from the given FormParams and adds them to the url.Values.
 // It processes each FormParam field and encodes the value according to its data type.
-func (fp *FormParams) prepareFormFields() (url.Values, error) {
-	form := url.Values{}
+func (fp *FormParams) prepareFormFields(form url.Values) (url.Values, error) {
+	if form == nil {
+		form = url.Values{}
+	}
 	for _, param := range *fp {
 		paramsMap, err := param.toMap()
 		if err != nil {

@@ -256,7 +256,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		urlValues, err := cb.queryParams.prepareFormFields()
+		urlValues, err := cb.queryParams.prepareFormFields(cb.query)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
 		}
@@ -289,7 +289,7 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		urlValues, err := cb.formParams.prepareFormFields()
+		urlValues, err := cb.formParams.prepareFormFields(cb.form)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
 		}
