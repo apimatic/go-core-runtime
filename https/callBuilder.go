@@ -256,12 +256,9 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		urlValues, err := cb.queryParams.prepareFormFields(cb.query)
+		err := cb.queryParams.prepareFormFields(cb.query)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
-		}
-		for urlKey, _ := range urlValues {
-			cb.query.Add(urlKey, urlValues.Get(urlKey))
 		}
 	}
 	return nil
@@ -270,7 +267,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 // QueryParams sets multiple query parameters for the API call.
 // It takes a map of string keys and interface{} values representing the query parameters.
 func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
-	cb.query = utilities.PrepareQueryParams(cb.query, parameters)
+	utilities.PrepareQueryParams(cb.query, parameters)
 }
 
 // FormParam adds a form parameter to the API call.
@@ -289,12 +286,9 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		urlValues, err := cb.formParams.prepareFormFields(cb.form)
+		err := cb.formParams.prepareFormFields(cb.form)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
-		}
-		for urlKey, _ := range urlValues {
-			cb.form.Add(urlKey, urlValues.Get(urlKey))
 		}
 		cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)
 	}

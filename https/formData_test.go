@@ -79,7 +79,8 @@ func TestFormEncodeMapStructType(t *testing.T) {
 
 func TestPrepareFormFieldsNil(t *testing.T) {
 	params := FormParams{{"param", "value", nil}}
-	result, _ := params.prepareFormFields(nil)
+	result := url.Values{}
+	_ = params.prepareFormFields(result)
 
 	expected := url.Values{}
 	expected.Add("param", "value")
@@ -90,11 +91,11 @@ func TestPrepareFormFieldsNil(t *testing.T) {
 }
 
 func TestPrepareFormFields(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
+	result := url.Values{}
+	result.Add("param", "val")
+	result.Add("param", "val1")
 	params := FormParams{{"param2", "value", nil}}
-	result, _ := params.prepareFormFields(input)
+	_ = params.prepareFormFields(result)
 
 	expected := url.Values{}
 	expected.Add("param", "val")
@@ -107,13 +108,13 @@ func TestPrepareFormFields(t *testing.T) {
 }
 
 func TestPrepareFormFieldsBoolSlice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
+	result := url.Values{}
+	result.Add("param", "val")
+	result.Add("param", "val1")
 	params := FormParams{{"param2", []bool{false, true}, nil}}
-	result, _ := params.prepareFormFields(input)
+	_ = params.prepareFormFields(result)
 
-	expected := input
+	expected := result
 	expected.Add("param2", "false")
 	expected.Add("param2", "true")
 
@@ -125,8 +126,8 @@ func TestPrepareFormFieldsBoolSlice(t *testing.T) {
 func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 	floatV := math.Inf(1)
 	params := FormParams{{"param", &floatV, nil}}
-	result, err := params.prepareFormFields(nil)
-
+	result := url.Values{}
+	err := params.prepareFormFields(result)
 	if err == nil {
 		t.Errorf("Failed:\nExpected: nil \nGot: %v", result)
 	}
