@@ -52,7 +52,7 @@ type CallBuilder interface {
 	QueryParams(parameters map[string]interface{})
 	FormParam(name string, value interface{})
 	validateFormParams() error
-	FormData(fields []FormParam)
+	FormData(fields FormParams)
 	validateFormData() error
 	Text(body string)
 	FileStream(file FileWrapper)
@@ -92,9 +92,9 @@ type defaultCallBuilder struct {
 	retryConfig            RetryConfiguration
 	clientError            error
 	jsonData               interface{}
-	formFields             []FormParam
-	formParams             []FormParam
-	queryParams            []FormParam
+	formFields             FormParams
+	formParams             FormParams
+	queryParams            FormParams
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -247,21 +247,21 @@ func (cb *defaultCallBuilder) QueryParam(
 	name string,
 	value interface{},
 ) {
-	cb.queryParams = append(cb.queryParams, FormParam{name, value, nil})
+	cb.queryParams.Add(FormParam{name, value, nil})
 }
 
 // validateQueryParams validates the query parameters in the CallBuilder.
 func (cb *defaultCallBuilder) validateQueryParams() error {
-	var err error = nil
 	if len(cb.queryParams) != 0 {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		for _, param := range cb.queryParams {
-			cb.query, err = prepareFormFields(FormParam{Key: param.Key, Value: param.Value}, cb.query)
-			if err != nil {
-				return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
-			}
+		urlValues, err := cb.queryParams.prepareFormFields()
+		if err != nil {
+			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
+		}
+		for urlKey, _ := range urlValues {
+			cb.query.Add(urlKey, urlValues.Get(urlKey))
 		}
 	}
 	return nil
@@ -279,31 +279,31 @@ func (cb *defaultCallBuilder) FormParam(
 	name string,
 	value interface{},
 ) {
-	cb.formParams = append(cb.formParams, FormParam{name, value, nil})
+	cb.formParams.Add(FormParam{name, value, nil})
 }
 
 // validateFormParams validates the form parameters in the CallBuilder.
 // Additionally, it sets the "Content-Type" header to "application/x-www-form-urlencoded" if not already set.
 func (cb *defaultCallBuilder) validateFormParams() error {
-	var err error = nil
 	if len(cb.formParams) != 0 {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		for _, param := range cb.formParams {
-			cb.form, err = prepareFormFields(FormParam{Key: param.Key, Value: param.Value}, cb.form)
-			if err != nil {
-				return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
-			}
-			cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)
+		urlValues, err := cb.formParams.prepareFormFields()
+		if err != nil {
+			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
 		}
+		for urlKey, _ := range urlValues {
+			cb.form.Add(urlKey, urlValues.Get(urlKey))
+		}
+		cb.setContentTypeIfNotSet(FORM_URLENCODED_CONTENT_TYPE)
 	}
 	return nil
 }
 
 // FormData sets form fields for the API call.
 // It takes a slice of FormParam representing the form fields.
-func (cb *defaultCallBuilder) FormData(fields []FormParam) {
+func (cb *defaultCallBuilder) FormData(fields FormParams) {
 	if fields != nil {
 		cb.formFields = fields
 	}
@@ -315,8 +315,7 @@ func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
 	var err error = nil
 	if len(cb.formFields) != 0 {
-
-		cb.formData, headerVal, err = prepareMultipartFields(cb.formFields)
+		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields()
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
 		}
