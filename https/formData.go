@@ -81,7 +81,9 @@ type FormParams []FormParam
 
 // Add appends a FormParam to the FormParams collection.
 func (fp *FormParams) Add(formParam FormParam) {
-	*fp = append(*fp, formParam)
+	if formParam.Value != nil {
+		*fp = append(*fp, formParam)
+	}
 }
 
 // prepareFormFields prepares the form fields from the given FormParams and adds them to the url.Values.
