@@ -20,6 +20,145 @@ type FormParam struct {
 	Headers http.Header
 }
 
+// toMap converts a FormParam to a map of string key-value pairs.
+func (param *FormParam) toMap() (map[string]string, error) {
+
+	paramMap := make(map[string]string)
+	if param.Value == nil {
+		return paramMap, nil
+	}
+	valueType := reflect.TypeOf(param.Value).Kind()
+	switch valueType {
+	case reflect.Map, reflect.Struct, reflect.Ptr:
+		// Convert Struct and Pointer types into Map.
+		if valueType == reflect.Struct || valueType == reflect.Ptr {
+			structMap, err := structToMap(param.Value)
+			if err != nil {
+				return paramMap, err
+			}
+			param.Value = structMap
+		}
+		// Add Map key-value pairs into the parent Map.
+		iter := reflect.ValueOf(param.Value).MapRange()
+		for iter.Next() {
+			innerParam := &FormParam{
+				fmt.Sprintf("%v[%v]", param.Key, iter.Key()),
+				iter.Value().Interface(),
+				param.Headers,
+			}
+			innerParamMap, err := innerParam.toMap()
+			if err != nil {
+				return paramMap, err
+			}
+			for k, v := range innerParamMap {
+				paramMap[k] = v
+			}
+		}
+	case reflect.Slice:
+		reflectValue := reflect.ValueOf(param.Value)
+		for index := 0; index < reflectValue.Len(); index++ {
+			innerParam := &FormParam{
+				fmt.Sprintf("%v[%v]", param.Key, index),
+				reflectValue.Index(index).Interface(),
+				param.Headers,
+			}
+			innerParamMap, err := innerParam.toMap()
+			if err != nil {
+				return paramMap, err
+			}
+			for k, v := range innerParamMap {
+				paramMap[k] = v
+			}
+		}
+	default:
+		paramMap[param.Key] = fmt.Sprintf("%v", param.Value)
+	}
+	return paramMap, nil
+}
+
+// FormParams represents a collection of FormParam objects.
+type FormParams []FormParam
+
+// Add appends a FormParam to the FormParams collection.
+func (fp *FormParams) Add(formParam FormParam) {
+	if formParam.Value != nil {
+		*fp = append(*fp, formParam)
+	}
+}
+
+// prepareFormFields prepares the form fields from the given FormParams and adds them to the url.Values.
+// It processes each FormParam field and encodes the value according to its data type.
+func (fp *FormParams) prepareFormFields(form url.Values) error {
+	if form == nil {
+		form = url.Values{}
+	}
+	for _, param := range *fp {
+		paramsMap, err := param.toMap()
+		if err != nil {
+			return err
+		}
+		for key, value := range paramsMap {
+			form.Add(key, value)
+		}
+	}
+	return nil
+}
+
+// prepareMultipartFields prepares the multipart fields from the given FormParams and
+// returns the body as a bytes.Buffer, along with the Content-Type header for the multipart form data.
+func (fp *FormParams) prepareMultipartFields() (bytes.Buffer, string, error) {
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	for _, field := range *fp {
+		switch fieldValue := field.Value.(type) {
+		case FileWrapper:
+			mediaParam := map[string]string{
+				"name":     field.Key,
+				"filename": fieldValue.FileName,
+			}
+			formParamWriter(writer, field.Headers, mediaParam, fieldValue.File)
+		default:
+			paramsMap, err := field.toMap()
+			if err != nil {
+				return *body, writer.FormDataContentType(), err
+			}
+			for key, value := range paramsMap {
+				mediaParam := map[string]string{"name": key}
+				formParamWriter(writer, field.Headers, mediaParam, []byte(value))
+			}
+		}
+	}
+	writer.Close()
+	return *body, writer.FormDataContentType(), nil
+}
+
+// formParamWriter writes a form parameter to the multipart writer.
+func formParamWriter(
+	writer *multipart.Writer,
+	fpHeaders http.Header,
+	mediaParam map[string]string,
+	bytes []byte) error {
+
+	mimeHeader := make(textproto.MIMEHeader)
+
+	contentDisp := mime.FormatMediaType("form-data", mediaParam)
+	mimeHeader.Set("Content-Disposition", contentDisp)
+
+	if contentType := fpHeaders.Get("Content-Type"); contentType != "" {
+		mimeHeader.Set("Content-Type", contentType)
+	}
+	part, err := writer.CreatePart(mimeHeader)
+	if err != nil {
+		return err
+	}
+	_, err = part.Write(bytes)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // structToMap converts a given data structure to a map.
 func structToMap(data interface{}) (map[string]interface{}, error) {
 	dataBytes, err := json.Marshal(data)
@@ -29,184 +168,4 @@ func structToMap(data interface{}) (map[string]interface{}, error) {
 	mapData := make(map[string]interface{})
 	err = json.Unmarshal(dataBytes, &mapData)
 	return mapData, err
-}
-
-// formEncodeMap recursively encodes the form parameters from a nested data structure.
-// It processes the FormParam field and appends the result to the formParams slice.
-// This function is used to handle nested data structures in form parameters.
-func formEncodeMap(field FormParam, formParams *[]FormParam) ([]FormParam, error) {
-	if formParams == nil {
-		formParams = &[]FormParam{}
-	}
-
-	value := field.Value
-	name := field.Key
-	headers := field.Headers
-
-	if value == nil {
-		return *formParams, nil
-	}
-
-	switch reflect.TypeOf(value).Kind() {
-	case reflect.Struct, reflect.Ptr:
-		structMap, err := structToMap(value)
-		if err != nil {
-			return nil, err
-		}
-		for key, value := range structMap {
-			var fullName string = key
-			if name != "" {
-				fullName = name + "[" + key + "]"
-			}
-			formEncodeMap(FormParam{fullName, value, headers}, formParams)
-		}
-	case reflect.Map:
-		for key, val := range value.(map[string]interface{}) {
-			var fullName string = key
-			if name != "" {
-				fullName = name + "[" + key + "]"
-			}
-			formEncodeMap(FormParam{fullName, val, headers}, formParams)
-		}
-	case reflect.Slice:
-		if reflect.TypeOf(value).Elem().Kind() == reflect.Interface {
-			for num, val := range value.([]interface{}) {
-				fullName := name + "[" + fmt.Sprintf("%v", num) + "]"
-				formEncodeMap(FormParam{fullName, val, headers}, formParams)
-			}
-		} else {
-			reflectValue := reflect.ValueOf(value)
-			for num := 0; num < reflectValue.Len(); num++ {
-				fullName := name + "[" + fmt.Sprintf("%v", num) + "]"
-				formEncodeMap(FormParam{fullName, reflectValue.Index(num).Interface(), headers}, formParams)
-			}
-		}
-	default:
-		*formParams = append(*formParams, FormParam{name, value, headers})
-	}
-	return *formParams, nil
-}
-
-// prepareFormFields prepares the form fields from the given FormParam and adds them to the provided url.Values.
-// It processes the FormParam field and encodes the value according to its data type.
-func prepareFormFields(field FormParam, form url.Values) (url.Values, error) {
-	if form == nil {
-		form = url.Values{}
-	}
-
-	switch value := field.Value.(type) {
-	case []string:
-		for _, val := range value {
-			form.Add(field.Key, fmt.Sprintf("%v", val))
-		}
-	case []int:
-		for _, val := range value {
-			form.Add(field.Key, fmt.Sprintf("%v", val))
-		}
-	case []int16:
-		for _, val := range value {
-			form.Add(field.Key, fmt.Sprintf("%v", val))
-		}
-	case []int32:
-		for _, val := range value {
-			form.Add(field.Key, fmt.Sprintf("%v", val))
-		}
-	case []int64:
-		for _, val := range value {
-			form.Add(field.Key, fmt.Sprintf("%v", val))
-		}
-	case []bool:
-		for _, val := range value {
-			form.Add(field.Key, fmt.Sprintf("%v", val))
-		}
-	case []float32:
-		for _, val := range value {
-			form.Add(field.Key, fmt.Sprintf("%v", val))
-		}
-	case []float64:
-		for _, val := range value {
-			form.Add(field.Key, fmt.Sprintf("%v", val))
-		}
-	default:
-		formParams, err := formEncodeMap(field, nil)
-
-		if err != nil {
-			return nil, fmt.Errorf("Error parsing the date: %v", err)
-		}
-		for _, param := range formParams {
-			form.Add(param.Key, fmt.Sprintf("%v", param.Value))
-		}
-	}
-
-	return form, nil
-}
-
-// prepareMultipartFields prepares the multipart fields from the given FormParam and
-// returns the body as a bytes.Buffer, along with the Content-Type header for the multipart form data.
-func prepareMultipartFields(fields []FormParam) (bytes.Buffer, string, error) {
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-
-	for _, field := range fields {
-		switch fieldValue := field.Value.(type) {
-		case FileWrapper:
-			headers := make(textproto.MIMEHeader)
-			contentDisposition := mime.FormatMediaType("form-data", map[string]string{
-				"name":     field.Key,
-				"filename": fieldValue.FileName,
-			})
-			headers.Set("Content-Disposition", contentDisposition)
-			if contentType := field.Headers.Get("Content-Type"); contentType != "" {
-				headers.Set("Content-Type", contentType)
-			}
-			part, err := writer.CreatePart(headers)
-			if err != nil {
-				return *body, writer.FormDataContentType(), err
-			}
-			_, err = part.Write(fieldValue.File)
-			if err != nil {
-				return *body, writer.FormDataContentType(), err
-			}
-		case string:
-			headers := make(textproto.MIMEHeader)
-			contentDisposition := mime.FormatMediaType("form-data", map[string]string{
-				"name": field.Key,
-			})
-			headers.Set("Content-Disposition", contentDisposition)
-			if contentType := field.Headers.Get("Content-Type"); contentType != "" {
-				headers.Set("Content-Type", contentType)
-			}
-			part, err := writer.CreatePart(headers)
-			if err != nil {
-				return *body, writer.FormDataContentType(), err
-			}
-			_, err = part.Write([]byte(fieldValue))
-			if err != nil {
-				return *body, writer.FormDataContentType(), err
-			}
-		default:
-			headers := make(textproto.MIMEHeader)
-			contentDisposition := mime.FormatMediaType("form-data", map[string]string{
-				"name": field.Key,
-			})
-			headers.Set("Content-Disposition", contentDisposition)
-			if contentType := field.Headers.Get("Content-Type"); contentType != "" {
-				headers.Set("Content-Type", contentType)
-			}
-			part, err := writer.CreatePart(headers)
-			if err != nil {
-				return *body, writer.FormDataContentType(), err
-			}
-			marshalledBytes, err := json.Marshal(fieldValue)
-			if err != nil {
-				return *body, writer.FormDataContentType(), err
-			}
-			_, err = part.Write(marshalledBytes)
-			if err != nil {
-				return *body, writer.FormDataContentType(), err
-			}
-		}
-	}
-	writer.Close()
-	return *body, writer.FormDataContentType(), nil
 }

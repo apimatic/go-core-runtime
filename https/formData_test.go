@@ -39,11 +39,12 @@ func TestStructToMapMarshallingError(t *testing.T) {
 	}
 }
 
-func TestFormEncodeMapNilMap(t *testing.T) {
-	result, _ := formEncodeMap(FormParam{"param", "value", nil}, nil)
+func TestToMapNilMap(t *testing.T) {
+	param := FormParam{"param", "value", nil}
+	result, _ := param.toMap()
 
-	expected := []FormParam{
-		{"param", "value", nil},
+	expected := map[string]string{
+		"param": "value",
 	}
 
 	if !reflect.DeepEqual(result, expected) {
@@ -52,34 +53,10 @@ func TestFormEncodeMapNilMap(t *testing.T) {
 }
 
 func TestFormEncodeMapNilValue(t *testing.T) {
-	formParams := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-	}
-	result, _ := formEncodeMap(FormParam{"param2", nil, nil}, &formParams)
+	param := FormParam{"param", nil, nil}
+	result, _ := param.toMap()
 
-	expected := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-	}
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestFormEncodeMap(t *testing.T) {
-	formParams := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-	}
-	result, _ := formEncodeMap(FormParam{"param2", "value2", nil}, &formParams)
-
-	expected := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-		{"param2", "value2", nil},
-	}
+	expected := make(map[string]string)
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -87,15 +64,10 @@ func TestFormEncodeMap(t *testing.T) {
 }
 
 func TestFormEncodeMapStructType(t *testing.T) {
-	formParams := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-	}
-	result, _ := formEncodeMap(FormParam{"param2", GetStruct(), nil}, &formParams)
+	param := FormParam{"param2", GetStruct(), nil}
+	result, _ := param.toMap()
 
-	expected := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
+	expected := FormParams{
 		{"param2[Name]", "Bisma", nil},
 		{"param2[Employed]", "true", nil},
 	}
@@ -105,76 +77,10 @@ func TestFormEncodeMapStructType(t *testing.T) {
 	}
 }
 
-func TestFormEncodeMapMapType(t *testing.T) {
-	formParams := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-	}
-	result, _ := formEncodeMap(FormParam{"param2", map[string]interface{}{"Name": "Bisma"}, nil}, &formParams)
-
-	expected := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-		{"param2[Name]", "Bisma", nil},
-	}
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestFormEncodeMapSliceType(t *testing.T) {
-	formParams := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-	}
-	result, _ := formEncodeMap(FormParam{"param2", []string{"Name", "Bisma"}, nil}, &formParams)
-
-	expected := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-		{"param2[0]", "Name", nil},
-		{"param2[1]", "Bisma", nil},
-	}
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestFormEncodeMapInterfaceSliceType(t *testing.T) {
-	formParams := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-	}
-	result, _ := formEncodeMap(FormParam{"param2", []interface{}{"Name", "Bisma"}, nil}, &formParams)
-
-	expected := []FormParam{
-		{"param", "value", nil},
-		{"param1", "value1", nil},
-		{"param2[0]", "Name", nil},
-		{"param2[1]", "Bisma", nil},
-	}
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestFormEncodeMapStructTypeError(t *testing.T) {
-	formParams := []FormParam{
-		{"param", "value", nil},
-	}
-	ptr := math.Inf(1)
-	_, err := formEncodeMap(FormParam{"param2", &ptr, nil}, &formParams)
-
-	if err == nil {
-		t.Errorf("The code should get error because input cannot be converted to struct.")
-	}
-}
-
 func TestPrepareFormFieldsNil(t *testing.T) {
-	result, _ := prepareFormFields(FormParam{"param", "value", nil}, nil)
+	params := FormParams{{"param", "value", nil}}
+	result := url.Values{}
+	_ = params.prepareFormFields(result)
 
 	expected := url.Values{}
 	expected.Add("param", "value")
@@ -185,10 +91,11 @@ func TestPrepareFormFieldsNil(t *testing.T) {
 }
 
 func TestPrepareFormFields(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", "value", nil}, input)
+	result := url.Values{}
+	result.Add("param", "val")
+	result.Add("param", "val1")
+	params := FormParams{{"param2", "value", nil}}
+	_ = params.prepareFormFields(result)
 
 	expected := url.Values{}
 	expected.Add("param", "val")
@@ -200,88 +107,14 @@ func TestPrepareFormFields(t *testing.T) {
 	}
 }
 
-func TestPrepareFormFieldsStringSlice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", []string{"value", "value1"}, nil}, input)
-
-	expected := input
-	expected.Add("param2", "value")
-	expected.Add("param2", "value1")
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestPrepareFormFieldsIntSlice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", []int{1, 2}, nil}, input)
-
-	expected := input
-	expected.Add("param2", "1")
-	expected.Add("param2", "2")
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestPrepareFormFieldsInt16Slice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", []int16{1, 2}, nil}, input)
-
-	expected := input
-	expected.Add("param2", "1")
-	expected.Add("param2", "2")
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestPrepareFormFieldsInt32Slice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", []int32{1, 2}, nil}, input)
-
-	expected := input
-	expected.Add("param2", "1")
-	expected.Add("param2", "2")
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestPrepareFormFieldsInt64Slice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", []int64{1, 2}, nil}, input)
-
-	expected := input
-	expected.Add("param2", "1")
-	expected.Add("param2", "2")
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
 func TestPrepareFormFieldsBoolSlice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", []bool{false, true}, nil}, input)
+	result := url.Values{}
+	result.Add("param", "val")
+	result.Add("param", "val1")
+	params := FormParams{{"param2", []bool{false, true}, nil}}
+	_ = params.prepareFormFields(result)
 
-	expected := input
+	expected := result
 	expected.Add("param2", "false")
 	expected.Add("param2", "true")
 
@@ -290,40 +123,11 @@ func TestPrepareFormFieldsBoolSlice(t *testing.T) {
 	}
 }
 
-func TestPrepareFormFieldsFloat32Slice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", []float32{1.2, 2.1}, nil}, input)
-
-	expected := input
-	expected.Add("param2", "1.2")
-	expected.Add("param2", "2.1")
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
-func TestPrepareFormFieldsFloat64Slice(t *testing.T) {
-	input := url.Values{}
-	input.Add("param", "val")
-	input.Add("param", "val1")
-	result, _ := prepareFormFields(FormParam{"param2", []float64{1.1111, 2.1111}, nil}, input)
-
-	expected := input
-	expected.Add("param2", "1.1111")
-	expected.Add("param2", "2.1111")
-
-	if !reflect.DeepEqual(result, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
-	}
-}
-
 func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 	floatV := math.Inf(1)
-	result, err := prepareFormFields(FormParam{"param", &(floatV), nil}, nil)
-
+	params := FormParams{{"param", &floatV, nil}}
+	result := url.Values{}
+	err := params.prepareFormFields(result)
 	if err == nil {
 		t.Errorf("Failed:\nExpected: nil \nGot: %v", result)
 	}
@@ -332,7 +136,8 @@ func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 func TestPrepareMultipartFieldsString(t *testing.T) {
 	header := http.Header{}
 	header.Add("Content-Type", TEXT_CONTENT_TYPE)
-	bytes, str, _ := prepareMultipartFields([]FormParam{{"param", "value", header}})
+	params := FormParams{{"param", "value", header}}
+	bytes, str, _ := params.prepareMultipartFields()
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -342,7 +147,8 @@ func TestPrepareMultipartFieldsString(t *testing.T) {
 func TestPrepareMultipartFields(t *testing.T) {
 	header := http.Header{}
 	header.Add("Content-Type", TEXT_CONTENT_TYPE)
-	bytes, str, _ := prepareMultipartFields([]FormParam{{"param", 40, header}})
+	params := FormParams{{"param", 40, header}}
+	bytes, str, _ := params.prepareMultipartFields()
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -351,7 +157,8 @@ func TestPrepareMultipartFields(t *testing.T) {
 
 func TestPrepareMultipartFieldsWithPointer(t *testing.T) {
 	floatV := math.Inf(0)
-	bytes, str, _ := prepareMultipartFields([]FormParam{{"param", &floatV, nil}})
+	params := FormParams{{"param", &floatV, nil}}
+	bytes, str, _ := params.prepareMultipartFields()
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -365,17 +172,10 @@ func TestPrepareMultipartFieldsWithFile(t *testing.T) {
 	}
 	header := http.Header{}
 	header.Add("Content-Type", "image/png")
-	bytes, _, _ := prepareMultipartFields([]FormParam{{"param", file, header}})
+	params := FormParams{{"param", file, header}}
+	bytes, _, _ := params.prepareMultipartFields()
 
 	if !strings.Contains(bytes.String(), `filename=googles-new-logo`) {
-		t.Errorf("Failed:\nGot: %v", bytes.String())
-	}
-}
-
-func TestPrepareMultipartFieldsWithFileError(t *testing.T) {
-	bytes, _, _ := prepareMultipartFields([]FormParam{{"param", nil, nil}})
-
-	if !strings.Contains(bytes.String(), `null`) {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
 	}
 }
