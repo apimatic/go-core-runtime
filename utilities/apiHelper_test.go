@@ -552,7 +552,7 @@ func TestJsonDecoderToStringWithEmptyString(t *testing.T) {
 
 // PrepareQueryParams
 func TestPrepareQueryParamsDuplicateData(t *testing.T) {
-	result := url.Values{
+	queryParams := url.Values{
 		"key":  []string{"value"},
 		"key1": []string{"1"},
 	}
@@ -560,7 +560,7 @@ func TestPrepareQueryParamsDuplicateData(t *testing.T) {
 		"key":  "value",
 		"key1": 1,
 	}
-	PrepareQueryParams(result, data)
+	result := PrepareQueryParams(queryParams, data)
 	expected := url.Values{
 		"key":  []string{"value", "value"},
 		"key1": []string{"1", "1"},
@@ -571,12 +571,12 @@ func TestPrepareQueryParamsDuplicateData(t *testing.T) {
 }
 
 func TestPrepareQueryParamsNilData(t *testing.T) {
-	result := url.Values{
+	queryParams := url.Values{
 		"key":  []string{"value"},
 		"key1": []string{"1"},
 	}
 
-	PrepareQueryParams(result, nil)
+	result := PrepareQueryParams(queryParams, nil)
 	expected := url.Values{
 		"key":  []string{"value"},
 		"key1": []string{"1"},
@@ -591,8 +591,7 @@ func TestPrepareQueryParamsNilQueryParams(t *testing.T) {
 		"key":  "value",
 		"key1": 1,
 	}
-	result := url.Values{}
-	PrepareQueryParams(result, data)
+	result := PrepareQueryParams(nil, data)
 	expected := url.Values{
 		"key":  []string{"value"},
 		"key1": []string{"1"},
@@ -603,12 +602,12 @@ func TestPrepareQueryParamsNilQueryParams(t *testing.T) {
 }
 
 func TestPrepareQueryParamsEmptyQueryParams(t *testing.T) {
-	result := url.Values{}
+	queryParams := url.Values{}
 	data := map[string]interface{}{
 		"key":  "value",
 		"key1": 1,
 	}
-	PrepareQueryParams(result, data)
+	result := PrepareQueryParams(queryParams, data)
 	expected := url.Values{
 		"key":  []string{"value"},
 		"key1": []string{"1"},
@@ -619,7 +618,7 @@ func TestPrepareQueryParamsEmptyQueryParams(t *testing.T) {
 }
 
 func TestPrepareQueryParamsAppendQueryParams(t *testing.T) {
-	result := url.Values{
+	queryParams := url.Values{
 		"key":  []string{"value"},
 		"key1": []string{"1"},
 	}
@@ -627,7 +626,7 @@ func TestPrepareQueryParamsAppendQueryParams(t *testing.T) {
 		"key":  "value1",
 		"key1": 2,
 	}
-	PrepareQueryParams(result, data)
+	result := PrepareQueryParams(queryParams, data)
 	expected := url.Values{
 		"key":  []string{"value", "value1"},
 		"key1": []string{"1", "2"},
@@ -638,12 +637,12 @@ func TestPrepareQueryParamsAppendQueryParams(t *testing.T) {
 }
 
 func TestPrepareQueryParamsAppendEmptyData(t *testing.T) {
-	result := url.Values{
+	queryParams := url.Values{
 		"key":  []string{"value"},
 		"key1": []string{"1"},
 	}
 	data := map[string]interface{}{}
-	PrepareQueryParams(result, data)
+	result := PrepareQueryParams(queryParams, data)
 	expected := url.Values{
 		"key":  []string{"value"},
 		"key1": []string{"1"},

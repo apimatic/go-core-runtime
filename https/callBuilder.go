@@ -267,7 +267,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 // QueryParams sets multiple query parameters for the API call.
 // It takes a map of string keys and interface{} values representing the query parameters.
 func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
-	utilities.PrepareQueryParams(cb.query, parameters)
+	cb.query = utilities.PrepareQueryParams(cb.query, parameters)
 }
 
 // FormParam adds a form parameter to the API call.

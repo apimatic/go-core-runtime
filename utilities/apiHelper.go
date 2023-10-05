@@ -29,7 +29,7 @@ func DecodeResults[T any](decoder *json.Decoder) (T, error) {
 }
 
 // PrepareQueryParams adds key-value pairs from the data map to the existing URL query parameters.
-func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) {
+func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) url.Values {
 	if queryParams == nil {
 		queryParams = url.Values{}
 	}
@@ -37,6 +37,7 @@ func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) {
 	for k, v := range data {
 		queryParams.Add(k, fmt.Sprintf("%v", v))
 	}
+	return queryParams
 }
 
 // JsonDecoderToString decodes a JSON value from the provided json.Decoder into a string.
