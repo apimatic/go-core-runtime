@@ -633,7 +633,7 @@ func mergePath(left, right string) string {
 	}
 
 	if left[len(left)-1] == '/' && right[0] == '/' {
-		return left + strings.Replace(right, "/", "", -1)
+		return left + strings.Replace(right, "/", "", 1)
 	} else if left[len(left)-1] == '/' || right[0] == '/' {
 		return left + right
 	} else {
