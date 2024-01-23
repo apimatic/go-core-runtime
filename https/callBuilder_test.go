@@ -46,6 +46,32 @@ func TestAppendPath(t *testing.T) {
 	}
 }
 
+func TestAppendMultiplePath(t *testing.T) {
+	samplePath := "/number/integer/base64"
+	request := GetCallBuilder(ctx, "GET", "//response/", nil)
+	request.AppendPath(samplePath)
+	_, response, _ := request.CallAsJson()
+	responsePath := response.Request.URL.Path
+	expected := "/response" + samplePath
+
+	if responsePath != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, responsePath)
+	}
+}
+
+func TestAppendPathWithMultiSlashes(t *testing.T) {
+	samplePath := "//number//integer//base64"
+	request := GetCallBuilder(ctx, "GET", "//response/", nil)
+	request.AppendPath(samplePath)
+	_, response, _ := request.CallAsJson()
+	responsePath := response.Request.URL.Path
+	expected := "/response" + strings.Replace(samplePath, "//", "/", -1)
+
+	if responsePath != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, responsePath)
+	}
+}
+
 func TestAppendPathEmptyPath(t *testing.T) {
 	request := GetCallBuilder(ctx, "GET", "", nil)
 	request.AppendPath("/response/integer")
