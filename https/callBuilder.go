@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -65,7 +66,7 @@ type CallBuilder interface {
 	CallAsJson() (*json.Decoder, *http.Response, error)
 	CallAsText() (string, *http.Response, error)
 	CallAsStream() ([]byte, *http.Response, error)
-	Authenticate(requiresAuth bool)
+	Authenticate(requiresAuth []map[string]bool)
 	RequestRetryOption(option RequestRetryOption)
 }
 
@@ -86,8 +87,8 @@ type defaultCallBuilder struct {
 	streamBody             []byte
 	httpClient             HttpClient
 	interceptors           []HttpInterceptor
-	requiresAuth           bool
-	authProvider           Authenticator
+	requiresAuth          []map[string]bool
+	authProvider          map[string]Authenticator
 	retryOption            RequestRetryOption
 	retryConfig            RetryConfiguration
 	clientError            error
@@ -104,7 +105,7 @@ func newDefaultCallBuilder(
 	httpMethod,
 	path string,
 	baseUrlProvider baseUrlProvider,
-	authProvider Authenticator,
+	authProvider map[string]Authenticator,
 	retryConfig RetryConfiguration,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
@@ -126,16 +127,67 @@ func newDefaultCallBuilder(
 // If authentication is required (requiresAuth is true), it invokes the authProvider function to get the HTTP interceptor
 // that handles authentication. The interceptor is then added to the list of interceptors in the CallBuilder.
 func (cb *defaultCallBuilder) addAuthentication() {
-	if cb.authProvider != nil {
-		cb.intercept(cb.authProvider(cb.requiresAuth))
+	// compositeAuthenticationProvider
+
+	// If auth param is false or an empty list, skip authentication.
+	if len(cb.requiresAuth) == 0 { return }
+
+	// Find an auth combination in the list of optional combinations that can be
+    // applied given the current auth configuration.
+    matchingAuthCombination := findMatchingAuth(cb.requiresAuth, cb.authProvider)
+
+	// If no auth combination satisfies the security requirements, raise an error.
+    if matchingAuthCombination == nil {
+		cb.clientError = errors.New("required authentication credentials for this API call are not provided or all provided auth combinations are disabled")
 	}
+
+    // Get interceptors for the selected auth combination.
+    authInterceptors := getHttpInterceptorsForAuths(
+		matchingAuthCombination, cb.authProvider)
+  
+	cb.interceptors = append(cb.interceptors, authInterceptors...)
+}
+
+func findMatchingAuth(
+	requiresAuths []map[string]bool,
+	providedInterceptors map[string]Authenticator) map[string]bool {
+	for _, authMap := range requiresAuths {
+		isMatchingAuth := false
+		for mapKey, mapVal := range authMap {
+			val, ok := providedInterceptors[mapKey]
+			// If the key exists && Check for interceptor
+			if ok && val != nil && mapVal {
+				isMatchingAuth = true
+			} else {
+				isMatchingAuth = false
+			}
+		}
+		if isMatchingAuth {
+			return authMap
+		}
+	}
+	return nil
+}
+
+func getHttpInterceptorsForAuths(
+	matchingAuthCombination map[string]bool,
+	providedInterceptors map[string]Authenticator) (
+		interceptors []HttpInterceptor) {
+	for mapKey, mapVal := range matchingAuthCombination {
+		val, ok := providedInterceptors[mapKey]
+		// If the key exists && Check for interceptor
+		if ok && val != nil{
+			interceptors = append(interceptors, val(mapVal))
+		}
+	}
+	return interceptors
 }
 
 // Authenticate sets the authentication requirement for the API call.
 // If requiresAuth is true, it adds the authentication interceptor to the CallBuilder.
-func (cb *defaultCallBuilder) Authenticate(requiresAuth bool) {
+func (cb *defaultCallBuilder) Authenticate(requiresAuth []map[string]bool) {
 	cb.requiresAuth = requiresAuth
-	if cb.requiresAuth {
+	if cb.requiresAuth != nil {
 		cb.addAuthentication()
 	}
 }
@@ -658,7 +710,7 @@ func encodeSpace(str string) string {
 // context, httpMethod, and path using the inputs.
 func CreateCallBuilderFactory(
 	baseUrlProvider baseUrlProvider,
-	auth Authenticator,
+	auth map[string]Authenticator,
 	httpClient HttpClient,
 	retryConfig RetryConfiguration,
 ) CallBuilderFactory {

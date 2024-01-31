@@ -12,12 +12,16 @@ import (
 var ctx context.Context = context.Background()
 
 func GetCallBuilder(ctx context.Context, method, path string, auth Authenticator) CallBuilder {
+	return GetCallBuilder1(ctx, method, path, map[string]Authenticator{ "default" : auth})
+}
+func GetCallBuilder1(ctx context.Context, method, path string, auths map[string]Authenticator) CallBuilder {
+	
 	client := NewHttpClient(NewHttpConfiguration())
 	callBuilder := CreateCallBuilderFactory(
 		func(server string) string {
 			return GetTestingServer().URL
 		},
-		auth,
+		auths,
 		client,
 		NewRetryConfiguration(),
 	)
@@ -261,7 +265,20 @@ func TestQueryParams(t *testing.T) {
 
 func TestAuthenticate(t *testing.T) {
 	request := GetCallBuilder(ctx, "GET", "/auth", RequestAuthentication())
-	request.Authenticate(true)
+	request.Authenticate([]map[string]bool{{ "oAuthBearerToken": true }})
+}
+
+func TestAuthenticates(t *testing.T) {
+	auths := map[string]Authenticator{
+		"oAuthBearerToken" : RequestAuthentication(),
+		"basicAuth" : RequestAuthentication(),
+		"apiKey" : RequestAuthentication(),
+		"apiHeader" : RequestAuthentication(),
+	}
+	request := GetCallBuilder1(ctx, "GET", "/auth", auths)
+	request.Authenticate([]map[string]bool {
+		{ "oAuthBearerToken": false }, { "basicAuth": true, "apiKey": true, "apiHeader": true },
+	})
 }
 
 func TestFormData(t *testing.T) {
