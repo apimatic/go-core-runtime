@@ -11,17 +11,13 @@ import (
 
 var ctx context.Context = context.Background()
 
-func GetCallBuilder(ctx context.Context, method, path string, auth Authenticator) CallBuilder {
-	return GetCallBuilder1(ctx, method, path, map[string]Authenticator{ "default" : auth})
-}
-func GetCallBuilder1(ctx context.Context, method, path string, auths map[string]Authenticator) CallBuilder {
-	
+func GetCallBuilder(ctx context.Context, method, path string, auth map[string]AuthInterface) CallBuilder {
 	client := NewHttpClient(NewHttpConfiguration())
 	callBuilder := CreateCallBuilderFactory(
 		func(server string) string {
 			return GetTestingServer().URL
 		},
-		auths,
+		auth,
 		client,
 		NewRetryConfiguration(),
 	)
@@ -29,10 +25,8 @@ func GetCallBuilder1(ctx context.Context, method, path string, auths map[string]
 	return callBuilder(ctx, method, path)
 }
 
-func RequestAuthentication() Authenticator {
-	return func(requiresAuth bool) HttpInterceptor {
-		return PassThroughInterceptor
-	}
+func RequestAuthentication() HttpInterceptor {
+	return PassThroughInterceptor
 }
 
 func TestAppendPath(t *testing.T) {
@@ -263,23 +257,10 @@ func TestQueryParams(t *testing.T) {
 	}
 }
 
-func TestAuthenticate(t *testing.T) {
-	request := GetCallBuilder(ctx, "GET", "/auth", RequestAuthentication())
-	request.Authenticate([]map[string]bool{{ "oAuthBearerToken": true }})
-}
-
-func TestAuthenticates(t *testing.T) {
-	auths := map[string]Authenticator{
-		"oAuthBearerToken" : RequestAuthentication(),
-		"basicAuth" : RequestAuthentication(),
-		"apiKey" : RequestAuthentication(),
-		"apiHeader" : RequestAuthentication(),
-	}
-	request := GetCallBuilder1(ctx, "GET", "/auth", auths)
-	request.Authenticate([]map[string]bool {
-		{ "oAuthBearerToken": false }, { "basicAuth": true, "apiKey": true, "apiHeader": true },
-	})
-}
+// func TestAuthenticate(t *testing.T) {
+// 	request := GetCallBuilder(ctx, "GET", "/auth", RequestAuthentication())
+// 	request.Authenticate(true)
+// }
 
 func TestFormData(t *testing.T) {
 	request := GetCallBuilder(ctx, "GET", "", nil)

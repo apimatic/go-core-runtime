@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,7 +27,7 @@ const XML_CONTENT_TYPE = "application/xml"
 const MULTIPART_CONTENT_TYPE = "multipart/form-data"
 
 // Authenticator is a function type used to generate HTTP interceptors for handling authentication.
-type Authenticator func(bool) HttpInterceptor
+// type Authenticator func(bool) HttpInterceptor
 
 // CallBuilderFactory is a function type used to create CallBuilder instances for making API calls.
 type CallBuilderFactory func(ctx context.Context, httpMethod, path string) CallBuilder
@@ -66,7 +65,7 @@ type CallBuilder interface {
 	CallAsJson() (*json.Decoder, *http.Response, error)
 	CallAsText() (string, *http.Response, error)
 	CallAsStream() ([]byte, *http.Response, error)
-	Authenticate(requiresAuth []map[string]bool)
+	Authenticate(authGroup AuthGroup)
 	RequestRetryOption(option RequestRetryOption)
 }
 
@@ -87,8 +86,7 @@ type defaultCallBuilder struct {
 	streamBody             []byte
 	httpClient             HttpClient
 	interceptors           []HttpInterceptor
-	requiresAuth          []map[string]bool
-	authProvider          map[string]Authenticator
+	authProvider          map[string]AuthInterface
 	retryOption            RequestRetryOption
 	retryConfig            RetryConfiguration
 	clientError            error
@@ -105,7 +103,7 @@ func newDefaultCallBuilder(
 	httpMethod,
 	path string,
 	baseUrlProvider baseUrlProvider,
-	authProvider map[string]Authenticator,
+	authProvider map[string]AuthInterface,
 	retryConfig RetryConfiguration,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
@@ -123,73 +121,11 @@ func newDefaultCallBuilder(
 	return &cb
 }
 
-// addAuthentication adds authentication interceptors to the CallBuilder.
-// If authentication is required (requiresAuth is true), it invokes the authProvider function to get the HTTP interceptor
-// that handles authentication. The interceptor is then added to the list of interceptors in the CallBuilder.
-func (cb *defaultCallBuilder) addAuthentication() {
-	// compositeAuthenticationProvider
-
-	// If auth param is false or an empty list, skip authentication.
-	if len(cb.requiresAuth) == 0 { return }
-
-	// Find an auth combination in the list of optional combinations that can be
-    // applied given the current auth configuration.
-    matchingAuthCombination := findMatchingAuth(cb.requiresAuth, cb.authProvider)
-
-	// If no auth combination satisfies the security requirements, raise an error.
-    if matchingAuthCombination == nil {
-		cb.clientError = errors.New("required authentication credentials for this API call are not provided or all provided auth combinations are disabled")
-	}
-
-    // Get interceptors for the selected auth combination.
-    authInterceptors := getHttpInterceptorsForAuths(
-		matchingAuthCombination, cb.authProvider)
-  
-	cb.interceptors = append(cb.interceptors, authInterceptors...)
-}
-
-func findMatchingAuth(
-	requiresAuths []map[string]bool,
-	providedInterceptors map[string]Authenticator) map[string]bool {
-	for _, authMap := range requiresAuths {
-		isMatchingAuth := false
-		for mapKey, mapVal := range authMap {
-			val, ok := providedInterceptors[mapKey]
-			// If the key exists && Check for interceptor
-			if ok && val != nil && mapVal {
-				isMatchingAuth = true
-			} else {
-				isMatchingAuth = false
-			}
-		}
-		if isMatchingAuth {
-			return authMap
-		}
-	}
-	return nil
-}
-
-func getHttpInterceptorsForAuths(
-	matchingAuthCombination map[string]bool,
-	providedInterceptors map[string]Authenticator) (
-		interceptors []HttpInterceptor) {
-	for mapKey, mapVal := range matchingAuthCombination {
-		val, ok := providedInterceptors[mapKey]
-		// If the key exists && Check for interceptor
-		if ok && val != nil{
-			interceptors = append(interceptors, val(mapVal))
-		}
-	}
-	return interceptors
-}
-
 // Authenticate sets the authentication requirement for the API call.
 // If requiresAuth is true, it adds the authentication interceptor to the CallBuilder.
-func (cb *defaultCallBuilder) Authenticate(requiresAuth []map[string]bool) {
-	cb.requiresAuth = requiresAuth
-	if cb.requiresAuth != nil {
-		cb.addAuthentication()
-	}
+func (cb *defaultCallBuilder) Authenticate(authGroup AuthGroup) {
+	authGroup.validate(cb.authProvider, []string{})
+	authGroup.apply(cb)
 }
 
 // RequestRetryOption sets the retry option for the API call.
@@ -710,7 +646,7 @@ func encodeSpace(str string) string {
 // context, httpMethod, and path using the inputs.
 func CreateCallBuilderFactory(
 	baseUrlProvider baseUrlProvider,
-	auth map[string]Authenticator,
+	auth map[string]AuthInterface,
 	httpClient HttpClient,
 	retryConfig RetryConfiguration,
 ) CallBuilderFactory {
