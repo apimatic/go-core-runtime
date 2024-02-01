@@ -86,7 +86,7 @@ type defaultCallBuilder struct {
 	streamBody             []byte
 	httpClient             HttpClient
 	interceptors           []HttpInterceptor
-	authProvider          map[string]AuthInterface
+	authProvider           map[string]AuthInterface
 	retryOption            RequestRetryOption
 	retryConfig            RetryConfiguration
 	clientError            error
@@ -124,8 +124,8 @@ func newDefaultCallBuilder(
 // Authenticate sets the authentication requirement for the API call.
 // If requiresAuth is true, it adds the authentication interceptor to the CallBuilder.
 func (cb *defaultCallBuilder) Authenticate(authGroup AuthGroup) {
-	authGroup.validate(cb.authProvider, []string{})
-	authGroup.apply(cb)
+	authGroup.validate(cb.authProvider)
+	authGroup.apply(*cb)
 }
 
 // RequestRetryOption sets the retry option for the API call.
@@ -477,6 +477,10 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 			Request:  request,
 			Response: response,
 		}
+	}
+	// to return auth Validation error
+	if cb.clientError != nil {
+		return nil, cb.clientError
 	}
 
 	pipeline := CallHttpInterceptors(cb.interceptors, f)

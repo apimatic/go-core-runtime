@@ -2,7 +2,6 @@ package https
 
 import (
 	"errors"
-	"strings"
 )
 
 const SINGLE_AUTH = "single"
@@ -14,6 +13,7 @@ type AuthGroup struct {
 	innerAuthGroups         []AuthGroup
 	authType                string
 	singleAuthKey           string
+	authError               error
 }
 
 func NewAuth(key string) AuthGroup {
@@ -37,38 +37,30 @@ func NewAndAuth(authGroups ...AuthGroup) AuthGroup {
 	}
 }
 
-func (ag AuthGroup) validate(authInterfaces map[string]AuthInterface, errorList []string) {
-
+func (ag AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 	switch ag.authType {
 	case SINGLE_AUTH:
 		if val, ok := authInterfaces[ag.singleAuthKey]; ok {
 			if val.IsValid() {
 				ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, val)
 			} else {
-				errorList = append(errorList, val.ErrorMessage())
+				ag.authError = internalError{Body: val.ErrorMessage(), FileInfo: "authenticationGroup.go/validate"}
 			}
 		}
-	case OR_AUTH:
+	case OR_AUTH, AND_AUTH:
 		for _, authGroup := range ag.innerAuthGroups {
+			authGroup.validate(authInterfaces)
 
-			authGroup.validate(authInterfaces, errorList)
-
-			if len(errorList) == 0 {
+			if ag.authType == OR_AUTH && authGroup.authError == nil {
 				return
 			}
+			ag.authError = errors.Join(ag.authError, authGroup.authError)
 		}
-	case AND_AUTH:
-		for _, authGroup := range ag.innerAuthGroups {
-			authGroup.validate(authInterfaces, errorList)
-		}
-	}
-
-	if len(errorList) > 0 {
-		errors.New(strings.Join(errorList, "\n ==> "))
 	}
 }
 
-func (ag AuthGroup) apply(cb CallBuilder) {
+func (ag AuthGroup) apply(cb defaultCallBuilder) {
+	cb.clientError = ag.authError
 	for _, authI := range ag.validatedAuthInterfaces {
 		cb.intercept(authI.Authenticator())
 	}
