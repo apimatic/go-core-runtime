@@ -469,6 +469,11 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 // Call executes the API call and returns the HttpContext that contains the request and response.
 // It iterates through the interceptors to execute them in sequence before making the API call.
 func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
+	// to return auth Validation error
+	if cb.clientError != nil {
+		return nil, cb.clientError
+	}
+
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
 		response, err := client.Execute(request)
@@ -477,10 +482,6 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 			Request:  request,
 			Response: response,
 		}
-	}
-	// to return auth Validation error
-	if cb.clientError != nil {
-		return nil, cb.clientError
 	}
 
 	pipeline := CallHttpInterceptors(cb.interceptors, f)

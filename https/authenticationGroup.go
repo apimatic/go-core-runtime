@@ -50,6 +50,7 @@ func (ag AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 	case OR_AUTH, AND_AUTH:
 		for _, authGroup := range ag.innerAuthGroups {
 			authGroup.validate(authInterfaces)
+			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, authGroup.validatedAuthInterfaces...)
 
 			if ag.authType == OR_AUTH && authGroup.authError == nil {
 				return
