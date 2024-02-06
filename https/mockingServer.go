@@ -8,22 +8,24 @@ import (
 // GetTestingServer creates and returns an httptest.Server instance for testing purposes.
 func GetTestingServer() *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			if r.URL.Path == "/response/integer" {
+		switch r.Method {
+		case "GET":
+			switch r.URL.Path {
+			case "/response/integer":
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(`4`))
-
-			} else if r.URL.Path == "/template/abc/def" || r.URL.Path == "/template/1/2/3/4/5" {
+			case "/template/abc/def", "/template/1/2/3/4/5":
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(`"passed": true,
 				"message": "It's a hit!",`))
-			} else if r.URL.Path == "/response/binary" {
+			case "/response/binary":
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(`"passed": true,
 				"message": "It's a hit!",`))
 			}
-		} else if r.Method == "POST" {
-			if r.URL.Path == "/form/string" {
+		case "POST":
+			switch r.URL.Path {
+			case "/form/string":
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(`4`))
 			}
