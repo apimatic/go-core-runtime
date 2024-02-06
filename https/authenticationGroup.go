@@ -23,16 +23,16 @@ func NewAuth(key string) AuthGroup {
 	}
 }
 
-func NewOrAuth(authGroups ...AuthGroup) AuthGroup {
+func NewOrAuth(authGroup1, authGroup2 AuthGroup, moreAuthGroups ...AuthGroup) AuthGroup {
 	return AuthGroup{
-		innerAuthGroups: authGroups,
+		innerAuthGroups: append([]AuthGroup{authGroup1, authGroup2}, moreAuthGroups...),
 		authType:        OR_AUTH,
 	}
 }
 
-func NewAndAuth(authGroups ...AuthGroup) AuthGroup {
+func NewAndAuth(authGroup1, authGroup2 AuthGroup, moreAuthGroups ...AuthGroup) AuthGroup {
 	return AuthGroup{
-		innerAuthGroups: authGroups,
+		innerAuthGroups: append([]AuthGroup{authGroup1, authGroup2}, moreAuthGroups...),
 		authType:        AND_AUTH,
 	}
 }
