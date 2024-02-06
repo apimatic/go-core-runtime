@@ -37,7 +37,7 @@ func NewAndAuth(authGroups ...AuthGroup) AuthGroup {
 	}
 }
 
-func (ag AuthGroup) validate(authInterfaces map[string]AuthInterface) {
+func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 	switch ag.authType {
 	case SINGLE_AUTH:
 		if val, ok := authInterfaces[ag.singleAuthKey]; ok {
@@ -55,12 +55,12 @@ func (ag AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 			if ag.authType == OR_AUTH && authGroup.authError == nil {
 				return
 			}
-			ag.authError = errors.Join(ag.authError, authGroup.authError)
+			ag.authError = errors.New(ag.authError.Error() + "\n" + authGroup.authError.Error())
 		}
 	}
 }
 
-func (ag AuthGroup) apply(cb defaultCallBuilder) {
+func (ag *AuthGroup) apply(cb *defaultCallBuilder) {
 	cb.clientError = ag.authError
 	for _, authI := range ag.validatedAuthInterfaces {
 		cb.intercept(authI.Authenticator())
