@@ -49,15 +49,13 @@ func (ag *AuthGroup) appendError(err error) {
 func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 	switch ag.authType {
 	case SINGLE_AUTH:
-		if val, ok := authInterfaces[ag.singleAuthKey]; ok {
-			if val.IsValid() {
-				ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, val)
-			} else {
-				ag.authError = internalError{
-					Type: "AuthenticationValidation Error",
-					Body: val.ErrorMessage(),
-					FileInfo: "authenticationGroup.go/validate",
-				}
+		if val, ok := authInterfaces[ag.singleAuthKey]; ok && val.IsValid() {
+			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, val)
+		} else {
+			ag.authError = internalError{
+				Type:     "AuthenticationValidation Error",
+				Body:     val.ErrorMessage(),
+				FileInfo: "authenticationGroup.go/validate",
 			}
 		}
 	case OR_AUTH, AND_AUTH:
@@ -66,6 +64,7 @@ func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, authGroup.validatedAuthInterfaces...)
 
 			if ag.authType == OR_AUTH && authGroup.authError == nil {
+				ag.authError = nil
 				return
 			}
 			ag.appendError(authGroup.authError)
