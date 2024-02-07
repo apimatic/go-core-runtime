@@ -2,6 +2,7 @@ package https
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -25,6 +26,11 @@ func (creds *MockHeaderCredentials) Authenticator() HttpInterceptor {
 }
 
 func (creds *MockHeaderCredentials) ErrorMessage() string {
+
+	if creds.apiKey == "" {
+		return "api-key is empty!"
+	}
+
 	return "Error:  MockHeaderCredentials"
 }
 
@@ -50,6 +56,11 @@ func (creds *MockQueryCredentials) Authenticator() HttpInterceptor {
 }
 
 func (creds *MockQueryCredentials) ErrorMessage() string {
+
+	if creds.apiToken == "" {
+		return "api-token is empty!"
+	}
+
 	return "Error: MockQueryCredentials"
 }
 
@@ -78,10 +89,10 @@ func TestErrorWhenUndefinedAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "Error: authThatDoesntExist is undefined!"
+	expected := "authThatDoesntExist is undefined!"
 
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	if !strings.Contains(err.Error(), expected) {
+		t.Errorf("Expected error message to contain: %q. \nGot %q.", expected, err.Error())
 	}
 }
 
@@ -270,10 +281,10 @@ func TestErrorWhenHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "Error: headerEmptyVal value is empty!"
+	expected := "api-key is empty!"
 
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	if !strings.Contains(err.Error(), expected) {
+		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -292,10 +303,10 @@ func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "Error: queryEmptyVal value is empty!"
+	expected := "api-token is empty!"
 
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	if !strings.Contains(err.Error(), expected) {
+		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -314,10 +325,10 @@ func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "Error: missingQuery is undefined!"
+	expected := "missingQuery is undefined!"
 
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	if !strings.Contains(err.Error(), expected) {
+		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -325,7 +336,7 @@ func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
 		NewAndAuth(
-			NewAuth("missingheader"),
+			NewAuth("missingHeader"),
 			NewAuth("query"),
 		),
 	)
@@ -336,10 +347,10 @@ func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "Error: missingHeader is undefined!"
+	expected := "missingHeader is undefined!"
 
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	if !strings.Contains(err.Error(), expected) {
+		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -358,10 +369,10 @@ func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "Expected either headerMissing or queryMissing. Got neither."
+	expected := "at least one valid auth credential must be provided"
 
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	if !strings.Contains(err.Error(), expected) {
+		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -380,9 +391,9 @@ func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "Expected either headerEmptyVal or queryEmptyVal. Got neither."
+	expected := "at least one valid auth credential must be provided"
 
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	if !strings.Contains(err.Error(), expected) {
+		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
 	}
 }

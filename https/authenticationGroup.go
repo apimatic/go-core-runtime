@@ -71,18 +71,28 @@ func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 			return
 		}
 		ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, val)
-	case OR_AUTH, AND_AUTH:
+	case AND_AUTH:
 		for _, authGroup := range ag.innerAuthGroups {
 			authGroup.validate(authInterfaces)
 
 			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, authGroup.validatedAuthInterfaces...)
 
-			if ag.authType == OR_AUTH && authGroup.authError == nil {
+			ag.appendError(authGroup.authError)
+		}
+	case OR_AUTH:
+		for _, authGroup := range ag.innerAuthGroups {
+			authGroup.validate(authInterfaces)
+
+			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, authGroup.validatedAuthInterfaces...)
+
+			if authGroup.authError == nil {
 				ag.authError = nil
 				return
 			}
+
 			ag.appendError(authGroup.authError)
 		}
+		ag.appendError(errors.New("Error: at least one valid auth credential must be provided"))
 	}
 }
 
