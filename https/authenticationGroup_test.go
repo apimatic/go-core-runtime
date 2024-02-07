@@ -68,7 +68,7 @@ func getMockCallBuilderWithAuths() CallBuilder {
 	return GetCallBuilder(ctx, "GET", "/auth", auths)
 }
 
-func TestUndefinedAuth(t *testing.T) {
+func TestErrorWhenUndefinedAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(NewAuth("authThatDoesntExist"))
 
@@ -85,7 +85,7 @@ func TestUndefinedAuth(t *testing.T) {
 	}
 }
 
-func TestHeaderAuth(t *testing.T) {
+func TestSuccessfulCallWhenHeaderAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(NewAuth("header"))
 
@@ -104,7 +104,7 @@ func TestHeaderAuth(t *testing.T) {
 	}
 }
 
-func TestQueryAuth(t *testing.T) {
+func TestSuccessfulCallWhenQueryAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(NewAuth("query"))
 
@@ -123,7 +123,7 @@ func TestQueryAuth(t *testing.T) {
 	}
 }
 
-func TestHeaderAndQueryAuth(t *testing.T) {
+func TestSuccessfulCallWhenHeaderAndQueryAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
 		NewAndAuth(
@@ -149,7 +149,7 @@ func TestHeaderAndQueryAuth(t *testing.T) {
 	}
 }
 
-func TestHeaderOrQueryAuth(t *testing.T) {
+func TestSuccessfulCallWhenHeaderOrQueryAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
 		NewOrAuth(
@@ -174,95 +174,7 @@ func TestHeaderOrQueryAuth(t *testing.T) {
 	}
 }
 
-func TestHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
-	request := getMockCallBuilderWithAuths()
-	request.Authenticate(
-		NewAndAuth(
-			NewAuth("headerEmptyVal"),
-			NewAuth("query"),
-		),
-	)
-
-	_, err := request.Call()
-
-	if err == nil {
-		t.Fatalf("Expected an error.")
-	}
-
-	expected := "Error: headerEmptyVal value is empty!"
-
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
-	}
-}
-
-func TestHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
-	request := getMockCallBuilderWithAuths()
-	request.Authenticate(
-		NewAndAuth(
-			NewAuth("header"),
-			NewAuth("queryEmptyVal"),
-		),
-	)
-
-	_, err := request.Call()
-
-	if err == nil {
-		t.Fatalf("Expected an error.")
-	}
-
-	expected := "Error: queryEmptyVal value is empty!"
-
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
-	}
-}
-
-func TestHeaderAndMissingQueryAuth(t *testing.T) {
-	request := getMockCallBuilderWithAuths()
-	request.Authenticate(
-		NewAndAuth(
-			NewAuth("header"),
-			NewAuth("missingQuery"),
-		),
-	)
-
-	_, err := request.Call()
-
-	if err == nil {
-		t.Fatalf("Expected an error.")
-	}
-
-	expected := "Error: missingQuery is undefined!"
-
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
-	}
-}
-
-func TestMissingHeaderAndQueryAuth(t *testing.T) {
-	request := getMockCallBuilderWithAuths()
-	request.Authenticate(
-		NewAndAuth(
-			NewAuth("missingheader"),
-			NewAuth("query"),
-		),
-	)
-
-	_, err := request.Call()
-
-	if err == nil {
-		t.Fatalf("Expected an error.")
-	}
-
-	expected := "Error: missingHeader is undefined!"
-
-	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
-	}
-}
-
-func TestEmptyHeaderOrQueryAuth(t *testing.T) {
+func TestSuccessfulCallWhenEmptyHeaderOrQueryAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
 		NewOrAuth(
@@ -289,7 +201,7 @@ func TestEmptyHeaderOrQueryAuth(t *testing.T) {
 	}
 }
 
-func TestHeaderOrMissingQueryAuth(t *testing.T) {
+func TestSuccessfulCallWhenHeaderOrMissingQueryAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
 		NewOrAuth(
@@ -316,7 +228,7 @@ func TestHeaderOrMissingQueryAuth(t *testing.T) {
 	}
 }
 
-func TestMissingHeaderOrQueryAuth(t *testing.T) {
+func TestSuccessfulCallWhenMissingHeaderOrQueryAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
 		NewOrAuth(
@@ -343,7 +255,95 @@ func TestMissingHeaderOrQueryAuth(t *testing.T) {
 	}
 }
 
-func TestHeaderOrQueryAuthBothAreMissing(t *testing.T) {
+func TestErrorWhenHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
+	request := getMockCallBuilderWithAuths()
+	request.Authenticate(
+		NewAndAuth(
+			NewAuth("headerEmptyVal"),
+			NewAuth("query"),
+		),
+	)
+
+	_, err := request.Call()
+
+	if err == nil {
+		t.Fatalf("Expected an error.")
+	}
+
+	expected := "Error: headerEmptyVal value is empty!"
+
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	}
+}
+
+func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
+	request := getMockCallBuilderWithAuths()
+	request.Authenticate(
+		NewAndAuth(
+			NewAuth("header"),
+			NewAuth("queryEmptyVal"),
+		),
+	)
+
+	_, err := request.Call()
+
+	if err == nil {
+		t.Fatalf("Expected an error.")
+	}
+
+	expected := "Error: queryEmptyVal value is empty!"
+
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	}
+}
+
+func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
+	request := getMockCallBuilderWithAuths()
+	request.Authenticate(
+		NewAndAuth(
+			NewAuth("header"),
+			NewAuth("missingQuery"),
+		),
+	)
+
+	_, err := request.Call()
+
+	if err == nil {
+		t.Fatalf("Expected an error.")
+	}
+
+	expected := "Error: missingQuery is undefined!"
+
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	}
+}
+
+func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
+	request := getMockCallBuilderWithAuths()
+	request.Authenticate(
+		NewAndAuth(
+			NewAuth("missingheader"),
+			NewAuth("query"),
+		),
+	)
+
+	_, err := request.Call()
+
+	if err == nil {
+		t.Fatalf("Expected an error.")
+	}
+
+	expected := "Error: missingHeader is undefined!"
+
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	}
+}
+
+func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
 		NewOrAuth(
@@ -365,7 +365,7 @@ func TestHeaderOrQueryAuthBothAreMissing(t *testing.T) {
 	}
 }
 
-func TestHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
+func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
 		NewOrAuth(
