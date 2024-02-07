@@ -53,7 +53,11 @@ func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 			if val.IsValid() {
 				ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, val)
 			} else {
-				ag.authError = internalError{Body: val.ErrorMessage(), FileInfo: "authenticationGroup.go/validate"}
+				ag.authError = internalError{
+					Type: "AuthenticationValidation Error",
+					Body: val.ErrorMessage(),
+					FileInfo: "authenticationGroup.go/validate",
+				}
 			}
 		}
 	case OR_AUTH, AND_AUTH:

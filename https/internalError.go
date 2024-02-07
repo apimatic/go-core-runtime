@@ -7,9 +7,14 @@ import "fmt"
 type internalError struct {
 	Body     string
 	FileInfo string
+	Type 	 string
 }
 
 // Error returns a formatted error string that includes the file information and the descriptive error message.
 func (e internalError) Error() string {
-	return fmt.Sprintf("Internal Error occured at %v \n %v", e.FileInfo, e.Body)
+	if e.Type == "" {
+		e.Type = "Internal Error"
+	}
+
+	return fmt.Sprintf("%v occured at %v \n %v", e.Type, e.FileInfo, e.Body)
 }
