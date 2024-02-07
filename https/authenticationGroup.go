@@ -1,8 +1,6 @@
 package https
 
-import (
-	"errors"
-)
+import "errors"
 
 const SINGLE_AUTH = "single"
 const AND_AUTH = "and"
@@ -37,6 +35,17 @@ func NewAndAuth(authGroups ...AuthGroup) AuthGroup {
 	}
 }
 
+func (ag *AuthGroup) appendError(err error) {
+
+	if ag.authError == nil {
+		ag.authError = err
+	} else {
+		if err != nil {
+			ag.authError = errors.New(ag.authError.Error() + "\n" + err.Error())
+		}
+	}
+}
+
 func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 	switch ag.authType {
 	case SINGLE_AUTH:
@@ -55,7 +64,7 @@ func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 			if ag.authType == OR_AUTH && authGroup.authError == nil {
 				return
 			}
-			ag.authError = errors.New(ag.authError.Error() + "\n" + authGroup.authError.Error())
+			ag.appendError(authGroup.authError)
 		}
 	}
 }
