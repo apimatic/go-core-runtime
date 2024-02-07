@@ -240,6 +240,28 @@ func TestHeaderAndMissingQueryAuth(t *testing.T) {
 	}
 }
 
+func TestMissingHeaderAndQueryAuth(t *testing.T) {
+	request := getMockCallBuilderWithAuths()
+	request.Authenticate(
+		NewAndAuth(
+			NewAuth("missingheader"),
+			NewAuth("query"),
+		),
+	)
+
+	_, err := request.Call()
+
+	if err == nil {
+		t.Fatalf("Expected an error.")
+	}
+
+	expected := "Error: missingHeader is undefined!"
+
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got %q.", expected, err.Error())
+	}
+}
+
 func TestEmptyHeaderOrQueryAuth(t *testing.T) {
 	request := getMockCallBuilderWithAuths()
 	request.Authenticate(
