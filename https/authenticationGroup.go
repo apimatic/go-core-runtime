@@ -1,6 +1,9 @@
 package https
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 const SINGLE_AUTH = "single"
 const AND_AUTH = "and"
@@ -49,18 +52,29 @@ func (ag *AuthGroup) appendError(err error) {
 func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 	switch ag.authType {
 	case SINGLE_AUTH:
-		if val, ok := authInterfaces[ag.singleAuthKey]; ok && val.IsValid() {
-			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, val)
-		} else {
+		val, ok := authInterfaces[ag.singleAuthKey]
+
+		if !ok {
+			ag.authError = internalError{
+				Type:     "AuthenticationValidation Error",
+				Body:     fmt.Sprintf("%s is undefined!", ag.singleAuthKey),
+				FileInfo: "authenticationGroup.go/validate",
+			}
+			return
+		}
+		if !val.IsValid() {
 			ag.authError = internalError{
 				Type:     "AuthenticationValidation Error",
 				Body:     val.ErrorMessage(),
 				FileInfo: "authenticationGroup.go/validate",
 			}
+			return
 		}
+		ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, val)
 	case OR_AUTH, AND_AUTH:
 		for _, authGroup := range ag.innerAuthGroups {
 			authGroup.validate(authInterfaces)
+
 			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, authGroup.validatedAuthInterfaces...)
 
 			if ag.authType == OR_AUTH && authGroup.authError == nil {
