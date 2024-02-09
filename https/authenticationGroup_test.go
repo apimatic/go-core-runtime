@@ -3,6 +3,7 @@ package https
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -55,11 +56,19 @@ func (creds *MockQueryCredentials) Authenticator() HttpInterceptor {
 	}
 }
 
-func AuthenticationError(errMsg string) string {
+func AuthenticationError(errMsgs ...string) string {
+
+	var body strings.Builder
+
+	for _, errMsg := range errMsgs {
+		body.WriteString("\n-> ")
+		body.WriteString(errMsg)
+	}
+
 	authError := internalError{
+		Type:     AUTHENTICATION_ERROR,
+		Body:     body.String(),
 		FileInfo: "callBuilder.go/Authenticate",
-		Type: AUTHENTICATION_ERROR,
-		Body: errMsg,
 	}
 	return authError.Error()
 }
@@ -290,7 +299,7 @@ func TestErrorWhenHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "api-key is empty!"
+	expected := AuthenticationError("api-key is empty!")
 
 	if err.Error() != expected {
 		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
@@ -312,7 +321,7 @@ func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "api-token is empty!"
+	expected := AuthenticationError("api-token is empty!")
 
 	if err.Error() != expected {
 		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
@@ -334,7 +343,7 @@ func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "missingQuery is undefined!"
+	expected := AuthenticationError("missingQuery is undefined!")
 
 	if err.Error() != expected {
 		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
@@ -356,7 +365,7 @@ func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "missingHeader is undefined!"
+	expected := AuthenticationError("missingHeader is undefined!")
 
 	if err.Error() != expected {
 		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
@@ -378,7 +387,7 @@ func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "at least one valid auth credential must be provided"
+	expected := AuthenticationError("headerMissing is undefined!", "queryMissing is undefined!")
 
 	if err.Error() != expected {
 		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
@@ -400,7 +409,7 @@ func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "at least one valid auth credential must be provided"
+	expected := AuthenticationError("api-key is empty!", "api-token is empty!")
 
 	if err.Error() != expected {
 		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())

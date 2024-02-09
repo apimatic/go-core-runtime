@@ -26,20 +26,20 @@ func NewAuth(key string) AuthGroup {
 func NewOrAuth(authGroup1, authGroup2 AuthGroup, moreAuthGroups ...AuthGroup) AuthGroup {
 	return AuthGroup{
 		innerGroups: append([]AuthGroup{authGroup1, authGroup2}, moreAuthGroups...),
-		authType:        OR_AUTH,
+		authType:    OR_AUTH,
 	}
 }
 
 func NewAndAuth(authGroup1, authGroup2 AuthGroup, moreAuthGroups ...AuthGroup) AuthGroup {
 	return AuthGroup{
 		innerGroups: append([]AuthGroup{authGroup1, authGroup2}, moreAuthGroups...),
-		authType:        AND_AUTH,
+		authType:    AND_AUTH,
 	}
 }
 
-func (ag *AuthGroup) appendError(errMsg string) {
+func (ag *AuthGroup) appendIndentedError(errMsg string) {
 	if errMsg != "" {
-		ag.errMessage = ag.errMessage + "\n-> " + errMsg
+		ag.errMessage += "\n-> " + errMsg
 	}
 }
 
@@ -49,11 +49,11 @@ func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 		val, ok := authInterfaces[ag.singleAuthKey]
 
 		if !ok {
-			ag.appendError(fmt.Sprintf("%s is undefined!", ag.singleAuthKey))
+			ag.appendIndentedError(fmt.Sprintf("%s is undefined!", ag.singleAuthKey))
 			return
 		}
 		if ok, err := val.Validate(); !ok {
-			ag.appendError(err.Error())
+			ag.appendIndentedError(err.Error())
 			return
 		}
 		ag.validAuthInterfaces = append(ag.validAuthInterfaces, val)
@@ -67,7 +67,7 @@ func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 				ag.errMessage = ""
 				return
 			}
-			ag.appendError(innerAG.errMessage)
+			ag.errMessage += innerAG.errMessage
 		}
 	}
 }
