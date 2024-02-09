@@ -1,6 +1,7 @@
 package https
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 	"testing"
@@ -14,8 +15,8 @@ func NewMockHeaderCredentials(apiKey string) *MockHeaderCredentials {
 	return &MockHeaderCredentials{apiKey: apiKey}
 }
 
-func (creds *MockHeaderCredentials) IsValid() bool {
-	return creds.apiKey != ""
+func (creds *MockHeaderCredentials) Validate() (bool, error) {
+	return creds.apiKey != "", errors.New(creds.ErrorMessage())
 }
 
 func (creds *MockHeaderCredentials) Authenticator() HttpInterceptor {
@@ -42,8 +43,8 @@ func NewMockQueryCredentials(apiToken string) *MockQueryCredentials {
 	return &MockQueryCredentials{apiToken: apiToken}
 }
 
-func (creds *MockQueryCredentials) IsValid() bool {
-	return creds.apiToken != ""
+func (creds *MockQueryCredentials) Validate() (bool, error) {
+	return creds.apiToken != "", errors.New(creds.ErrorMessage())
 }
 
 func (creds *MockQueryCredentials) Authenticator() HttpInterceptor {
