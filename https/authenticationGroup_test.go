@@ -2,7 +2,6 @@ package https
 
 import (
 	"net/http"
-	"strings"
 	"testing"
 )
 
@@ -91,8 +90,8 @@ func TestErrorWhenUndefinedAuth(t *testing.T) {
 
 	expected := "authThatDoesntExist is undefined!"
 
-	if !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error message to contain: %q. \nGot %q.", expected, err.Error())
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. \nGot %q.", expected, err.Error())
 	}
 }
 
@@ -283,8 +282,8 @@ func TestErrorWhenHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
 
 	expected := "api-key is empty!"
 
-	if !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -305,8 +304,8 @@ func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
 
 	expected := "api-token is empty!"
 
-	if !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -327,8 +326,8 @@ func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
 
 	expected := "missingQuery is undefined!"
 
-	if !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -349,8 +348,8 @@ func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
 
 	expected := "missingHeader is undefined!"
 
-	if !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -371,8 +370,8 @@ func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
 
 	expected := "at least one valid auth credential must be provided"
 
-	if !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
 	}
 }
 
@@ -393,7 +392,7 @@ func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
 
 	expected := "at least one valid auth credential must be provided"
 
-	if !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error message to contain: %q. Got: \n%s.", expected, err.Error())
+	if err.Error() != expected {
+		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
 	}
 }
