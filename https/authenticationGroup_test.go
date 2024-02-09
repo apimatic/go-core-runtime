@@ -55,6 +55,15 @@ func (creds *MockQueryCredentials) Authenticator() HttpInterceptor {
 	}
 }
 
+func AuthenticationError(errMsg string) string {
+	authError := internalError{
+		FileInfo: "callBuilder.go/Authenticate",
+		Type: AUTHENTICATION_ERROR,
+		Body: errMsg,
+	}
+	return authError.Error()
+}
+
 func (creds *MockQueryCredentials) ErrorMessage() string {
 
 	if creds.apiToken == "" {
@@ -89,7 +98,7 @@ func TestErrorWhenUndefinedAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := "authThatDoesntExist is undefined!"
+	expected := AuthenticationError("authThatDoesntExist is undefined!")
 
 	if err.Error() != expected {
 		t.Errorf("Expected error message: %q. \nGot %q.", expected, err.Error())

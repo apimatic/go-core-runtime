@@ -127,16 +127,16 @@ func (cb *defaultCallBuilder) Authenticate(authGroup AuthGroup) {
 
 	authGroup.validate(cb.authProvider)
 
-	if authGroup.errMsg != "" {
+	if authGroup.errMessage != "" {
 		cb.clientError = internalError {
 			Type:     AUTHENTICATION_ERROR,
-			Body:     authGroup.errMsg,
+			Body:     authGroup.errMessage,
 			FileInfo: "callBuilder.go/Authenticate",
 		}
 		return
 	}
 	
-	for _, authI := range authGroup.validatedAuthInterfaces {
+	for _, authI := range authGroup.validAuthInterfaces {
 		cb.intercept(authI.Authenticator())
 	}
 	
