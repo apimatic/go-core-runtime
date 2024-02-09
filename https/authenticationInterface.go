@@ -1,7 +1,6 @@
 package https
 
 type AuthInterface interface {
-	IsValid() bool
+	Validate() (bool, error)
 	Authenticator() HttpInterceptor
-	ErrorMessage() string
 }

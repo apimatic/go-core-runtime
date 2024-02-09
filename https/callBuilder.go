@@ -124,8 +124,22 @@ func newDefaultCallBuilder(
 // Authenticate sets the authentication requirement for the API call.
 // If requiresAuth is true, it adds the authentication interceptor to the CallBuilder.
 func (cb *defaultCallBuilder) Authenticate(authGroup AuthGroup) {
+
 	authGroup.validate(cb.authProvider)
-	authGroup.apply(cb)
+
+	if authGroup.errMsg != "" {
+		cb.clientError = internalError {
+			Type:     AUTHENTICATION_ERROR,
+			Body:     authGroup.errMsg,
+			FileInfo: "callBuilder.go/Authenticate",
+		}
+		return
+	}
+	
+	for _, authI := range authGroup.validatedAuthInterfaces {
+		cb.intercept(authI.Authenticator())
+	}
+	
 }
 
 // RequestRetryOption sets the retry option for the API call.

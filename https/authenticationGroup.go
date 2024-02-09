@@ -1,7 +1,6 @@
 package https
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -14,7 +13,7 @@ type AuthGroup struct {
 	innerAuthGroups         []AuthGroup
 	authType                string
 	singleAuthKey           string
-	authError               error
+	errMsg               	string
 }
 
 func NewAuth(key string) AuthGroup {
@@ -38,14 +37,9 @@ func NewAndAuth(authGroup1, authGroup2 AuthGroup, moreAuthGroups ...AuthGroup) A
 	}
 }
 
-func (ag *AuthGroup) appendError(err error) {
-
-	if ag.authError == nil {
-		ag.authError = err
-	} else {
-		if err != nil {
-			ag.authError = errors.New(ag.authError.Error() + "\n" + err.Error())
-		}
+func (ag *AuthGroup) appendError(errMsg string) {
+	if errMsg != "" {
+		ag.errMsg = ag.errMsg + "\n-> " + errMsg
 	}
 }
 
@@ -55,50 +49,25 @@ func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 		val, ok := authInterfaces[ag.singleAuthKey]
 
 		if !ok {
-			ag.authError = internalError{
-				Type:     "AuthenticationValidation Error",
-				Body:     fmt.Sprintf("%s is undefined!", ag.singleAuthKey),
-				FileInfo: "authenticationGroup.go/validate",
-			}
+			ag.errMsg = fmt.Sprintf("%s is undefined!", ag.singleAuthKey)
 			return
 		}
-		if !val.IsValid() {
-			ag.authError = internalError{
-				Type:     "AuthenticationValidation Error",
-				Body:     val.ErrorMessage(),
-				FileInfo: "authenticationGroup.go/validate",
-			}
+		if ok, err := val.Validate(); !ok {
+			ag.errMsg = err.Error()
 			return
 		}
 		ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, val)
-	case AND_AUTH:
-		for _, authGroup := range ag.innerAuthGroups {
-			authGroup.validate(authInterfaces)
+	case AND_AUTH, OR_AUTH:
+		for _, innerAG := range ag.innerAuthGroups {
+			innerAG.validate(authInterfaces)
 
-			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, authGroup.validatedAuthInterfaces...)
+			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, innerAG.validatedAuthInterfaces...)
 
-			ag.appendError(authGroup.authError)
-		}
-	case OR_AUTH:
-		for _, authGroup := range ag.innerAuthGroups {
-			authGroup.validate(authInterfaces)
-
-			ag.validatedAuthInterfaces = append(ag.validatedAuthInterfaces, authGroup.validatedAuthInterfaces...)
-
-			if authGroup.authError == nil {
-				ag.authError = nil
+			if ag.authType == OR_AUTH && innerAG.errMsg == "" {
+				ag.errMsg = ""
 				return
 			}
-
-			ag.appendError(authGroup.authError)
+			ag.appendError(innerAG.errMsg)
 		}
-		ag.appendError(errors.New("Error: at least one valid auth credential must be provided"))
-	}
-}
-
-func (ag *AuthGroup) apply(cb *defaultCallBuilder) {
-	cb.clientError = ag.authError
-	for _, authI := range ag.validatedAuthInterfaces {
-		cb.intercept(authI.Authenticator())
 	}
 }
