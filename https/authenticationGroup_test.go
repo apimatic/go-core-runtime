@@ -84,7 +84,6 @@ func getMockCallBuilderWithAuths() CallBuilder {
 		"queryEmptyVal":  NewMockQueryCredentials(""),
 	}
 
-	// TODO: ctx is a global variable. What should be done with it?
 	return GetCallBuilder(ctx, "GET", "/auth", auths)
 }
 
