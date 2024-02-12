@@ -52,7 +52,7 @@ func (ag *AuthGroup) validate(authInterfaces map[string]AuthInterface) {
 			ag.appendIndentedError(fmt.Sprintf("%s is undefined!", ag.singleAuthKey))
 			return
 		}
-		if ok, err := val.Validate(); !ok {
+		if err := val.Validate(); err != nil {
 			ag.appendIndentedError(err.Error())
 			return
 		}

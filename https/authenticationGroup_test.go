@@ -15,8 +15,12 @@ func NewMockHeaderCredentials(apiKey string) *MockHeaderCredentials {
 	return &MockHeaderCredentials{apiKey: apiKey}
 }
 
-func (creds *MockHeaderCredentials) Validate() (bool, error) {
-	return creds.apiKey != "", errors.New(creds.ErrorMessage())
+func (creds *MockHeaderCredentials) Validate() error {
+	if creds.apiKey == "" {
+		return errors.New("api-key is empty!")
+	}
+
+	return nil
 }
 
 func (creds *MockHeaderCredentials) Authenticator() HttpInterceptor {
@@ -24,15 +28,6 @@ func (creds *MockHeaderCredentials) Authenticator() HttpInterceptor {
 		req.Header.Set("api-key", creds.apiKey)
 		return next(req)
 	}
-}
-
-func (creds *MockHeaderCredentials) ErrorMessage() string {
-
-	if creds.apiKey == "" {
-		return "api-key is empty!"
-	}
-
-	return "Error:  MockHeaderCredentials"
 }
 
 type MockQueryCredentials struct {
@@ -43,8 +38,13 @@ func NewMockQueryCredentials(apiToken string) *MockQueryCredentials {
 	return &MockQueryCredentials{apiToken: apiToken}
 }
 
-func (creds *MockQueryCredentials) Validate() (bool, error) {
-	return creds.apiToken != "", errors.New(creds.ErrorMessage())
+func (creds *MockQueryCredentials) Validate() error {
+
+	if creds.apiToken == "" {
+		return errors.New("api-token is empty!")
+	}
+
+	return nil
 }
 
 func (creds *MockQueryCredentials) Authenticator() HttpInterceptor {
@@ -71,15 +71,6 @@ func AuthenticationError(errMsgs ...string) string {
 		FileInfo: "callBuilder.go/Authenticate",
 	}
 	return authError.Error()
-}
-
-func (creds *MockQueryCredentials) ErrorMessage() string {
-
-	if creds.apiToken == "" {
-		return "api-token is empty!"
-	}
-
-	return "Error: MockQueryCredentials"
 }
 
 const MockHeaderToken = "1234"
