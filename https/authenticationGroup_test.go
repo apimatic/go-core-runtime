@@ -7,6 +7,12 @@ import (
 	"testing"
 )
 
+const API_KEY = "api-key"
+const API_TOKEN = "api-token"
+const API_KEY_MISSING_ERROR = API_KEY + " is empty!"
+const API_TOKEN_MISSING_ERROR = API_TOKEN + " is empty!"
+const ASSERT_FORMAT = "Expected %q, got %q"
+
 type MockHeaderCredentials struct {
 	apiKey string
 }
@@ -17,7 +23,7 @@ func NewMockHeaderCredentials(apiKey string) *MockHeaderCredentials {
 
 func (creds *MockHeaderCredentials) Validate() error {
 	if creds.apiKey == "" {
-		return errors.New("api-key is empty!")
+		return errors.New(API_KEY_MISSING_ERROR)
 	}
 
 	return nil
@@ -25,7 +31,7 @@ func (creds *MockHeaderCredentials) Validate() error {
 
 func (creds *MockHeaderCredentials) Authenticator() HttpInterceptor {
 	return func(req *http.Request, next HttpCallExecutor) HttpContext {
-		req.Header.Set("api-key", creds.apiKey)
+		req.Header.Set(API_KEY, creds.apiKey)
 		return next(req)
 	}
 }
@@ -41,7 +47,7 @@ func NewMockQueryCredentials(apiToken string) *MockQueryCredentials {
 func (creds *MockQueryCredentials) Validate() error {
 
 	if creds.apiToken == "" {
-		return errors.New("api-token is empty!")
+		return errors.New(API_TOKEN_MISSING_ERROR)
 	}
 
 	return nil
@@ -50,7 +56,7 @@ func (creds *MockQueryCredentials) Validate() error {
 func (creds *MockQueryCredentials) Authenticator() HttpInterceptor {
 	return func(req *http.Request, next HttpCallExecutor) HttpContext {
 		query := req.URL.Query()
-		query.Add("api-token", creds.apiToken)
+		query.Add(API_TOKEN, creds.apiToken)
 		req.URL.RawQuery = query.Encode()
 		return next(req)
 	}
@@ -100,7 +106,7 @@ func TestErrorWhenUndefinedAuth(t *testing.T) {
 	expected := AuthenticationError("authThatDoesntExist is undefined!")
 
 	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. \nGot %q.", expected, err.Error())
+		t.Errorf(ASSERT_FORMAT, expected, err.Error())
 	}
 }
 
@@ -119,7 +125,7 @@ func TestSuccessfulCallWhenHeaderAuth(t *testing.T) {
 	expected := MockHeaderToken
 
 	if actual := header.Get("api-key"); actual != expected {
-		t.Errorf("Expected %q, got %q", expected, actual)
+		t.Errorf(ASSERT_FORMAT, expected, actual)
 	}
 }
 
@@ -138,7 +144,7 @@ func TestSuccessfulCallWhenQueryAuth(t *testing.T) {
 	expected := MockQueryToken
 
 	if actual := query.Get("api-token"); actual != expected {
-		t.Errorf("Expected %q, got %q", expected, actual)
+		t.Errorf(ASSERT_FORMAT, expected, actual)
 	}
 }
 
@@ -157,14 +163,14 @@ func TestSuccessfulCallWhenHeaderAndQueryAuth(t *testing.T) {
 		t.Fatalf("Unexpected Error: %s", err.Error())
 	}
 
-	headerToken := httpContext.Request.Header.Get("api-key")
+	headerToken := httpContext.Request.Header.Get(API_KEY)
 	if headerToken != MockHeaderToken {
-		t.Errorf("Expected header param 'api-token' with value %q, got %q", MockHeaderToken, headerToken)
+		t.Errorf(ASSERT_FORMAT, MockHeaderToken, headerToken)
 	}
 
-	queryToken := httpContext.Request.URL.Query().Get("api-token")
+	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
 	if queryToken != MockQueryToken {
-		t.Errorf("Expected query param 'api-key' with value %q, got %q", MockQueryToken, queryToken)
+		t.Errorf(ASSERT_FORMAT, MockQueryToken, queryToken)
 	}
 }
 
@@ -183,8 +189,8 @@ func TestSuccessfulCallWhenHeaderOrQueryAuth(t *testing.T) {
 		t.Fatalf("Unexpected Error: %s", err.Error())
 	}
 
-	headerToken := httpContext.Request.Header.Get("api-key")
-	queryToken := httpContext.Request.URL.Query().Get("api-token")
+	headerToken := httpContext.Request.Header.Get(API_KEY)
+	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
 
 	if headerToken != MockHeaderToken && queryToken != MockQueryToken {
 		t.Errorf("Expected either header param 'api-key' with value %q"+
@@ -208,15 +214,15 @@ func TestSuccessfulCallWhenEmptyHeaderOrQueryAuth(t *testing.T) {
 		t.Fatalf("Unexpected Error: %s", err.Error())
 	}
 
-	headerToken := httpContext.Request.Header.Get("api-key")
-	queryToken := httpContext.Request.URL.Query().Get("api-token")
+	headerToken := httpContext.Request.Header.Get(API_KEY)
+	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
 
 	if headerToken != "" {
 		t.Errorf("Expected no header param. Got %q.", headerToken)
 	}
 
 	if queryToken != MockQueryToken {
-		t.Errorf("Expected query param 'api-token' with value %q. Got %q.", MockQueryToken, queryToken)
+		t.Errorf(ASSERT_FORMAT, MockQueryToken, queryToken)
 	}
 }
 
@@ -235,15 +241,15 @@ func TestSuccessfulCallWhenHeaderOrMissingQueryAuth(t *testing.T) {
 		t.Fatalf("Unexpected Error: %s", err.Error())
 	}
 
-	headerToken := httpContext.Request.Header.Get("api-key")
-	queryToken := httpContext.Request.URL.Query().Get("api-token")
+	headerToken := httpContext.Request.Header.Get(API_KEY)
+	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
 
 	if queryToken != "" {
 		t.Errorf("Expected no query param. Got %q.", queryToken)
 	}
 
 	if headerToken != MockHeaderToken {
-		t.Errorf("Expected header param 'api-key' with value %q. Got %q.", MockHeaderToken, headerToken)
+		t.Errorf(ASSERT_FORMAT, MockHeaderToken, headerToken)
 	}
 }
 
@@ -262,15 +268,15 @@ func TestSuccessfulCallWhenMissingHeaderOrQueryAuth(t *testing.T) {
 		t.Fatalf("Unexpected Error: %s", err.Error())
 	}
 
-	headerToken := httpContext.Request.Header.Get("api-key")
-	queryToken := httpContext.Request.URL.Query().Get("api-token")
+	headerToken := httpContext.Request.Header.Get(API_KEY)
+	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
 
 	if headerToken != "" {
 		t.Errorf("Expected no header param. Got %q.", headerToken)
 	}
 
 	if queryToken != MockQueryToken {
-		t.Errorf("Expected query param 'api-token' with value %q. Got %q.", MockQueryToken, queryToken)
+		t.Errorf(ASSERT_FORMAT, MockQueryToken, queryToken)
 	}
 }
 
@@ -289,10 +295,10 @@ func TestErrorWhenHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := AuthenticationError("api-key is empty!")
+	expected := AuthenticationError(API_KEY_MISSING_ERROR)
 
 	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
+		t.Errorf(ASSERT_FORMAT, expected, err.Error())
 	}
 }
 
@@ -311,10 +317,10 @@ func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := AuthenticationError("api-token is empty!")
+	expected := AuthenticationError(API_TOKEN_MISSING_ERROR)
 
 	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
+		t.Errorf(ASSERT_FORMAT, expected, err.Error())
 	}
 }
 
@@ -336,7 +342,7 @@ func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
 	expected := AuthenticationError("missingQuery is undefined!")
 
 	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
+		t.Errorf(ASSERT_FORMAT, expected, err.Error())
 	}
 }
 
@@ -358,7 +364,7 @@ func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
 	expected := AuthenticationError("missingHeader is undefined!")
 
 	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
+		t.Errorf(ASSERT_FORMAT, expected, err.Error())
 	}
 }
 
@@ -380,7 +386,7 @@ func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
 	expected := AuthenticationError("headerMissing is undefined!", "queryMissing is undefined!")
 
 	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
+		t.Errorf(ASSERT_FORMAT, expected, err.Error())
 	}
 }
 
@@ -399,9 +405,9 @@ func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
 		t.Fatalf("Expected an error.")
 	}
 
-	expected := AuthenticationError("api-key is empty!", "api-token is empty!")
+	expected := AuthenticationError(API_KEY_MISSING_ERROR, API_TOKEN_MISSING_ERROR)
 
 	if err.Error() != expected {
-		t.Errorf("Expected error message: %q. Got: \n%s.", expected, err.Error())
+		t.Errorf(ASSERT_FORMAT, expected, err.Error())
 	}
 }
