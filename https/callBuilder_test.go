@@ -257,11 +257,6 @@ func TestQueryParams(t *testing.T) {
 	}
 }
 
-// func TestAuthenticate(t *testing.T) {
-// 	request := GetCallBuilder(ctx, "GET", "/auth", RequestAuthentication())
-// 	request.Authenticate(true)
-// }
-
 func TestFormData(t *testing.T) {
 	request := GetCallBuilder(ctx, "GET", "", nil)
 	formFields := []FormParam{
@@ -347,7 +342,7 @@ func TestRequestRetryOption(t *testing.T) {
 	}
 }
 
-func TestContextPropagationInRequests(t *testing.T) {	
+func TestContextPropagationInRequests(t *testing.T) {
 	key := "Test Key"
 	ctx = context.WithValue(ctx, &key, "Test Value")
 	request := GetCallBuilder(ctx, "GET", "", nil)
