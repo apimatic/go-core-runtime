@@ -26,9 +26,6 @@ const TEXT_CONTENT_TYPE = "text/plain; charset=utf-8"
 const XML_CONTENT_TYPE = "application/xml"
 const MULTIPART_CONTENT_TYPE = "multipart/form-data"
 
-// Authenticator is a function type used to generate HTTP interceptors for handling authentication.
-type Authenticator func(bool) HttpInterceptor
-
 // CallBuilderFactory is a function type used to create CallBuilder instances for making API calls.
 type CallBuilderFactory func(ctx context.Context, httpMethod, path string) CallBuilder
 
@@ -65,7 +62,7 @@ type CallBuilder interface {
 	CallAsJson() (*json.Decoder, *http.Response, error)
 	CallAsText() (string, *http.Response, error)
 	CallAsStream() ([]byte, *http.Response, error)
-	Authenticate(requiresAuth bool)
+	Authenticate(authGroup AuthGroup)
 	RequestRetryOption(option RequestRetryOption)
 }
 
@@ -86,8 +83,7 @@ type defaultCallBuilder struct {
 	streamBody             []byte
 	httpClient             HttpClient
 	interceptors           []HttpInterceptor
-	requiresAuth           bool
-	authProvider           Authenticator
+	authProvider           map[string]AuthInterface
 	retryOption            RequestRetryOption
 	retryConfig            RetryConfiguration
 	clientError            error
@@ -104,7 +100,7 @@ func newDefaultCallBuilder(
 	httpMethod,
 	path string,
 	baseUrlProvider baseUrlProvider,
-	authProvider Authenticator,
+	authProvider map[string]AuthInterface,
 	retryConfig RetryConfiguration,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
@@ -122,22 +118,25 @@ func newDefaultCallBuilder(
 	return &cb
 }
 
-// addAuthentication adds authentication interceptors to the CallBuilder.
-// If authentication is required (requiresAuth is true), it invokes the authProvider function to get the HTTP interceptor
-// that handles authentication. The interceptor is then added to the list of interceptors in the CallBuilder.
-func (cb *defaultCallBuilder) addAuthentication() {
-	if cb.authProvider != nil {
-		cb.intercept(cb.authProvider(cb.requiresAuth))
-	}
-}
-
 // Authenticate sets the authentication requirement for the API call.
-// If requiresAuth is true, it adds the authentication interceptor to the CallBuilder.
-func (cb *defaultCallBuilder) Authenticate(requiresAuth bool) {
-	cb.requiresAuth = requiresAuth
-	if cb.requiresAuth {
-		cb.addAuthentication()
+// If a valid auth is given, it adds the respective authentication interceptor to the CallBuilder.
+func (cb *defaultCallBuilder) Authenticate(authGroup AuthGroup) {
+
+	authGroup.validate(cb.authProvider)
+
+	if authGroup.errMessage != "" {
+		cb.clientError = internalError{
+			Type:     AUTHENTICATION_ERROR,
+			Body:     authGroup.errMessage,
+			FileInfo: "callBuilder.go/Authenticate",
+		}
+		return
 	}
+
+	for _, authI := range authGroup.validAuthInterfaces {
+		cb.intercept(authI.Authenticator())
+	}
+
 }
 
 // RequestRetryOption sets the retry option for the API call.
@@ -481,6 +480,11 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 // Call executes the API call and returns the HttpContext that contains the request and response.
 // It iterates through the interceptors to execute them in sequence before making the API call.
 func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
+	// return any client errors found before executing the call
+	if cb.clientError != nil {
+		return nil, cb.clientError
+	}
+
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
 		response, err := client.Execute(request)
@@ -652,13 +656,11 @@ func encodeSpace(str string) string {
 	return strings.ReplaceAll(str, "+", "%20")
 }
 
-// CreateCallBuilderFactory creates a new CallBuilderFactory based on the provided parameters.
-// It takes a baseUrlProvider, Authenticator, HttpClient, and RetryConfiguration as inputs.
-// The returned CallBuilderFactory function creates a new CallBuilder with the provided
-// context, httpMethod, and path using the inputs.
+// CreateCallBuilderFactory creates a new CallBuilderFactory function which
+// creates a new CallBuilder using the provided inputs
 func CreateCallBuilderFactory(
 	baseUrlProvider baseUrlProvider,
-	auth Authenticator,
+	auth map[string]AuthInterface,
 	httpClient HttpClient,
 	retryConfig RetryConfiguration,
 ) CallBuilderFactory {

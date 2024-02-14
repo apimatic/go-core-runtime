@@ -11,7 +11,7 @@ import (
 
 var ctx context.Context = context.Background()
 
-func GetCallBuilder(ctx context.Context, method, path string, auth Authenticator) CallBuilder {
+func GetCallBuilder(ctx context.Context, method, path string, auth map[string]AuthInterface) CallBuilder {
 	client := NewHttpClient(NewHttpConfiguration())
 	callBuilder := CreateCallBuilderFactory(
 		func(server string) string {
@@ -25,10 +25,8 @@ func GetCallBuilder(ctx context.Context, method, path string, auth Authenticator
 	return callBuilder(ctx, method, path)
 }
 
-func RequestAuthentication() Authenticator {
-	return func(requiresAuth bool) HttpInterceptor {
-		return PassThroughInterceptor
-	}
+func RequestAuthentication() HttpInterceptor {
+	return PassThroughInterceptor
 }
 
 func TestAppendPath(t *testing.T) {
@@ -259,11 +257,6 @@ func TestQueryParams(t *testing.T) {
 	}
 }
 
-func TestAuthenticate(t *testing.T) {
-	request := GetCallBuilder(ctx, "GET", "/auth", RequestAuthentication())
-	request.Authenticate(true)
-}
-
 func TestFormData(t *testing.T) {
 	request := GetCallBuilder(ctx, "GET", "", nil)
 	formFields := []FormParam{
@@ -349,7 +342,7 @@ func TestRequestRetryOption(t *testing.T) {
 	}
 }
 
-func TestContextPropagationInRequests(t *testing.T) {	
+func TestContextPropagationInRequests(t *testing.T) {
 	key := "Test Key"
 	ctx = context.WithValue(ctx, &key, "Test Value")
 	request := GetCallBuilder(ctx, "GET", "", nil)
