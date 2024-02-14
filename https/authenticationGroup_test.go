@@ -64,7 +64,6 @@ func (creds *MockQueryCredentials) Authenticator() HttpInterceptor {
 }
 
 func AuthenticationError(errMsgs ...string) string {
-
 	var body strings.Builder
 
 	for _, errMsg := range errMsgs {
