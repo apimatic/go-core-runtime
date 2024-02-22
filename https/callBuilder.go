@@ -501,6 +501,7 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
 		response, err := client.Execute(request)
+		response.StatusCode
 		cb.clientError = err
 		return HttpContext{
 			Request:  request,

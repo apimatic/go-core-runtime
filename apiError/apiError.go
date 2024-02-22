@@ -14,16 +14,24 @@ type ApiError struct {
 	StatusCode int               `json:"StatusCode"`
 	Headers    map[string]string `json:"Headers"`
 	Body       string            `json:"Body"`
+	Message    string
 }
 
 // NewApiError is the constructor function for ApiError.
 // It creates and returns a pointer to an ApiError instance with the given status code and response body.
 func NewApiError(
-	statusCode int,
-	body string) *ApiError {
+	errorType string,
+	message string) *ApiError {
 	return &ApiError{
-		StatusCode: statusCode,
-		Body:       body,
+		Message: message,
+	}
+}
+
+func NewApiErrorTemplated(
+	errorType string,
+	message string) *ApiError {
+	return &ApiError{
+		TemplatedMessage: message,
 	}
 }
 
