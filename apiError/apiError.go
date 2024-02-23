@@ -23,22 +23,8 @@ func (a *ApiError) Error() string {
 	return fmt.Sprintf("ApiError occured %v", a.Body)
 }
 
-type ErrorBuilder struct {
+type ErrorBuilder[T any] struct {
 	Message          string
 	TemplatedMessage string
-	Builder          func(ApiError) any
-}
-
-func NewErrorBuilder(message string, builder func(ApiError) any) ErrorBuilder {
-	return ErrorBuilder{
-		Message: message,
-		Builder: builder,
-	}
-}
-
-func NewErrorBuilderWithTemplate(template string, builder func(ApiError) any) ErrorBuilder {
-	return ErrorBuilder{
-		TemplatedMessage: template,
-		Builder:          builder,
-	}
+	Builder          func(ApiError) T
 }
