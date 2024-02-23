@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/apimatic/go-core-runtime/apiError"
 	"github.com/apimatic/go-core-runtime/utilities"
 )
 
@@ -29,8 +30,6 @@ const MULTIPART_CONTENT_TYPE = "multipart/form-data"
 // CallBuilderFactory is a function type used to create CallBuilder instances for making API calls.
 type CallBuilderFactory func(ctx context.Context, httpMethod, path string) CallBuilder
 
-type ErrorBuilder func(code int) error
-
 // baseUrlProvider is a function type used to provide the base URL for API calls based on the server name.
 type baseUrlProvider func(server string) string
 
@@ -39,7 +38,7 @@ type CallBuilder interface {
 	AppendPath(path string)
 	AppendTemplateParam(param string)
 	AppendTemplateParams(params interface{})
-	AppendErrors(errors map[string]ErrorBuilder)
+	AppendErrors(errors map[string]apiError.ErrorBuilder)
 	BaseUrl(arg string)
 	Method(httpMethodName string)
 	validateMethod() error
@@ -94,7 +93,7 @@ type defaultCallBuilder struct {
 	formFields             FormParams
 	formParams             FormParams
 	queryParams            FormParams
-	errors                 map[string]ErrorBuilder
+	errors                 map[string]apiError.ErrorBuilder
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -182,9 +181,9 @@ func (cb *defaultCallBuilder) AppendTemplateParams(params interface{}) {
 	}
 }
 
-func (cb *defaultCallBuilder) AppendErrors(errors map[string]ErrorBuilder) {
+func (cb *defaultCallBuilder) AppendErrors(errors map[string]apiError.ErrorBuilder) {
 	if cb.errors == nil {
-		cb.errors = make(map[string]ErrorBuilder)
+		cb.errors = make(map[string]apiError.ErrorBuilder)
 	}
 	for key, err := range errors {
 		cb.errors[key] = err
@@ -501,7 +500,6 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
 		response, err := client.Execute(request)
-		response.StatusCode
 		cb.clientError = err
 		return HttpContext{
 			Request:  request,
