@@ -1,6 +1,6 @@
 // Package apiError provides a structure to represent error responses from API calls.
 // Copyright (c) APIMatic. All rights reserved.
-package apiError
+package https
 
 import (
 	"fmt"
