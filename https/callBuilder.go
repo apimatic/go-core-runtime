@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apimatic/go-core-runtime/apiError"
 	"github.com/apimatic/go-core-runtime/utilities"
 )
 
@@ -38,7 +37,7 @@ type CallBuilder interface {
 	AppendPath(path string)
 	AppendTemplateParam(param string)
 	AppendTemplateParams(params interface{})
-	AppendErrors(errors map[string]apiError.ErrorBuilder[error])
+	AppendErrors(errors map[string]ErrorBuilder[error])
 	BaseUrl(arg string)
 	Method(httpMethodName string)
 	validateMethod() error
@@ -93,7 +92,7 @@ type defaultCallBuilder struct {
 	formFields             FormParams
 	formParams             FormParams
 	queryParams            FormParams
-	errors                 map[string]apiError.ErrorBuilder[error]
+	errors                 map[string]ErrorBuilder[error]
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -181,9 +180,9 @@ func (cb *defaultCallBuilder) AppendTemplateParams(params interface{}) {
 	}
 }
 
-func (cb *defaultCallBuilder) AppendErrors(errors map[string]apiError.ErrorBuilder[error]) {
+func (cb *defaultCallBuilder) AppendErrors(errors map[string]ErrorBuilder[error]) {
 	if cb.errors == nil {
-		cb.errors = make(map[string]apiError.ErrorBuilder[error])
+		cb.errors = make(map[string]ErrorBuilder[error])
 	}
 	for key, err := range errors {
 		cb.errors[key] = err
