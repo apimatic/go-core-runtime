@@ -500,11 +500,15 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
 		response, err := client.Execute(request)
-		cb.clientError = err
-		return HttpContext{
+		context := HttpContext{
 			Request:  request,
 			Response: response,
 		}
+		if err == nil {
+			err = cb.selectApiError(context)
+		}
+		cb.clientError = err
+		return context
 	}
 
 	pipeline := CallHttpInterceptors(cb.interceptors, f)
@@ -514,6 +518,38 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	}
 	context := pipeline(request)
 	return &context, err
+}
+
+func (cb *defaultCallBuilder) selectApiError(context *HttpContext) error {
+	statusCode := context.Response.StatusCode
+	if statusCode >= 200 && statusCode < 300 {
+		// Return early if its a successful APICall
+		return nil
+	}
+
+	// Try getting error builder with errorCode directly
+	errorCode := string(statusCode)
+	errorBuilder := cb.errors[errorCode]
+	if errorBuilder != nil {
+		return errorBuilder.Build(context)
+	}
+
+	// Try getting error builder with errorCode ranges
+	errorCode = string(errorCode[0]) + "XX"
+	errorBuilder = cb.errors[errorCode]
+	if errorBuilder != nil {
+		return errorBuilder.Build(context)
+	}
+
+	// Try getting the error builder for default case
+	errorBuilder = cb.errors["0"]
+	if errorBuilder != nil {
+		return errorBuilder.Build(context)
+	}
+
+	// Default ErrorBuidler creation
+	errorBuilder = apiError.ErrorBuilder[error]{Message: "Http Response Not OK"}
+	return errorBuilder.Build(context)
 }
 
 // CallAsJson executes the API call and returns a JSON decoder and the HTTP response.
