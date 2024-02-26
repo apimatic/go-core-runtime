@@ -26,7 +26,7 @@ func TestCorrectMessageWhenDynamicErrorMessageWithStatusCode(t *testing.T) {
 	}
 	tpl := "Error: Status Code {$statusCode}"
 
-	actual, _ := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res)
 
 	assert.Equal(t, "Error: Status Code 500", actual)
 }
@@ -39,7 +39,7 @@ func TestCorrectMessageWhenDynamicErrorMessageWithResponseHeader(t *testing.T) {
 	}
 	tpl := "Error: Date {$response.headers.Date}"
 
-	actual, _ := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res)
 
 	assert.Equal(t, "Error: Date Thu, 22 Feb 2024 06:01:57 GMT", actual)
 }
@@ -58,7 +58,7 @@ func TestCorrectMessageWhenDynamicErrorMessageWithResponseBody(t *testing.T) {
 	}
 	tpl := "Error: Code {$response.body#/Error/0/Code}"
 
-	actual, _ := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res)
 
 	assert.Equal(t, "Error: Code 1", actual)
 }
@@ -77,22 +77,21 @@ func TestCorrectMessageWhenDynamicErrorMessageWithResponseBodyLargeValue(t *test
 	}
 	tpl := "Error: Code {$response.body#/Error/0/Code}"
 
-	actual, _ := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res)
 
 	assert.Equal(t, "Error: Code 100000000000000000", actual)
 }
 
 func TestEmptyStringWhenDynamicErrorMessageWithMissingResponseHeader(t *testing.T) {
 	h := http.Header{}
-	h.Set("Date", "Thu, 22 Feb 2024 06:01:57 GMT")
 	res := http.Response{
 		Header: h,
 	}
 	tpl := "Error: Date {$response.headers.Date}"
 
-	actual, _ := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, "Error: Date  ", actual)
+	assert.Equal(t, "Error: Date ", actual)
 }
 
 func TestEmptyStringWhenDynamicErrorMessageWithResponseBodyPropertyMissing(t *testing.T) {
@@ -108,12 +107,12 @@ func TestEmptyStringWhenDynamicErrorMessageWithResponseBodyPropertyMissing(t *te
 	}
 	tpl := "Error: Code {$response.body#/Error/0/Code}"
 
-	actual, _ := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, "Error: Code  ", actual)
+	assert.Equal(t, "Error: Code ", actual)
 }
 
-func TestErrorWhenDynamicErrorMessageWithInvalidJsonPointer(t *testing.T) {
+func TestEmptyStringWhenDynamicErrorMessageWithInvalidJsonPointer(t *testing.T) {
 	body := []byte(`{
 		"Error": [
 		  {
@@ -127,28 +126,25 @@ func TestErrorWhenDynamicErrorMessageWithInvalidJsonPointer(t *testing.T) {
 	}
 	tpl := "Error: Code {$response.body##\\#}"
 
-	actual, err := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res)
 
-	assert.Empty(t, actual)
-	assert.ErrorContains(t, err, "Invalid JSON Pointer")
+	assert.Equal(t, "Error: Code ", actual)
 }
 
 func TestReturnWithoutChangesWhenDynamicErrorMessageWithInvalidPlaceholder(t *testing.T) {
-	body := []byte(`{
-		"Error": [
-		  {
-			"Code": 1,
-			"Type": "Critical"
-		  }
-		]
-	  }`)
-	res := http.Response{
-		Body: io.NopCloser(bytes.NewReader(body)),
-	}
+	res := http.Response{}
 	tpl := "Error: Code {$something.something}"
 
-	actual, err := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res)
 
-	assert.Nil(t, err)
+	assert.Equal(t, tpl, actual)
+}
+
+func TestReturnWithoutChangesWhenDynamicErrorMessageWithNoTemplates(t *testing.T) {
+	res := http.Response{}
+	tpl := "An error occurred."
+
+	actual := renderErrorTemplate(tpl, res)
+
 	assert.Equal(t, tpl, actual)
 }
