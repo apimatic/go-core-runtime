@@ -28,3 +28,8 @@ type ErrorBuilder[T any] struct {
 	TemplatedMessage string
 	Builder          func(ApiError) T
 }
+
+func renderErrorTemplate(tpl string, res http.Response) (string, error) {
+	// TODO: Implement function
+	return fmt.Sprintf("%v", res), nil
+}
