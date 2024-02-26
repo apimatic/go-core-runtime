@@ -3,8 +3,16 @@
 package https
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"reflect"
+	"regexp"
+	"strings"
+
+	"github.com/go-openapi/jsonpointer"
 )
 
 // ApiError is the base struct for all error responses from the server.
@@ -30,6 +38,81 @@ type ErrorBuilder[T any] struct {
 }
 
 func renderErrorTemplate(tpl string, res http.Response) string {
+	placeholderRegex := `\{\$(.*?)\}`
+	re := regexp.MustCompile(placeholderRegex)
 
-	return fmt.Sprintf("%v", res)
+	// Extract placeholders into an array of strings
+	placeholders := re.FindAllString(tpl, -1)
+
+	renderedVals := []any{}
+	for _, placeholder := range placeholders {
+		renderedVals = append(renderedVals, renderPlaceholder(placeholder, res))
+	}
+
+	// Replace each instance of a placeholder with "%v"
+	formattedTpl := re.ReplaceAllString(tpl, "%v")
+
+	return fmt.Sprintf(formattedTpl, renderedVals...)
+}
+
+func renderPlaceholder(placeholder string, res http.Response) any {
+	if placeholder == "{$statusCode}" {
+		return res.StatusCode
+	}
+
+	if strings.HasPrefix(placeholder, "{$response.header.") {
+		headerName := placeholder[len("{$response.header.") : len(placeholder)-1]
+		return res.Header.Get(headerName)
+	}
+
+	if placeholder == "{$response.body}" {
+		serializedBody, err := io.ReadAll(res.Body)
+
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		return string(serializedBody)
+	}
+
+	// Use JSON Pointer to get the desired value
+	if strings.HasPrefix(placeholder, "{$response.body#") {
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		var jsonBody any
+		if err := json.Unmarshal(body, &jsonBody); err != nil {
+			return ""
+		}
+
+		jsonPtr := placeholder[len("{$response.body#") : len(placeholder)-1]
+		if jsonPtr == "" {
+			return ""
+		}
+
+		p, err := jsonpointer.New(jsonPtr)
+		if err != nil {
+			return ""
+		}
+
+		val, kind, err := p.Get(jsonBody)
+		if err != nil {
+			return ""
+		}
+
+		switch kind {
+		case reflect.Map:
+			obj, err := json.Marshal(val)
+
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			return string(obj)
+		}
+
+		return val
+	}
+
+	return placeholder
 }
