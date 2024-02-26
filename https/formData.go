@@ -21,9 +21,9 @@ type FormParam struct {
 }
 
 // toMap converts a FormParam to a map of string key-value pairs.
-func (param *FormParam) toMap() (map[string]string, error) {
+func (param *FormParam) toMap() (map[string][]string, error) {
 
-	paramMap := make(map[string]string)
+	paramMap := make(map[string][]string)
 	if param.Value == nil {
 		return paramMap, nil
 	}
@@ -57,6 +57,7 @@ func (param *FormParam) toMap() (map[string]string, error) {
 	case reflect.Slice:
 		reflectValue := reflect.ValueOf(param.Value)
 		for index := 0; index < reflectValue.Len(); index++ {
+			//frmt := "%v[%v]"
 			innerParam := &FormParam{
 				fmt.Sprintf("%v[%v]", param.Key, index),
 				reflectValue.Index(index).Interface(),
@@ -66,12 +67,23 @@ func (param *FormParam) toMap() (map[string]string, error) {
 			if err != nil {
 				return paramMap, err
 			}
-			for k, v := range innerParamMap {
-				paramMap[k] = v
+			for _, values := range innerParamMap {
+				for _, value := range values{
+					paramMap[param.Key] = append(paramMap[param.Key], value)
+				}
 			}
 		}
+	case reflect.String:
+		paramMap[param.Key] = append(paramMap[param.Key], param.Value.(string))
+	case reflect.Array:
+		paramMap[param.Key] = append(paramMap[param.Key], fmt.Sprintf("%v", param.Value))
 	default:
-		paramMap[param.Key] = fmt.Sprintf("%v", param.Value)
+		bytes, err := json.Marshal(param.Value)
+		if err == nil {
+			paramMap[param.Key] =  append(paramMap[param.Key], string(bytes))
+		} else {
+			paramMap[param.Key] = append(paramMap[param.Key], fmt.Sprintf("%v", param.Value))
+		}
 	}
 	return paramMap, nil
 }
@@ -97,8 +109,10 @@ func (fp *FormParams) prepareFormFields(form url.Values) error {
 		if err != nil {
 			return err
 		}
-		for key, value := range paramsMap {
-			form.Add(key, value)
+		for key, values := range paramsMap {
+			for _, value := range values {
+				form.Add(key, value)
+			}
 		}
 	}
 	return nil
@@ -123,9 +137,11 @@ func (fp *FormParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 			if err != nil {
 				return *body, writer.FormDataContentType(), err
 			}
-			for key, value := range paramsMap {
+			for key, values := range paramsMap {
 				mediaParam := map[string]string{"name": key}
-				formParamWriter(writer, field.Headers, mediaParam, []byte(value))
+				for _, value := range values {
+					formParamWriter(writer, field.Headers, mediaParam, []byte(value))
+				}
 			}
 		}
 	}
@@ -160,7 +176,7 @@ func formParamWriter(
 }
 
 // structToMap converts a given data structure to a map.
-func structToMap(data interface{}) (map[string]interface{}, error) {
+func structToMap2(data interface{}) (map[string]interface{}, error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -168,4 +184,29 @@ func structToMap(data interface{}) (map[string]interface{}, error) {
 	mapData := make(map[string]interface{})
 	err = json.Unmarshal(dataBytes, &mapData)
 	return mapData, err
+}
+
+func structToMap(in interface{}) (map[string]interface{}, error) {
+	tagName := "json"
+	out := make(map[string]interface{})
+
+	v := reflect.ValueOf(in)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+
+	if v.Kind() != reflect.Struct { // Non-structural return error
+		return nil, fmt.Errorf("ToMap only accepts struct or struct pointer; got %T", v)
+	}
+
+	t := v.Type()
+	// Traversing structure fields
+	// Specify the tagName value as the key in the map; the field value as the value in the map
+	for i := 0; i < v.NumField(); i++ {
+		fi := t.Field(i)
+		if tagValue := fi.Tag.Get(tagName); tagValue != "" {
+			out[tagValue] = v.Field(i).Interface()
+		}
+	}
+	return out, nil
 }
