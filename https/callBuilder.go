@@ -1,3 +1,4 @@
+// Copyright (c) APIMatic. All rights reserved.
 package https
 
 import (
@@ -37,6 +38,7 @@ type CallBuilder interface {
 	AppendPath(path string)
 	AppendTemplateParam(param string)
 	AppendTemplateParams(params interface{})
+	AppendErrors(errors map[string]ErrorBuilder[error])
 	BaseUrl(arg string)
 	Method(httpMethodName string)
 	validateMethod() error
@@ -91,6 +93,7 @@ type defaultCallBuilder struct {
 	formFields             FormParams
 	formParams             FormParams
 	queryParams            FormParams
+	errors                 map[string]ErrorBuilder[error]
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -175,6 +178,16 @@ func (cb *defaultCallBuilder) AppendTemplateParams(params interface{}) {
 		for _, param := range x {
 			cb.AppendTemplateParam(strconv.Itoa(int(param)))
 		}
+	}
+}
+
+// AppendErrors sets or update the entries in the existing errorBuilder map in call builder.
+func (cb *defaultCallBuilder) AppendErrors(errors map[string]ErrorBuilder[error]) {
+	if cb.errors == nil {
+		cb.errors = make(map[string]ErrorBuilder[error])
+	}
+	for key, err := range errors {
+		cb.errors[key] = err
 	}
 }
 
@@ -488,11 +501,15 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
 		response, err := client.Execute(request)
-		cb.clientError = err
-		return HttpContext{
+		context := HttpContext{
 			Request:  request,
 			Response: response,
 		}
+		if err == nil {
+			err = cb.selectApiError(context)
+		}
+		cb.clientError = err
+		return context
 	}
 
 	pipeline := CallHttpInterceptors(cb.interceptors, f)
@@ -501,7 +518,40 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 		return nil, err
 	}
 	context := pipeline(request)
+
+	if cb.clientError != nil {
+		return nil, cb.clientError
+	}
+
 	return &context, err
+}
+
+func (cb *defaultCallBuilder) selectApiError(context HttpContext) error {
+	statusCode := context.Response.StatusCode
+	if statusCode >= 200 && statusCode < 300 {
+		// Return early if its a successful APICall
+		return nil
+	}
+
+	// Try getting error builder with errorCode directly
+	errorCode := fmt.Sprint(statusCode)
+	if errorBuilder, ok := cb.errors[errorCode]; ok {
+		return errorBuilder.Build(context)
+	}
+
+	// Try getting error builder with errorCode ranges
+	errorCode = string(errorCode[0]) + "XX"
+	if errorBuilder, ok := cb.errors[errorCode]; ok {
+		return errorBuilder.Build(context)
+	}
+
+	// Try getting the error builder for default case
+	if errorBuilder, ok := cb.errors["0"]; ok {
+		return errorBuilder.Build(context)
+	}
+
+	// Default ErrorBuilder creation
+	return ErrorBuilder[error]{Message: "HTTP Response Not OK"}.Build(context)
 }
 
 // CallAsJson executes the API call and returns a JSON decoder and the HTTP response.
@@ -526,9 +576,6 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 
 		return json.NewDecoder(result.Response.Body), result.Response, err
 	}
-	if cb.clientError != nil {
-		return nil, nil, cb.clientError
-	}
 	return nil, nil, err
 }
 
@@ -552,9 +599,6 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 
 		return string(body), result.Response, err
 	}
-	if cb.clientError != nil {
-		return "", nil, cb.clientError
-	}
 	return "", nil, err
 }
 
@@ -577,9 +621,6 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 		}
 
 		return bytes, result.Response, err
-	}
-	if cb.clientError != nil {
-		return nil, nil, cb.clientError
 	}
 	return nil, nil, err
 }
