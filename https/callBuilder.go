@@ -1,3 +1,4 @@
+// Copyright (c) APIMatic. All rights reserved.
 package https
 
 import (

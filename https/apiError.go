@@ -1,4 +1,3 @@
-// Package apiError provides a structure to represent error responses from API calls.
 // Copyright (c) APIMatic. All rights reserved.
 package https
 
@@ -24,8 +23,6 @@ type ApiError struct {
 	Message    string
 }
 
-// Error implements the Error method for the error interface.
-// It returns a string representation of the ApiError instance when used in an error context.
 func (a *ApiError) Error() string {
 	return fmt.Sprintf("ApiError occured: %v", a.Message)
 }
