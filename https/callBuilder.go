@@ -181,6 +181,7 @@ func (cb *defaultCallBuilder) AppendTemplateParams(params interface{}) {
 	}
 }
 
+// AppendErrors sets or update the entries in the existing errorBuilder map in call builder.
 func (cb *defaultCallBuilder) AppendErrors(errors map[string]ErrorBuilder[error]) {
 	if cb.errors == nil {
 		cb.errors = make(map[string]ErrorBuilder[error])
