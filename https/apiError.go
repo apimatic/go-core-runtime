@@ -23,17 +23,17 @@ type ApiError struct {
 	Message    string
 }
 
-func (a *ApiError) Error() string {
+func (a ApiError) Error() string {
 	return fmt.Sprintf("ApiError occured: %v", a.Message)
 }
 
-type ErrorBuilder[T any] struct {
+type ErrorBuilder[T error] struct {
 	Message          string
 	TemplatedMessage string
 	Unmarshaller     func(ApiError) T
 }
 
-func (eb ErrorBuilder[T]) Build(httpctx HttpContext) *ApiError {
+func (eb ErrorBuilder[T]) Build(httpctx HttpContext) error {
 	res := httpctx.Response
 
 	message := eb.Message
@@ -42,13 +42,19 @@ func (eb ErrorBuilder[T]) Build(httpctx HttpContext) *ApiError {
 	}
 
 	body, _ := io.ReadAll(res.Body)
-	return &ApiError{
+	err := ApiError{
 		Request:    *httpctx.Request,
 		StatusCode: res.StatusCode,
 		Headers:    res.Header,
 		Body:       body,
 		Message:    message,
 	}
+
+	if eb.Unmarshaller != nil {
+		return eb.Unmarshaller(err)
+	}
+
+	return err
 }
 
 func renderErrorTemplate(tpl string, res http.Response) string {
