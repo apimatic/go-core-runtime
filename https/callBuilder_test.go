@@ -373,7 +373,7 @@ func TestError(t *testing.T) {
 	codeToErrorMapDefault := map[string]ErrorBuilder[error]{
 		"400": {Message: "400 Wrong Input"},
 		"5XX": {TemplatedMessage: "Server Error! Server Message: {$response.body#/errorDetail}", Unmarshaller: func(ae ApiError) error { return errors.New(ae.Message) }},
-		"0":   {Message: "Error ${statusCode}"},
+		"0":   {TemplatedMessage: "Error {$statusCode}"},
 	}
 
 	codeToErrorMapEmpty := map[string]ErrorBuilder[error]{}

@@ -17,11 +17,12 @@ func GetTestingServer() *httptest.Server {
 				w.Write([]byte(`"passed": true,
 				"message": "It's a hit!",`))
 			case "/error/400":
-				w.WriteHeader(400)
-			case "/error/5XX":
-				w.WriteHeader(504)
+				w.WriteHeader(http.StatusBadRequest)
+			case "/error/500":
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Write([]byte(`{"errorDetail":"The server is down at the moment."}`))
 			case "/error/404":
-				w.WriteHeader(404)
+				w.WriteHeader(http.StatusNotFound)
 			}
 		case "POST":
 			switch r.URL.Path {

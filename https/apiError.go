@@ -82,6 +82,7 @@ func renderPlaceholder(placeholder string, res http.Response) any {
 		return res.Header.Get(headerName)
 	}
 
+	// Return Response Body as-is
 	if placeholder == "{$response.body}" {
 		serializedBody, err := io.ReadAll(res.Body)
 
@@ -91,7 +92,7 @@ func renderPlaceholder(placeholder string, res http.Response) any {
 		return string(serializedBody)
 	}
 
-	// Use JSON Pointer to get the desired value
+	// Use JSON Pointer to get the desired value from a JSON Response Body
 	if strings.HasPrefix(placeholder, "{$response.body#") {
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
