@@ -68,31 +68,26 @@ func TestCorrectMessageWhenDynamicErrorMessageWithResponseHeader(t *testing.T) {
 	assert.Equal(t, "Error: Date Thu, 22 Feb 2024 06:01:57 GMT", actual)
 }
 
-func TestCorrectMessageWhenDynamicErrorMessageWithResponseBodyIntValue(t *testing.T) {
-	res := getMockResponseWithJSONBody(mockJSONResponseBody)
-	tpl := "Error: Code {$response.body#/Error/0/Code}"
+func TestDynamicErrorMessageWithResponseBody(t *testing.T) {
+	var tests = []struct {
+		name     string
+		tpl      string
+		expected string
+	}{
+		{`FormattedMessageWhenIntValue`, `Error: Code {$response.body#/Error/0/Code}`, `Error: Code 1`},
+		{`JSONStringWhenObjectValue`, `Error: {$response.body#/Error/0}`, `Error: {"Code":1,"Type":"Critical"}`},
+		{`RawResponseBodyWhenNoJSONPointer`, `Error: {$response.body}`, `Error: {"Error":[{"Code":1,"Type":"Critical"}]}`},
+		{`EmptyStringWhenInvalidJSONPointer`, `Error: Code {$response.body##\\#}`, `Error: Code `},
+		{`EmptyStringWhenEmptyJSONPointer`, `Error: Code {$response.body#}`, `Error: Code `},
+	}
 
-	actual := renderErrorTemplate(tpl, res)
-
-	assert.Equal(t, "Error: Code 1", actual)
-}
-
-func TestCorrectMessageWhenDynamicErrorMessageWithResponseBodyObjectValue(t *testing.T) {
-	res := getMockResponseWithJSONBody(mockJSONResponseBody)
-	tpl := "Error: {$response.body#/Error/0}"
-
-	actual := renderErrorTemplate(tpl, res)
-
-	assert.Equal(t, `Error: {"Code":1,"Type":"Critical"}`, actual)
-}
-
-func TestCorrectMessageWhenDynamicErrorMessageWithResponseBodyNoJSONPointer(t *testing.T) {
-	res := getMockResponseWithJSONBody(mockJSONResponseBody)
-	tpl := "Error: {$response.body}"
-
-	actual := renderErrorTemplate(tpl, res)
-
-	assert.Equal(t, `Error: {"Error":[{"Code":1,"Type":"Critical"}]}`, actual)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			res := getMockResponseWithJSONBody(mockJSONResponseBody)
+			actual := renderErrorTemplate(test.tpl, res)
+			assert.Equal(t, test.expected, actual)
+		})
+	}
 }
 
 func TestEmptyStringWhenDynamicErrorMessageWithMissingResponseHeader(t *testing.T) {
@@ -116,24 +111,6 @@ func TestEmptyStringWhenDynamicErrorMessageWithResponseBodyPropertyMissing(t *te
 		]
 	  }`)
 	tpl := "Error: Code {$response.body#/Error/0/Code}"
-
-	actual := renderErrorTemplate(tpl, res)
-
-	assert.Equal(t, "Error: Code ", actual)
-}
-
-func TestEmptyStringWhenDynamicErrorMessageWithInvalidJSONPointer(t *testing.T) {
-	res := getMockResponseWithJSONBody(mockJSONResponseBody)
-	tpl := "Error: Code {$response.body##\\#}"
-
-	actual := renderErrorTemplate(tpl, res)
-
-	assert.Equal(t, "Error: Code ", actual)
-}
-
-func TestEmptyStringWhenDynamicErrorMessageWithEmptyJSONPointer(t *testing.T) {
-	res := getMockResponseWithJSONBody(mockJSONResponseBody)
-	tpl := "Error: Code {$response.body#}"
 
 	actual := renderErrorTemplate(tpl, res)
 
