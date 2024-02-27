@@ -516,6 +516,11 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 		return nil, err
 	}
 	context := pipeline(request)
+
+	if cb.clientError != nil {
+		return nil, cb.clientError
+	}
+
 	return &context, err
 }
 
@@ -544,7 +549,7 @@ func (cb *defaultCallBuilder) selectApiError(context HttpContext) error {
 	}
 
 	// Default ErrorBuilder creation
-	return ErrorBuilder[error]{Message: "Http Response Not OK"}.Build(context)
+	return ErrorBuilder[error]{Message: "HTTP Response Not OK"}.Build(context)
 }
 
 // CallAsJson executes the API call and returns a JSON decoder and the HTTP response.
@@ -569,9 +574,6 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 
 		return json.NewDecoder(result.Response.Body), result.Response, err
 	}
-	if cb.clientError != nil {
-		return nil, nil, cb.clientError
-	}
 	return nil, nil, err
 }
 
@@ -595,9 +597,6 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 
 		return string(body), result.Response, err
 	}
-	if cb.clientError != nil {
-		return "", nil, cb.clientError
-	}
 	return "", nil, err
 }
 
@@ -620,9 +619,6 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 		}
 
 		return bytes, result.Response, err
-	}
-	if cb.clientError != nil {
-		return nil, nil, cb.clientError
 	}
 	return nil, nil, err
 }

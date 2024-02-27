@@ -384,7 +384,7 @@ func TestError(t *testing.T) {
 		codeToErrorMap map[string]ErrorBuilder[error]
 		expected       string
 	}{
-		{`DefaultErrorMessage`, `/error/400`, codeToErrorMapEmpty, `HTTP Response Not OK.`},
+		{`DefaultErrorMessage`, `/error/400`, codeToErrorMapEmpty, `HTTP Response Not OK`},
 		{`StaticErrorMessage`, `/error/400`, codeToErrorMapDefault, `400 Wrong Input`},
 		{`DynamicErrorMessageUsingJSONResponseBody`, `/error/500`, codeToErrorMapDefault, `Server Error! Server Message: The server is down at the moment.`},
 		{`DynamicErrorMessageWithoutBody`, `/error/404`, codeToErrorMapDefault, `Error 404`},
