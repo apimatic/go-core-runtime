@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -69,7 +68,7 @@ func renderPlaceholder(placeholder string, res http.Response) any {
 		serializedBody, err := io.ReadAll(res.Body)
 
 		if err != nil {
-			log.Fatal(err.Error())
+			return ""
 		}
 		return string(serializedBody)
 	}
@@ -78,7 +77,7 @@ func renderPlaceholder(placeholder string, res http.Response) any {
 	if strings.HasPrefix(placeholder, "{$response.body#") {
 		body, err := io.ReadAll(res.Body)
 		if err != nil {
-			log.Fatal(err.Error())
+			return ""
 		}
 
 		var jsonBody any
@@ -106,7 +105,7 @@ func renderPlaceholder(placeholder string, res http.Response) any {
 			obj, err := json.Marshal(val)
 
 			if err != nil {
-				log.Fatal(err.Error())
+				return ""
 			}
 			return string(obj)
 		}
