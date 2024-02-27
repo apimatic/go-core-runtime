@@ -88,10 +88,10 @@ func renderPlaceholder(placeholder string, res http.Response) any {
 	// Return Response Body as-is
 	if placeholder == "{$response.body}" {
 		serializedBody, err := io.ReadAll(res.Body)
-
 		if err != nil {
 			return ""
 		}
+
 		return string(serializedBody)
 	}
 
@@ -102,38 +102,42 @@ func renderPlaceholder(placeholder string, res http.Response) any {
 			return ""
 		}
 
-		var jsonBody any
-		if err := json.Unmarshal(body, &jsonBody); err != nil {
-			return ""
-		}
-
 		jsonPtr := placeholder[len("{$response.body#") : len(placeholder)-1]
 		if jsonPtr == "" {
 			return ""
 		}
 
-		p, err := jsonpointer.New(jsonPtr)
-		if err != nil {
-			return ""
-		}
-
-		val, kind, err := p.Get(jsonBody)
-		if err != nil {
-			return ""
-		}
-
-		switch kind {
-		case reflect.Map:
-			obj, err := json.Marshal(val)
-
-			if err != nil {
-				return ""
-			}
-			return string(obj)
-		}
-
-		return val
+		return getValueFromJSON(body, jsonPtr)
 	}
 
 	return placeholder
+}
+
+func getValueFromJSON(rawJSON []byte, jsonPtr string) any {
+	var jsonBody any
+	if err := json.Unmarshal(rawJSON, &jsonBody); err != nil {
+		return ""
+	}
+
+	p, err := jsonpointer.New(jsonPtr)
+	if err != nil {
+		return ""
+	}
+
+	val, kind, err := p.Get(jsonBody)
+	if err != nil {
+		return ""
+	}
+
+	switch kind {
+	case reflect.Map:
+		obj, err := json.Marshal(val)
+		if err != nil {
+			return ""
+		}
+
+		return string(obj)
+	}
+
+	return val
 }
