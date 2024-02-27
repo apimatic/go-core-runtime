@@ -2,11 +2,14 @@ package https
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 var ctx context.Context = context.Background()
@@ -363,5 +366,38 @@ func TestRequestCancellation(t *testing.T) {
 
 	if err == nil {
 		t.Errorf("Failed:\nExpected error due to request cancellation.")
+	}
+}
+
+func TestError(t *testing.T) {
+	codeToErrorMapDefault := map[string]ErrorBuilder[error]{
+		"400": {Message: "400 Wrong Input"},
+		"5XX": {TemplatedMessage: "Server Error! Server Message: {$response.body#/errorDetail}", Unmarshaller: func(ae ApiError) error { return errors.New(ae.Message) }},
+		"0":   {Message: "Error ${statusCode}"},
+	}
+
+	codeToErrorMapEmpty := map[string]ErrorBuilder[error]{}
+
+	var tests = []struct {
+		name           string
+		path           string
+		codeToErrorMap map[string]ErrorBuilder[error]
+		expected       string
+	}{
+		{`DefaultErrorMessage`, `/error/400`, codeToErrorMapEmpty, `HTTP Response Not OK.`},
+		{`StaticErrorMessage`, `/error/400`, codeToErrorMapDefault, `400 Wrong Input`},
+		{`DynamicErrorMessageUsingJSONResponseBody`, `/error/500`, codeToErrorMapDefault, `Server Error! Server Message: The server is down at the moment.`},
+		{`DynamicErrorMessageWithoutBody`, `/error/404`, codeToErrorMapDefault, `Error 404`},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := GetCallBuilder(ctx, "GET", test.path, nil)
+			request.AppendErrors(test.codeToErrorMap)
+
+			_, err := request.Call()
+
+			assert.ErrorContains(t, err, test.expected)
+		})
 	}
 }
