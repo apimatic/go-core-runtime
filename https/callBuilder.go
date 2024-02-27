@@ -519,7 +519,7 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	return &context, err
 }
 
-func (cb *defaultCallBuilder) selectApiError(context *HttpContext) error {
+func (cb *defaultCallBuilder) selectApiError(context HttpContext) error {
 	statusCode := context.Response.StatusCode
 	if statusCode >= 200 && statusCode < 300 {
 		// Return early if its a successful APICall
@@ -527,28 +527,24 @@ func (cb *defaultCallBuilder) selectApiError(context *HttpContext) error {
 	}
 
 	// Try getting error builder with errorCode directly
-	errorCode := string(statusCode)
-	errorBuilder := cb.errors[errorCode]
-	if errorBuilder != nil {
+	errorCode := fmt.Sprint(statusCode)
+	if errorBuilder, ok := cb.errors[errorCode]; ok {
 		return errorBuilder.Build(context)
 	}
 
 	// Try getting error builder with errorCode ranges
 	errorCode = string(errorCode[0]) + "XX"
-	errorBuilder = cb.errors[errorCode]
-	if errorBuilder != nil {
+	if errorBuilder, ok := cb.errors[errorCode]; ok {
 		return errorBuilder.Build(context)
 	}
 
 	// Try getting the error builder for default case
-	errorBuilder = cb.errors["0"]
-	if errorBuilder != nil {
+	if errorBuilder, ok := cb.errors["0"]; ok {
 		return errorBuilder.Build(context)
 	}
 
-	// Default ErrorBuidler creation
-	errorBuilder = apiError.ErrorBuilder[error]{Message: "Http Response Not OK"}
-	return errorBuilder.Build(context)
+	// Default ErrorBuilder creation
+	return ErrorBuilder[error]{Message: "Http Response Not OK"}.Build(context)
 }
 
 // CallAsJson executes the API call and returns a JSON decoder and the HTTP response.

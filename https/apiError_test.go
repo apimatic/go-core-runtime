@@ -34,10 +34,10 @@ func getMockResponseWithJSONBody(jsonStr string) http.Response {
 }
 
 func TestErrorMethod(t *testing.T) {
-	expected := "ApiError occured Server Error"
+	expected := "ApiError occured: Server Error"
 	result := ApiError{
 		StatusCode: 500,
-		Body:       "Server Error",
+		Message:    "Server Error",
 	}
 	if result.Error() != expected {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Error())

@@ -19,8 +19,8 @@ import (
 type ApiError struct {
 	Request    http.Request
 	StatusCode int
-	Headers    map[string]string
-	Body       string
+	Headers    http.Header
+	Body       []byte
 	Message    string
 }
 
@@ -34,6 +34,24 @@ type ErrorBuilder[T any] struct {
 	Message          string
 	TemplatedMessage string
 	Unmarshaller     func(ApiError) T
+}
+
+func (eb ErrorBuilder[T]) Build(httpctx HttpContext) *ApiError {
+	res := httpctx.Response
+
+	message := eb.Message
+	if eb.TemplatedMessage != "" {
+		message = renderErrorTemplate(eb.TemplatedMessage, *res)
+	}
+
+	body, _ := io.ReadAll(res.Body)
+	return &ApiError{
+		Request:    *httpctx.Request,
+		StatusCode: res.StatusCode,
+		Headers:    res.Header,
+		Body:       body,
+		Message:    message,
+	}
 }
 
 func renderErrorTemplate(tpl string, res http.Response) string {
