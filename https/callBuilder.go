@@ -66,6 +66,7 @@ type CallBuilder interface {
 	CallAsStream() ([]byte, *http.Response, error)
 	Authenticate(authGroup AuthGroup)
 	RequestRetryOption(option RequestRetryOption)
+	ArraySerializationOption(option ArraySerializationOption)
 }
 
 // defaultCallBuilder is a struct that implements the CallBuilder interface for making API calls.
@@ -94,6 +95,7 @@ type defaultCallBuilder struct {
 	formParams             FormParams
 	queryParams            FormParams
 	errors                 map[string]ErrorBuilder[error]
+	arraySerializationOption ArraySerializationOption
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -146,6 +148,10 @@ func (cb *defaultCallBuilder) Authenticate(authGroup AuthGroup) {
 // It allows users to configure the retry behavior for the request.
 func (cb *defaultCallBuilder) RequestRetryOption(option RequestRetryOption) {
 	cb.retryOption = option
+}
+
+func (cb *defaultCallBuilder) ArraySerializationOption(option ArraySerializationOption) {
+	cb.arraySerializationOption = option
 }
 
 // AppendPath appends the provided path to the existing path in the CallBuilder.
@@ -268,7 +274,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		err := cb.queryParams.prepareFormFields(cb.query)
+		err := cb.queryParams.prepareFormFields(cb.query, cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
 		}
@@ -298,7 +304,7 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		err := cb.formParams.prepareFormFields(cb.form)
+		err := cb.formParams.prepareFormFields(cb.form, cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
 		}
@@ -321,7 +327,7 @@ func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
 	var err error = nil
 	if len(cb.formFields) != 0 {
-		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields()
+		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields(cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
 		}

@@ -20,130 +20,6 @@ type FormParam struct {
 	Headers http.Header
 }
 
-func getDefaultValue(in interface{}) string {
-
-	switch in.(type) {
-	case string:
-		return in.(string)
-	default:
-		bytes, err := json.Marshal(in)
-		if err == nil {
-			return string(bytes)
-		} else {
-			return fmt.Sprintf("%v", in)
-		}
-	}
-}
-
-func appendMap(param map[string][]string, result map[string][]string) {
-	for k, v := range param {
-		for _, v1 := range v {
-			appendMapValue(k, result, v1)
-		}
-	}
-}
-
-func prePareKey(keyPrefix string, key string) string {
-	var innerKey string
-	if key == ""  { 		// plain text
-		innerKey = fmt.Sprintf("%v", keyPrefix)
-	} else if key == "[]" {	// unindexed
-		innerKey = fmt.Sprintf("%v[]", keyPrefix)
-	} else {				// indexed
-		innerKey = fmt.Sprintf("%v[%v]", keyPrefix, key)
-	}
-	return innerKey
-}
-
-func appendMapValue(key string, result map[string][]string, value string) {
-	if (len(result[key]) > 0){
-		formatter := ","
-		result[key][0] = fmt.Sprintf("%v%v%v", result[key][0], formatter, value)
-	} else {
-		result[key] = append(result[key], value)
-	}
-	//result[key] = append(result[key], value)
-}
-
-
-// Return a pointer to the supplied struct via interface{}
-func toStructPtr(obj interface{}) interface{} {
-	// Create a new instance of the underlying type
-	vp := reflect.New(reflect.TypeOf(obj))
-	vp.Elem().Set(reflect.ValueOf(obj))
-	// NOTE: `vp.Elem().Set(reflect.ValueOf(&obj).Elem())` does not work
-	// Return a `Cat` pointer to obj -- i.e. &obj.(*Cat)
-	return vp.Interface()
-}
-
-
-func toMap3(keyPrefix string, param interface{}) (map[string][]string, error) {
-	result := make(map[string][]string)
-	valueKind := reflect.TypeOf(param).Kind()
-
-	switch valueKind {
-	case reflect.Map:
-
-		iter := reflect.ValueOf(param).MapRange()
-		for iter.Next() {
-			key := fmt.Sprintf("%v", iter.Key())
-			innerKey := prePareKey(keyPrefix, key)
-			innerValue := iter.Value()
-			innerValueKind := innerValue.Type().Kind()
-
-			var innerStruct any
-			if (innerValueKind == reflect.Struct) {
-				innerStruct = toStructPtr(innerValue.Interface())
-			} else {
-				innerStruct =  innerValue.Interface()
-			}
-			innerFlatMap, err := toMap3(innerKey, innerStruct)
-			if err != nil {
-				return result, err
-			}
-			appendMap(innerFlatMap, result)
-		}
-	case reflect.Struct, reflect.Ptr:
-		// Convert Struct and Pointer types into Map.
-		innerMap, err := structToMap(toStructPtr(param))
-		if err != nil {
-			return result, err
-		}
-		innerFlatMap, err := toMap3(keyPrefix, innerMap)
-		if err != nil {
-			return result, err
-		}
-		appendMap(innerFlatMap, result)
-	case reflect.Slice:
-		reflectValue := reflect.ValueOf(param)
-		for index := 0; index < reflectValue.Len(); index++ {
-			innerObjType := reflectValue.Index(index).Type().Kind()
-			var innerStruct any
-			if innerObjType == reflect.Struct {
-				innerStruct = reflectValue.Index(index).Addr().Interface()
-			} else {
-				innerStruct = reflectValue.Index(index).Interface()
-			}
-			var indexStr string
-			switch innerStruct.(type) {
-			case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128, string:
-				indexStr = ""
-			default:
-				indexStr = fmt.Sprintf("%v", index)
-			}
-			innerKey := prePareKey(keyPrefix, indexStr)
-			innerFlatMap, err := toMap3(innerKey, innerStruct)
-			if err != nil {
-				return result, err
-			}
-			appendMap(innerFlatMap, result)
-		}
-	default:
-		appendMapValue(keyPrefix, result, getDefaultValue(param))
-	}
-	return result, nil
-}
-
 // FormParams represents a collection of FormParam objects.
 type FormParams []FormParam
 
@@ -156,12 +32,12 @@ func (fp *FormParams) Add(formParam FormParam) {
 
 // prepareFormFields prepares the form fields from the given FormParams and adds them to the url.Values.
 // It processes each FormParam field and encodes the value according to its data type.
-func (fp *FormParams) prepareFormFields(form url.Values) error {
+func (fp *FormParams) prepareFormFields(form url.Values, option ArraySerializationOption) error {
 	if form == nil {
 		form = url.Values{}
 	}
 	for _, param := range *fp {
-		paramsMap, err := toMap3(param.Key, param.Value)
+		paramsMap, err := toMap(param.Key, param.Value, option)
 		if err != nil {
 			return err
 		}
@@ -176,7 +52,7 @@ func (fp *FormParams) prepareFormFields(form url.Values) error {
 
 // prepareMultipartFields prepares the multipart fields from the given FormParams and
 // returns the body as a bytes.Buffer, along with the Content-Type header for the multipart form data.
-func (fp *FormParams) prepareMultipartFields() (bytes.Buffer, string, error) {
+func (fp *FormParams) prepareMultipartFields(option ArraySerializationOption) (bytes.Buffer, string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 
@@ -189,7 +65,7 @@ func (fp *FormParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 			}
 			formParamWriter(writer, field.Headers, mediaParam, fieldValue.File)
 		default:
-			paramsMap, err := toMap3(field.Key, field.Value)
+			paramsMap, err := toMap(field.Key, field.Value, option)
 			if err != nil {
 				return *body, writer.FormDataContentType(), err
 			}
@@ -231,8 +107,62 @@ func formParamWriter(
 	return nil
 }
 
+func toMap(keyPrefix string, param interface{}, option ArraySerializationOption) (map[string][]string, error) {
+	valueKind := reflect.TypeOf(param).Kind()
+	switch valueKind {
+	case reflect.Struct, reflect.Ptr:
+		innerMap, err := structToMap(param)
+		if err != nil {
+			return nil, err
+		}
+		innerFlatMap, err := toMap(keyPrefix, innerMap, option)
+		if err != nil {
+			return nil, err
+		}
+		return innerFlatMap, nil
+	case reflect.Map:
+		iter := reflect.ValueOf(param).MapRange()
+		result := make(map[string][]string)
+		for iter.Next() {
+			innerKey := ArraySerializationOption(Indexed).prePareKey(keyPrefix, iter.Key())
+			innerValue := iter.Value().Interface()
+			innerFlatMap, err := toMap(innerKey, innerValue, option)
+			if err != nil {
+				return nil, err
+			}
+			option.appendMap(result, innerFlatMap)
+		}
+		return result, nil
+	case reflect.Slice:
+		reflectValue := reflect.ValueOf(param)
+		result := make(map[string][]string)
+		for i := 0; i < reflectValue.Len(); i++ {
+			var innerStruct = reflectValue.Index(i).Interface()
+			var indexStr any
+			switch innerStruct.(type) {
+			case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128, string:
+				indexStr = nil
+			default:
+				indexStr = fmt.Sprintf("%v", i)
+			}
+			innerKey := option.prePareKey(keyPrefix, indexStr)
+			innerFlatMap, err := toMap(innerKey, innerStruct, option)
+			if err != nil {
+				return result, err
+			}
+			option.appendMap(result, innerFlatMap)
+		}
+		return result, nil
+	default:
+		return map[string][]string{keyPrefix: {getDefaultValue(param)}}, nil
+	}
+}
+
 // structToMap converts a given data structure to a map.
-func structToMap(data interface{}) (map[string]interface{}, error) {
+func structToMap(data any) (map[string]any, error) {
+	if reflect.TypeOf(data).Kind() != reflect.Ptr {
+		data = toStructPtr(data)
+	}
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
@@ -240,4 +170,28 @@ func structToMap(data interface{}) (map[string]interface{}, error) {
 	mapData := make(map[string]interface{})
 	err = json.Unmarshal(dataBytes, &mapData)
 	return mapData, err
+}
+
+// Return a pointer to the supplied struct via interface{}
+func toStructPtr(obj any) any {
+	// Create a new instance of the underlying type
+	vp := reflect.New(reflect.TypeOf(obj))
+	vp.Elem().Set(reflect.ValueOf(obj))
+	// NOTE: `vp.Elem().Set(reflect.ValueOf(&obj).Elem())` does not work
+	// Return a `Cat` pointer to obj -- i.e. &obj.(*Cat)
+	return vp.Interface()
+}
+
+func getDefaultValue(in any) string {
+	switch in.(type) {
+	case string:
+		return in.(string)
+	default:
+		bytes, err := json.Marshal(in)
+		if err == nil {
+			return string(bytes)
+		} else {
+			return fmt.Sprintf("%v", in)
+		}
+	}
 }
