@@ -9,9 +9,10 @@ type HttpConfigurationOptions func(*HttpConfiguration)
 
 // HttpConfiguration holds the configuration options for the HTTP client.
 type HttpConfiguration struct {
-	timeout            float64
-	transport          http.RoundTripper
-	retryConfiguration RetryConfiguration
+	timeout                  float64
+	transport                http.RoundTripper
+	retryConfiguration       RetryConfiguration
+	arraySerializationOption ArraySerializationOption
 }
 
 // Timeout returns the configured timeout value for the HTTP client.
@@ -27,6 +28,11 @@ func (h *HttpConfiguration) Transport() http.RoundTripper {
 // RetryConfiguration returns the configured retry configuration for the HTTP client.
 func (h *HttpConfiguration) RetryConfiguration() RetryConfiguration {
 	return h.retryConfiguration
+}
+
+// RetryConfiguration returns the configured retry configuration for the HTTP client.
+func (h *HttpConfiguration) ArraySerializationOption() ArraySerializationOption {
+	return h.arraySerializationOption
 }
 
 // NewHttpConfiguration creates a new HttpConfiguration with the provided options and returns it.
@@ -58,5 +64,12 @@ func WithTransport(transport http.RoundTripper) HttpConfigurationOptions {
 func WithRetryConfiguration(retryConfig RetryConfiguration) HttpConfigurationOptions {
 	return func(h *HttpConfiguration) {
 		h.retryConfiguration = retryConfig
+	}
+}
+
+// WithRetryConfiguration sets the retry configuration for the HTTP client.
+func WithArraySerializationOption(option ArraySerializationOption) HttpConfigurationOptions {
+	return func(h *HttpConfiguration) {
+		h.arraySerializationOption = option
 	}
 }
