@@ -108,17 +108,19 @@ func newDefaultCallBuilder(
 	baseUrlProvider baseUrlProvider,
 	authProvider Authenticator,
 	retryConfig RetryConfiguration,
+	option ArraySerializationOption,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
-		httpClient:      httpClient,
-		path:            path,
-		httpMethod:      httpMethod,
-		authProvider:    authProvider,
-		baseUrlProvider: baseUrlProvider,
-		retryOption:     RequestRetryOption(Default),
-		clientError:     nil,
-		retryConfig:     retryConfig,
-		ctx:             ctx,
+		httpClient:               httpClient,
+		path:                     path,
+		httpMethod:               httpMethod,
+		authProvider:             authProvider,
+		baseUrlProvider:          baseUrlProvider,
+		retryOption:              RequestRetryOption(Default),
+		clientError:              nil,
+		retryConfig:              retryConfig,
+		ctx:                      ctx,
+		arraySerializationOption: option,
 	}
 	cb.addRetryInterceptor()
 	return &cb
@@ -667,11 +669,13 @@ func CreateCallBuilderFactory(
 	auth Authenticator,
 	httpClient HttpClient,
 	retryConfig RetryConfiguration,
+	option ArraySerializationOption,
 ) CallBuilderFactory {
 	return func(
 		ctx context.Context,
 		httpMethod,
 		path string,
+
 	) CallBuilder {
 		return newDefaultCallBuilder(
 			ctx,
@@ -681,6 +685,7 @@ func CreateCallBuilderFactory(
 			baseUrlProvider,
 			auth,
 			retryConfig,
+			option,
 		)
 	}
 }
