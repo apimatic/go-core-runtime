@@ -45,35 +45,33 @@ func appendMap(param map[string][]string, result map[string][]string) {
 
 func prePareKey(keyPrefix string, key string) string {
 	var innerKey string
-	if key == "" {
+	if key == ""  { 		// plain text
 		innerKey = fmt.Sprintf("%v", keyPrefix)
-	} else {
+	} else if key == "[]" {	// unindexed
+		innerKey = fmt.Sprintf("%v[]", keyPrefix)
+	} else {				// indexed
 		innerKey = fmt.Sprintf("%v[%v]", keyPrefix, key)
 	}
 	return innerKey
 }
 
 func appendMapValue(key string, result map[string][]string, value string) {
-	result[key] = append(result[key], value)
+	if (len(result[key]) > 0){
+		formatter := ","
+		result[key][0] = fmt.Sprintf("%v%v%v", result[key][0], formatter, value)
+	} else {
+		result[key] = append(result[key], value)
+	}
+	//result[key] = append(result[key], value)
 }
 
-//
+
 // Return a pointer to the supplied struct via interface{}
-//
-func to_struct_ptr(obj interface{}) interface{} {
-
-	fmt.Println("obj is a", reflect.TypeOf(obj).Name())
-
+func toStructPtr(obj interface{}) interface{} {
 	// Create a new instance of the underlying type
 	vp := reflect.New(reflect.TypeOf(obj))
-
-	// Should be a *Cat and Cat respectively
-	fmt.Println("vp is", vp.Type(), " to a ", vp.Elem().Type())
-
 	vp.Elem().Set(reflect.ValueOf(obj))
-
 	// NOTE: `vp.Elem().Set(reflect.ValueOf(&obj).Elem())` does not work
-
 	// Return a `Cat` pointer to obj -- i.e. &obj.(*Cat)
 	return vp.Interface()
 }
@@ -95,43 +93,19 @@ func toMap3(keyPrefix string, param interface{}) (map[string][]string, error) {
 
 			var innerStruct any
 			if (innerValueKind == reflect.Struct) {
-				innerStruct = to_struct_ptr(innerValue.Interface())
+				innerStruct = toStructPtr(innerValue.Interface())
 			} else {
 				innerStruct =  innerValue.Interface()
 			}
-			//innerStruct := iter.Value().Interface()
-
 			innerFlatMap, err := toMap3(innerKey, innerStruct)
 			if err != nil {
 				return result, err
 			}
 			appendMap(innerFlatMap, result)
 		}
-
-		// iter := reflect.ValueOf(param).MapRange()
-		// for iter.Next() {
-		// 	key := fmt.Sprintf("%v", iter.Key())
-		// 	innerKey := prePareKey(keyPrefix, key)
-		// 	innerValue := iter.Value()
-		// 	innerValueKind := innerValue.Type().Kind()
-
-		// 	var innerStruct any
-		// 	if (innerValueKind == reflect.Struct) {
-		// 		innerStruct = innerValue.Interface()
-		// 	} else {
-		// 		innerStruct =  innerValue.Interface()
-		// 	}
-		// 	//innerStruct := iter.Value().Interface()
-
-		// 	innerFlatMap, err := toMap3(innerKey, innerStruct)
-		// 	if err != nil {
-		// 		return result, err
-		// 	}
-		// 	appendMap(innerFlatMap, result)
-		// }
 	case reflect.Struct, reflect.Ptr:
 		// Convert Struct and Pointer types into Map.
-		innerMap, err := structToMap(param)
+		innerMap, err := structToMap(toStructPtr(param))
 		if err != nil {
 			return result, err
 		}
@@ -140,7 +114,6 @@ func toMap3(keyPrefix string, param interface{}) (map[string][]string, error) {
 			return result, err
 		}
 		appendMap(innerFlatMap, result)
-
 	case reflect.Slice:
 		reflectValue := reflect.ValueOf(param)
 		for index := 0; index < reflectValue.Len(); index++ {
@@ -153,7 +126,7 @@ func toMap3(keyPrefix string, param interface{}) (map[string][]string, error) {
 			}
 			var indexStr string
 			switch innerStruct.(type) {
-			case string, float64:
+			case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128, string:
 				indexStr = ""
 			default:
 				indexStr = fmt.Sprintf("%v", index)
