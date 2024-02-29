@@ -44,7 +44,7 @@ func GetFile(fileUrl string) (FileWrapper, error) {
 func ReadBytes(input io.Reader) ([]byte, error) {
 	bytes, err := io.ReadAll(input)
 	if err != nil {
-		err = fmt.Errorf("Error reading file: %v", err)
+		err = fmt.Errorf("error reading file: %v", err)
 	}
 	return bytes, err
 }

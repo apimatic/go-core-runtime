@@ -551,7 +551,7 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 
 		body, err := io.ReadAll(result.Response.Body)
 		if err != nil {
-			return "", result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
+			return "", result.Response, fmt.Errorf("error reading Response body: %v", err.Error())
 		}
 
 		return string(body), result.Response, err
@@ -577,7 +577,7 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 
 		bytes, err := io.ReadAll(result.Response.Body)
 		if err != nil {
-			return nil, result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
+			return nil, result.Response, fmt.Errorf("error reading Response body: %v", err.Error())
 		}
 
 		return bytes, result.Response, err
