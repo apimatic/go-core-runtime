@@ -103,7 +103,7 @@ func formParamWriter(
 	return nil
 }
 
-func toMap(keyPrefix string, param interface{}, option ArraySerializationOption) (map[string][]string, error) {
+func toMap(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
 	if param == nil {
 		return map[string][]string{}, nil
 	}
@@ -173,7 +173,7 @@ func structToMap(data any) (map[string]any, error) {
 }
 
 // Return a pointer to the supplied struct via interface{}
-func toStructPtr(obj any) interface{} {
+func toStructPtr(obj any) any {
 	// Create a new instance of the underlying type
 	vp := reflect.New(reflect.TypeOf(obj))
 	vp.Elem().Set(reflect.ValueOf(obj))
