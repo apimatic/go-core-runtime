@@ -219,6 +219,15 @@ func TestAnyOfDiscriminatorSuccess(t *testing.T) {
 			expectedValue:      `{"id":2345,"roof":"BIG","type":null}`,
 			expectedType:       &Car{},
 		},
+		{
+			name:               `(Car,Bike) => Car3`,
+			types:              []any{&Car{}, &Bike{}},
+			discriminators:     []string{"4 wheeler", "2 wheeler"},
+			discriminatorField: "",
+			testValue:          `{"id":2345,"roof":"BIG"}`,
+			expectedValue:      `{"id":2345,"roof":"BIG","type":null}`,
+			expectedType:       &Car{},
+		},
 	}
 
 	assertSuccessDiscriminatorCases(t, tests, UnmarshallAnyOfWithDiscriminator)
