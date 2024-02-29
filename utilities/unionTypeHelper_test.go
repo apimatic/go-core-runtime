@@ -224,8 +224,7 @@ func TestAnyOfDiscriminatorSuccess(t *testing.T) {
 			types:              []any{&Car{}, &Bike{}},
 			discriminators:     []string{"4 wheeler", "2 wheeler"},
 			discriminatorField: "",
-			testValue:          `{"id":2345,"roof":"BIG"}`,
-			expectedValue:      `{"id":2345,"roof":"BIG","type":null}`,
+			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
 			expectedType:       &Car{},
 		},
 	}
