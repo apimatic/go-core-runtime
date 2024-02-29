@@ -46,19 +46,16 @@ func (option ArraySerializationOption) appendMap(result map[string][]string, par
 }
 
 func (option ArraySerializationOption) prePareKey(keyPrefix string, obj any) string {
-	var indexedKey string
-	if obj == nil {
-		indexedKey = ""
-	} else {
-		indexedKey = fmt.Sprintf("%v", obj)
-	}
-	switch option {
-	case Indexed:
-		return fmt.Sprintf("%v[%v]", keyPrefix, indexedKey)
-	case UnIndexed:
-		fmt.Sprintf("%v[]", keyPrefix)
-	case Plain:
+
+	if (obj == nil) {
+		switch option {
+		case UnIndexed:
+			return fmt.Sprintf("%v[]", keyPrefix)
+		case Plain:
+			return fmt.Sprintf("%v", keyPrefix)
+		}
 		return fmt.Sprintf("%v", keyPrefix)
 	}
+	indexedKey := fmt.Sprintf("%v", obj)
 	return fmt.Sprintf("%v[%v]", keyPrefix, indexedKey)
 }

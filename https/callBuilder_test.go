@@ -23,6 +23,7 @@ func GetCallBuilder(ctx context.Context, method, path string, auth map[string]Au
 		auth,
 		client,
 		NewRetryConfiguration(),
+		Indexed,
 	)
 
 	return callBuilder(ctx, method, path)
