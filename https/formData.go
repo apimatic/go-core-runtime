@@ -183,9 +183,9 @@ func toStructPtr(obj any) any {
 }
 
 func getDefaultValue(in any) string {
-	switch in.(type) {
+	switch in := in.(type) {
 	case string:
-		return in.(string)
+		return in
 	default:
 		bytes, err := json.Marshal(in)
 		if err == nil {
