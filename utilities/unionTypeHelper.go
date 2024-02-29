@@ -24,31 +24,31 @@ func (t *TypeHolder) tryUnmarshall(data []byte) bool {
 // UnmarshallAnyOf tries to unmarshal the data into each of the provided types as an AnyOf group
 // and return the converted value
 func UnmarshallAnyOf(data []byte, types []*TypeHolder) (any, error) {
-	return unmarshallUnionType(data, types, nil, false)
+	return unmarshallUnionType(data, types, "", false)
 }
 
 // UnmarshallAnyOfWithDiscriminator tries to unmarshal the data into each of the provided types
 // as an AnyOf group with discriminators and return the converted value
-func UnmarshallAnyOfWithDiscriminator(data []byte, types []*TypeHolder, discValue string) (any, error) {
-	return unmarshallUnionType(data, types, &discValue, false)
+func UnmarshallAnyOfWithDiscriminator(data []byte, types []*TypeHolder, discField string) (any, error) {
+	return unmarshallUnionType(data, types, discField, false)
 }
 
 // UnmarshallOneOf tries to unmarshal the data into each of the provided types as a OneOf group
 // and return the converted value
 func UnmarshallOneOf(data []byte, types []*TypeHolder) (any, error) {
-	return unmarshallUnionType(data, types, nil, true)
+	return unmarshallUnionType(data, types, "", true)
 }
 
 // UnmarshallOneOfWithDiscriminator tries to unmarshal the data into each of the provided types
 // as a OneOf group with discriminators and return the converted value
-func UnmarshallOneOfWithDiscriminator(data []byte, types []*TypeHolder, discValue string) (any, error) {
-	return unmarshallUnionType(data, types, &discValue, true)
+func UnmarshallOneOfWithDiscriminator(data []byte, types []*TypeHolder, discField string) (any, error) {
+	return unmarshallUnionType(data, types, discField, true)
 }
 
 // unmarshallUnionType tries to unmarshal the byte array into each of the provided types
 // and return the converted value
-func unmarshallUnionType(data []byte, types []*TypeHolder, discValue *string, isOneOf bool) (any, error) {
-	if t := selectDiscriminatedTypeHolder(types, discValue); t != nil {
+func unmarshallUnionType(data []byte, types []*TypeHolder, discField string, isOneOf bool) (any, error) {
+	if t := selectDiscriminatedTypeHolder(data, types, discField); t != nil {
 		if t.tryUnmarshall(data) {
 			return t.getValue(), nil
 		}
@@ -72,12 +72,24 @@ func unmarshallUnionType(data []byte, types []*TypeHolder, discValue *string, is
 	return nil, errors.New("failed to unmarshal into any of the provided types")
 }
 
-func selectDiscriminatedTypeHolder(types []*TypeHolder, discValue *string) *TypeHolder {
-	if discValue == nil {
+// Select a specific typeHolder from given types based on available discriminator Field in the data
+func selectDiscriminatedTypeHolder(data []byte, types []*TypeHolder, discField string) *TypeHolder {
+	if discField == "" {
+		return nil
+	}
+	dict := map[string]any{}
+	err := json.Unmarshal(data, &dict)
+
+	if err != nil {
+		return nil
+	}
+	discValue, hasValue := dict[discField]
+
+	if !hasValue {
 		return nil
 	}
 	for _, t := range types {
-		if t.Discriminator == *discValue {
+		if t.Discriminator == discValue {
 			return t
 		}
 	}
