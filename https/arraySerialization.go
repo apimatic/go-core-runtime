@@ -2,7 +2,7 @@ package https
 
 import "fmt"
 
-// RequestRetryOption represents the type for request retry options.
+// ArraySerializationOption represents the type for request array serialization options.
 type ArraySerializationOption int
 
 // Constants for different request retry options.
@@ -28,21 +28,18 @@ func (option ArraySerializationOption) getSeparator() rune {
 	}
 }
 
-
 func (option ArraySerializationOption) joinKey(keyPrefix string, index any) string {
-	if (index == nil) {
+	if index == nil {
 		switch option {
 		case UnIndexed:
 			return fmt.Sprintf("%v[]", keyPrefix)
-		case Plain:
+		default:
 			return fmt.Sprintf("%v", keyPrefix)
 		}
-		return fmt.Sprintf("%v", keyPrefix)
 	}
 	indexedKey := fmt.Sprintf("%v", index)
 	return fmt.Sprintf("%v[%v]", keyPrefix, indexedKey)
 }
-
 
 func (option ArraySerializationOption) appendMap(result map[string][]string, param map[string][]string) {
 	for k, v := range param {
@@ -60,5 +57,3 @@ func (option ArraySerializationOption) append(result map[string][]string, key st
 		result[key] = append(result[key], value)
 	}
 }
-
-

@@ -73,10 +73,10 @@ func TestDefaultNullableTimeToStringMap(t *testing.T) {
 	result := NullableTimeToStringMap(input, DEFAULT_DATE)
 
 	expected := make(map[string]*string)
-	expectedtime1 := "2022-08-20"
-	expectedtime2 := "2021-08-20"
-	expected["time1"] = &expectedtime1
-	expected["time2"] = &expectedtime2
+	expectedTime1 := "2022-08-20"
+	expectedTime2 := "2021-08-20"
+	expected["time1"] = &expectedTime1
+	expected["time2"] = &expectedTime2
 	expected["time3"] = nil
 
 	if !reflect.DeepEqual(result, expected) {

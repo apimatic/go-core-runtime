@@ -111,7 +111,7 @@ func IsSameAsFile(test *testing.T, expectedFileURL string, responseFileBytes []b
 // IsSameInputBytes checks if the receivedBytes are equal to the expectedBytes.
 func IsSameInputBytes(test *testing.T, expectedBytes []byte, receivedBytes []byte) {
 	if !reflect.DeepEqual(expectedBytes, receivedBytes) {
-		test.Error("Recieved bytes donot match the bytes expected")
+		test.Error("Received bytes do not match the bytes expected")
 	}
 }
 
