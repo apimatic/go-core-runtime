@@ -41,10 +41,10 @@ func TestStructToMapMarshallingError(t *testing.T) {
 
 func TestToMapNilMap(t *testing.T) {
 	param := FormParam{"param", "value", nil}
-	result, _ := param.toMap()
+	result, _ := toMap(param.Key, param.Value, Indexed)
 
-	expected := map[string]string{
-		"param": "value",
+	expected := map[string][]string{
+		"param": {"value"},
 	}
 
 	if !reflect.DeepEqual(result, expected) {
@@ -54,9 +54,9 @@ func TestToMapNilMap(t *testing.T) {
 
 func TestFormEncodeMapNilValue(t *testing.T) {
 	param := FormParam{"param", nil, nil}
-	result, _ := param.toMap()
+	result, _ := toMap(param.Key, param.Value, Indexed)
 
-	expected := make(map[string]string)
+	expected := make(map[string][]string)
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -65,7 +65,7 @@ func TestFormEncodeMapNilValue(t *testing.T) {
 
 func TestFormEncodeMapStructType(t *testing.T) {
 	param := FormParam{"param2", GetStruct(), nil}
-	result, _ := param.toMap()
+	result, _ := toMap(param.Key, param.Value, Indexed)
 
 	expected := FormParams{
 		{"param2[Name]", "Bisma", nil},
@@ -80,7 +80,7 @@ func TestFormEncodeMapStructType(t *testing.T) {
 func TestPrepareFormFieldsNil(t *testing.T) {
 	params := FormParams{{"param", "value", nil}}
 	result := url.Values{}
-	_ = params.prepareFormFields(result)
+	_ = params.prepareFormFields(result, Indexed)
 
 	expected := url.Values{}
 	expected.Add("param", "value")
@@ -95,7 +95,7 @@ func TestPrepareFormFields(t *testing.T) {
 	result.Add("param", "val")
 	result.Add("param", "val1")
 	params := FormParams{{"param2", "value", nil}}
-	_ = params.prepareFormFields(result)
+	_ = params.prepareFormFields(result, Indexed)
 
 	expected := url.Values{}
 	expected.Add("param", "val")
@@ -112,7 +112,7 @@ func TestPrepareFormFieldsBoolSlice(t *testing.T) {
 	result.Add("param", "val")
 	result.Add("param", "val1")
 	params := FormParams{{"param2", []bool{false, true}, nil}}
-	_ = params.prepareFormFields(result)
+	_ = params.prepareFormFields(result, Indexed)
 
 	expected := result
 	expected.Add("param2", "false")
@@ -127,7 +127,7 @@ func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 	floatV := math.Inf(1)
 	params := FormParams{{"param", &floatV, nil}}
 	result := url.Values{}
-	err := params.prepareFormFields(result)
+	err := params.prepareFormFields(result, Indexed)
 	if err == nil {
 		t.Errorf("Failed:\nExpected: nil \nGot: %v", result)
 	}
@@ -137,7 +137,7 @@ func TestPrepareMultipartFieldsString(t *testing.T) {
 	header := http.Header{}
 	header.Add("Content-Type", TEXT_CONTENT_TYPE)
 	params := FormParams{{"param", "value", header}}
-	bytes, str, _ := params.prepareMultipartFields()
+	bytes, str, _ := params.prepareMultipartFields(Indexed)
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -148,7 +148,7 @@ func TestPrepareMultipartFields(t *testing.T) {
 	header := http.Header{}
 	header.Add("Content-Type", TEXT_CONTENT_TYPE)
 	params := FormParams{{"param", 40, header}}
-	bytes, str, _ := params.prepareMultipartFields()
+	bytes, str, _ := params.prepareMultipartFields(Indexed)
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -158,7 +158,7 @@ func TestPrepareMultipartFields(t *testing.T) {
 func TestPrepareMultipartFieldsWithPointer(t *testing.T) {
 	floatV := math.Inf(0)
 	params := FormParams{{"param", &floatV, nil}}
-	bytes, str, _ := params.prepareMultipartFields()
+	bytes, str, _ := params.prepareMultipartFields(Indexed)
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -173,7 +173,7 @@ func TestPrepareMultipartFieldsWithFile(t *testing.T) {
 	header := http.Header{}
 	header.Add("Content-Type", "image/png")
 	params := FormParams{{"param", file, header}}
-	bytes, _, _ := params.prepareMultipartFields()
+	bytes, _, _ := params.prepareMultipartFields(Indexed)
 
 	if !strings.Contains(bytes.String(), `filename=googles-new-logo`) {
 		t.Errorf("Failed:\nGot: %v", bytes.String())

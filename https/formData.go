@@ -104,6 +104,10 @@ func formParamWriter(
 }
 
 func toMap(keyPrefix string, param interface{}, option ArraySerializationOption) (map[string][]string, error) {
+	if param == nil {
+		return map[string][]string{}, nil
+	}
+
 	valueKind := reflect.TypeOf(param).Kind()
 	switch valueKind {
 	case reflect.Struct, reflect.Ptr:

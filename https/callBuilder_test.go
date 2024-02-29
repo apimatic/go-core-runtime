@@ -20,6 +20,7 @@ func GetCallBuilder(ctx context.Context, method, path string, auth Authenticator
 		auth,
 		client,
 		NewRetryConfiguration(),
+		Indexed,
 	)
 
 	return callBuilder(ctx, method, path)
@@ -349,7 +350,7 @@ func TestRequestRetryOption(t *testing.T) {
 	}
 }
 
-func TestContextPropagationInRequests(t *testing.T) {	
+func TestContextPropagationInRequests(t *testing.T) {
 	key := "Test Key"
 	ctx = context.WithValue(ctx, &key, "Test Value")
 	request := GetCallBuilder(ctx, "GET", "", nil)
