@@ -55,7 +55,6 @@ func (fp *FormParams) prepareFormFields(form url.Values, option ArraySerializati
 func (fp *FormParams) prepareMultipartFields(option ArraySerializationOption) (bytes.Buffer, string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-
 	for _, field := range *fp {
 		switch fieldValue := field.Value.(type) {
 		case FileWrapper:
@@ -87,12 +86,9 @@ func formParamWriter(
 	fpHeaders http.Header,
 	mediaParam map[string]string,
 	bytes []byte) error {
-
 	mimeHeader := make(textproto.MIMEHeader)
-
 	contentDisp := mime.FormatMediaType("form-data", mediaParam)
 	mimeHeader.Set("Content-Disposition", contentDisp)
-
 	if contentType := fpHeaders.Get("Content-Type"); contentType != "" {
 		mimeHeader.Set("Content-Type", contentType)
 	}
