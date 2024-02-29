@@ -128,7 +128,7 @@ func toMap(keyPrefix string, param interface{}, option ArraySerializationOption)
 		iter := reflect.ValueOf(param).MapRange()
 		result := make(map[string][]string)
 		for iter.Next() {
-			innerKey := ArraySerializationOption(Indexed).prePareKey(keyPrefix, iter.Key())
+			innerKey := ArraySerializationOption(Indexed).joinKey(keyPrefix, iter.Key())
 			innerValue := iter.Value().Interface()
 			innerFlatMap, err := toMap(innerKey, innerValue, option)
 			if err != nil {
@@ -149,7 +149,7 @@ func toMap(keyPrefix string, param interface{}, option ArraySerializationOption)
 			default:
 				indexStr = fmt.Sprintf("%v", i)
 			}
-			innerKey := option.prePareKey(keyPrefix, indexStr)
+			innerKey := option.joinKey(keyPrefix, indexStr)
 			innerFlatMap, err := toMap(innerKey, innerStruct, option)
 			if err != nil {
 				return result, err
