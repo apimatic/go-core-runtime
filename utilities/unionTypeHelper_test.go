@@ -36,7 +36,7 @@ func (u *UnionTypeCase) Assert(t *testing.T, result any, err error, isSuccess bo
 	assert.Equal(t, u.expectedValue, string(marshalled))
 }
 
-func TestOneOf(t *testing.T) {
+func TestCommonOAFCases(t *testing.T) {
 	var tests = []UnionTypeCase{
 		{
 			name:         `(string,int) => string1`,
@@ -68,6 +68,14 @@ func TestOneOf(t *testing.T) {
 			testValue:    `0`,
 			expectedType: new(int),
 		},
+	}
+
+	assertCases(t, tests, UnmarshallOneOf)
+	assertCases(t, tests, UnmarshallAnyOf)
+}
+
+func TestOneOf(t *testing.T) {
+	var tests = []UnionTypeCase{
 		{
 			name:         `(float,int) => float`,
 			types:        []any{new(float32), new(int)},
@@ -196,36 +204,6 @@ func TestOneOfDiscriminator(t *testing.T) {
 
 func TestAnyOf(t *testing.T) {
 	var tests = []UnionTypeCase{
-		{
-			name:         `(string,int) => string1`,
-			types:        []any{new(string), new(int)},
-			testValue:    `"some string"`,
-			expectedType: new(string),
-		},
-		{
-			name:         `(string,int) => string2`,
-			types:        []any{new(string), new(int)},
-			testValue:    `"123"`,
-			expectedType: new(string),
-		},
-		{
-			name:         `(string,int) => int`,
-			types:        []any{new(string), new(int)},
-			testValue:    `123`,
-			expectedType: new(int),
-		},
-		{
-			name:         `(bool,int) => bool`,
-			types:        []any{new(bool), new(int)},
-			testValue:    `true`,
-			expectedType: new(bool),
-		},
-		{
-			name:         `(bool,int) => int`,
-			types:        []any{new(bool), new(int)},
-			testValue:    `2345`,
-			expectedType: new(int),
-		},
 		{
 			name:         `(float,int) => float`,
 			types:        []any{new(float32), new(int)},
