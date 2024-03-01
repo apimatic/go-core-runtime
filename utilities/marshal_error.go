@@ -17,7 +17,7 @@ func NewMarshalError(structName string, err error) MarshalError {
 }
 
 // Error implements the Error method for the error interface.
-// It returns a string representation of the ApiError instance when used in an error context.
+// It returns a string representation of the MarshalError instance when used in an error context.
 func (a MarshalError) Error() string {
 	indent := "\n\t=>"
 	switch a.innerError.(type) {
