@@ -30,10 +30,10 @@ func (u *UnionTypeCase) Assert(t *testing.T, result any, err error, isSuccess bo
 	assert.True(t, isSuccess)
 	assert.IsType(t, u.expectedType, result)
 	marshalled, _ := json.Marshal(result)
-	if u.expectedValue != "" {
-		u.testValue = u.expectedValue
+	if u.expectedValue == "" {
+		u.expectedValue = u.testValue
 	}
-	assert.Equal(t, u.testValue, string(marshalled))
+	assert.Equal(t, u.expectedValue, string(marshalled))
 }
 
 func TestOneOf(t *testing.T) {
@@ -314,29 +314,29 @@ func TestAnyOfDiscriminator(t *testing.T) {
 	assertDiscriminatorCases(t, tests, UnmarshallAnyOfWithDiscriminator)
 }
 
-func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, []*TypeHolder) (any, error)) {
+func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, ...*TypeHolder) (any, error)) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var isSuccess bool
 			var typeHolders []*TypeHolder
 			for _, tt := range test.types {
-				typeHolders = append(typeHolders, &TypeHolder{Value: tt, Flag: &isSuccess})
+				typeHolders = append(typeHolders, NewTypeHolder(tt, &isSuccess))
 			}
-			result, err := caller([]byte(test.testValue), typeHolders)
+			result, err := caller([]byte(test.testValue), typeHolders...)
 			test.Assert(t, result, err, isSuccess)
 		})
 	}
 }
 
-func assertDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, []*TypeHolder, string) (any, error)) {
+func assertDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, string, ...*TypeHolder) (any, error)) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var isSuccess bool
 			var typeHolders []*TypeHolder
 			for i, tt := range test.types {
-				typeHolders = append(typeHolders, &TypeHolder{Value: tt, Flag: &isSuccess, Discriminator: test.discriminators[i]})
+				typeHolders = append(typeHolders, NewTypeHolderDiscriminator(tt, &isSuccess, test.discriminators[i]))
 			}
-			result, err := caller([]byte(test.testValue), typeHolders, test.discriminatorField)
+			result, err := caller([]byte(test.testValue), test.discriminatorField, typeHolders...)
 			test.Assert(t, result, err, isSuccess)
 		})
 	}

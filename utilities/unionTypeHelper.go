@@ -9,44 +9,59 @@ import (
 )
 
 type TypeHolder struct {
-	Value         any
-	Flag          *bool
-	Discriminator string
-	Error         error
+	value         any
+	flag          *bool
+	discriminator string
+	typeError     error
+}
+
+func NewTypeHolder(val any, flag *bool) *TypeHolder {
+	return &TypeHolder{
+		value: val,
+		flag:  flag,
+	}
+}
+
+func NewTypeHolderDiscriminator(val any, flag *bool, discriminator string) *TypeHolder {
+	return &TypeHolder{
+		value:         val,
+		flag:          flag,
+		discriminator: discriminator,
+	}
 }
 
 func (t *TypeHolder) selectValue() any {
-	*t.Flag = true
-	return t.Value
+	*t.flag = true
+	return t.value
 }
 
 func (t *TypeHolder) tryUnmarshall(data []byte) bool {
-	err := json.Unmarshal(data, t.Value)
-	t.Error = err
+	err := json.Unmarshal(data, t.value)
+	t.typeError = err
 	return err == nil
 }
 
 // UnmarshallAnyOf tries to unmarshal the data into each of the provided types as an AnyOf group
 // and return the converted value
-func UnmarshallAnyOf(data []byte, types []*TypeHolder) (any, error) {
+func UnmarshallAnyOf(data []byte, types ...*TypeHolder) (any, error) {
 	return unmarshallUnionType(data, types, false)
 }
 
 // UnmarshallAnyOfWithDiscriminator tries to unmarshal the data into each of the provided types
 // as an AnyOf group with discriminators and return the converted value
-func UnmarshallAnyOfWithDiscriminator(data []byte, types []*TypeHolder, discField string) (any, error) {
+func UnmarshallAnyOfWithDiscriminator(data []byte, discField string, types ...*TypeHolder) (any, error) {
 	return unmarshallUnionType(data, filterTypeHolders(data, types, discField), false)
 }
 
 // UnmarshallOneOf tries to unmarshal the data into each of the provided types as a OneOf group
 // and return the converted value
-func UnmarshallOneOf(data []byte, types []*TypeHolder) (any, error) {
+func UnmarshallOneOf(data []byte, types ...*TypeHolder) (any, error) {
 	return unmarshallUnionType(data, types, true)
 }
 
 // UnmarshallOneOfWithDiscriminator tries to unmarshal the data into each of the provided types
 // as a OneOf group with discriminators and return the converted value
-func UnmarshallOneOfWithDiscriminator(data []byte, types []*TypeHolder, discField string) (any, error) {
+func UnmarshallOneOfWithDiscriminator(data []byte, discField string, types ...*TypeHolder) (any, error) {
 	return unmarshallUnionType(data, filterTypeHolders(data, types, discField), true)
 }
 
@@ -68,7 +83,7 @@ func filterTypeHolders(data []byte, types []*TypeHolder, discField string) []*Ty
 		return types
 	}
 	for _, t := range types {
-		if t.Discriminator != "" && t.Discriminator == discValue {
+		if t.discriminator != "" && t.discriminator == discValue {
 			return []*TypeHolder{t}
 		}
 	}
@@ -96,8 +111,8 @@ func unmarshallUnionType(data []byte, types []*TypeHolder, isOneOf bool) (any, e
 }
 
 func moreThenOneTypeMatchesError(type1 *TypeHolder, type2 *TypeHolder, data []byte) error {
-	type1Name := reflect.TypeOf(type1.Value).String()
-	type2Name := reflect.TypeOf(type2.Value).String()
+	type1Name := reflect.TypeOf(type1.value).String()
+	type2Name := reflect.TypeOf(type2.value).String()
 	return errors.New("There are more than one matching types i.e. {" + type1Name + " and " + type2Name + "} on: " + string(data))
 }
 
@@ -106,8 +121,8 @@ func noneTypeMatchesError(types []*TypeHolder, data []byte) error {
 	reasons := make([]string, len(types))
 
 	for i, t := range types {
-		names[i] = reflect.TypeOf(t.Value).String()
-		reasons[i] = "\n\nError " + fmt.Sprint(i+1) + ":\n  => " + t.Error.Error()
+		names[i] = reflect.TypeOf(t.value).String()
+		reasons[i] = "\n\nError " + fmt.Sprint(i+1) + ":\n  => " + t.typeError.Error()
 	}
 
 	return errors.New("We could not match any acceptable type from {" + strings.Join(names, ", ") + "} on: " + string(data) + strings.Join(reasons, ""))
