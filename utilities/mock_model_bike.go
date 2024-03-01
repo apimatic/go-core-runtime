@@ -19,7 +19,7 @@ func (b *Bike) UnmarshalJSON(input []byte) error {
 	var temp bike
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return NewMarshallerError("Bike", err)
+		return NewMarshalError("Bike", err)
 	}
 	err = temp.validate(input)
 	if err != nil {
@@ -46,5 +46,5 @@ func (b *bike) validate(input []byte) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return NewMarshallerError("Bike", errors.New(strings.Join(errs, "\n\t=> ")))
+	return NewMarshalError("Bike", errors.New(strings.Join(errs, "\n\t=> ")))
 }

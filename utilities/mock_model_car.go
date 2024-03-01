@@ -16,7 +16,7 @@ func (c *Car) UnmarshalJSON(input []byte) error {
 	var temp car
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return NewMarshallerError("Car", err)
+		return NewMarshalError("Car", err)
 	}
 	err = temp.validate(input)
 	if err != nil {
@@ -42,5 +42,5 @@ func (c *car) validate(input []byte) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return NewMarshallerError("Car", errors.New(strings.Join(errs, "\n\t=> ")))
+	return NewMarshalError("Car", errors.New(strings.Join(errs, "\n\t=> ")))
 }
