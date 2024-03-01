@@ -15,7 +15,7 @@ func (c *Atom) UnmarshalJSON(input []byte) error {
 	var temp atom
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return err
+		return NewMarshallerError("Atom", err)
 	}
 	err = temp.validate(input)
 	if err != nil {
@@ -42,5 +42,5 @@ func (a *atom) validate(input []byte) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return errors.New(strings.Join(errs, "\n\t=> "))
+	return NewMarshallerError("Atom", errors.New(strings.Join(errs, "\n\t=> ")))
 }

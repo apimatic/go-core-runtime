@@ -4,19 +4,22 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+
+	"github.com/apimatic/go-core-runtime/types"
 )
 
 type Bike struct {
-	Id   int     `json:"id"`
-	Roof *string `json:"roof"`
-	Type *string `json:"type"`
+	Id       int                  `json:"id"`
+	Roof     *string              `json:"roof"`
+	AirLevel types.Optional[Atom] `json:"air_level"`
+	Type     *string              `json:"type"`
 }
 
 func (b *Bike) UnmarshalJSON(input []byte) error {
 	var temp bike
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return err
+		return NewMarshallerError("Bike", err)
 	}
 	err = temp.validate(input)
 	if err != nil {
@@ -29,9 +32,10 @@ func (b *Bike) UnmarshalJSON(input []byte) error {
 }
 
 type bike struct {
-	Id   *int    `json:"id"`
-	Roof *string `json:"roof"`
-	Type *string `json:"type"`
+	Id       *int                 `json:"id"`
+	Roof     *string              `json:"roof"`
+	AirLevel types.Optional[Atom] `json:"air_level"`
+	Type     *string              `json:"type"`
 }
 
 func (b *bike) validate(input []byte) error {
@@ -42,5 +46,5 @@ func (b *bike) validate(input []byte) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return errors.New(strings.Join(errs, "\n\t=> "))
+	return NewMarshallerError("Bike", errors.New(strings.Join(errs, "\n\t=> ")))
 }

@@ -8,16 +8,24 @@ import (
 )
 
 type UnionTypeCase struct {
-	name               string
-	types              []any
-	discriminators     []string
-	discriminatorField string
-	testValue          string
-	expectedValue      string
-	expectedType       any
+	name                 string
+	types                []any
+	discriminators       []string
+	discriminatorField   string
+	testValue            string
+	expectedValue        string
+	expectedType         any
+	shouldFail           bool
+	expectedErrorMessage string
 }
 
 func (u *UnionTypeCase) Assert(t *testing.T, result any, err error, isSuccess bool) {
+	if u.shouldFail {
+		assert.Nil(t, result)
+		assert.False(t, isSuccess)
+		assert.EqualError(t, err, u.expectedErrorMessage)
+		return
+	}
 	assert.Nil(t, err)
 	assert.True(t, isSuccess)
 	assert.IsType(t, u.expectedType, result)
@@ -28,7 +36,7 @@ func (u *UnionTypeCase) Assert(t *testing.T, result any, err error, isSuccess bo
 	assert.Equal(t, u.testValue, string(marshalled))
 }
 
-func TestOneOfSuccess(t *testing.T) {
+func TestOneOf(t *testing.T) {
 	var tests = []UnionTypeCase{
 		{
 			name:         `(string,int) => string1`,
@@ -102,12 +110,59 @@ func TestOneOfSuccess(t *testing.T) {
 			testValue:    `{"id":2345,"roof":"BIG","type":null}`,
 			expectedType: &Car{},
 		},
+		{
+			name:         `(Truck,[]Car) => []Car`,
+			types:        []any{&Truck{}, &[]Car{}},
+			testValue:    `[{"id":2345,"roof":"BIG","type":null}]`,
+			expectedType: &[]Car{},
+		},
+		{
+			name:                 `(float,int) => FAIL`,
+			types:                []any{new(float32), new(int)},
+			testValue:            `2345`,
+			shouldFail:           true,
+			expectedErrorMessage: "There are more than one matching types i.e. {*float32 and *int} on: 2345",
+		},
+		{
+			name:       `(float,int) => FAIL2`,
+			types:      []any{new(float32), new(int)},
+			testValue:  `"2345"`,
+			shouldFail: true,
+			expectedErrorMessage: "We could not match any acceptable type from {*float32, *int} on: \"2345\"\n\n" +
+				"Error 1:\n  => json: cannot unmarshal string into Go value of type float32\n\n" +
+				"Error 2:\n  => json: cannot unmarshal string into Go value of type int",
+		},
+		{
+			name:                 `(Car,Truck) => FAIL`,
+			types:                []any{&Car{}, &Truck{}},
+			testValue:            `{"id":2345,"weight":"heavy","roof":"BIG"}`,
+			shouldFail:           true,
+			expectedErrorMessage: "There are more than one matching types i.e. {*utilities.Car and *utilities.Truck} on: {\"id\":2345,\"weight\":\"heavy\",\"roof\":\"BIG\"}",
+		},
+		{
+			name:       `(Car,Truck) => FAIL`,
+			types:      []any{&Car{}, &Truck{}},
+			testValue:  `{"roof":"BIG"}`,
+			shouldFail: true,
+			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Car, *utilities.Truck} on: {\"roof\":\"BIG\"}\n\n" +
+				"Error 1:\n  => Car \n\t=> required field `Id` is missing\n\n" +
+				"Error 2:\n  => Truck \n\t=> required field `Id` is missing\n\t=> required field `Weight` is missing",
+		},
+		{
+			name:       `(Car,Truck) => FAIL2`,
+			types:      []any{&Car{}, &Truck{}},
+			testValue:  `"car or truck"`,
+			shouldFail: true,
+			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Car, *utilities.Truck} on: \"car or truck\"\n\n" +
+				"Error 1:\n  => Car \n\t=> json: cannot unmarshal string into Go value of type utilities.car\n\n" +
+				"Error 2:\n  => Truck \n\t=> json: cannot unmarshal string into Go value of type utilities.truck",
+		},
 	}
 
-	assertSuccessCases(t, tests, UnmarshallOneOf)
+	assertCases(t, tests, UnmarshallOneOf)
 }
 
-func TestOneOfDiscriminatorSuccess(t *testing.T) {
+func TestOneOfDiscriminator(t *testing.T) {
 	var tests = []UnionTypeCase{
 		{
 			name:               `(Car,Bike) => Car`,
@@ -123,6 +178,7 @@ func TestOneOfDiscriminatorSuccess(t *testing.T) {
 			discriminators:     []string{"4 wheeler", "2 wheeler"},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
+			expectedValue:      `{"id":2345,"roof":"BIG","air_level":{},"type":"2 wheeler"}`,
 			expectedType:       &Bike{},
 		},
 		{
@@ -135,10 +191,10 @@ func TestOneOfDiscriminatorSuccess(t *testing.T) {
 		},
 	}
 
-	assertSuccessDiscriminatorCases(t, tests, UnmarshallOneOfWithDiscriminator)
+	assertDiscriminatorCases(t, tests, UnmarshallOneOfWithDiscriminator)
 }
 
-func TestAnyOfSuccess(t *testing.T) {
+func TestAnyOf(t *testing.T) {
 	var tests = []UnionTypeCase{
 		{
 			name:         `(string,int) => string1`,
@@ -195,12 +251,21 @@ func TestAnyOfSuccess(t *testing.T) {
 			expectedValue: `{"id":2345,"roof":"BIG","type":null}`,
 			expectedType:  &Car{},
 		},
+		{
+			name:       `(Bike,Atom) => FAIL`,
+			types:      []any{&Bike{}, &Atom{}},
+			testValue:  `{"id":2345,"roof":"BIG","air_level":{},"type":"2 wheeler","number_of_protons":1234}`,
+			shouldFail: true,
+			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Bike, *utilities.Atom} on: {\"id\":2345,\"roof\":\"BIG\",\"air_level\":{},\"type\":\"2 wheeler\",\"number_of_protons\":1234}\n\n" +
+				"Error 1:\n  => Bike . Atom \n\t=> required field `NumberOfElectrons` is missing\n\t=> required field `NumberOfProtons` is missing\n\n" +
+				"Error 2:\n  => Atom \n\t=> required field `NumberOfElectrons` is missing",
+		},
 	}
 
-	assertSuccessCases(t, tests, UnmarshallAnyOf)
+	assertCases(t, tests, UnmarshallAnyOf)
 }
 
-func TestAnyOfDiscriminatorSuccess(t *testing.T) {
+func TestAnyOfDiscriminator(t *testing.T) {
 	var tests = []UnionTypeCase{
 		{
 			name:               `(Car,Bike) => Car`,
@@ -227,12 +292,29 @@ func TestAnyOfDiscriminatorSuccess(t *testing.T) {
 			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
 			expectedType:       &Car{},
 		},
+		{
+			name:               `(Car,Bike) => Car4`,
+			types:              []any{&Car{}, &Bike{}},
+			discriminators:     []string{"4 wheeler", ""},
+			discriminatorField: "type",
+			testValue:          `{"id":2345,"roof":"BIG","type":""}`,
+			expectedType:       &Car{},
+		},
+		{
+			name:               `(Car,Bike) => Bike`,
+			types:              []any{&Car{}, &Bike{}},
+			discriminators:     []string{"", "2 wheeler"},
+			discriminatorField: "type",
+			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
+			expectedValue:      `{"id":2345,"roof":"BIG","air_level":{},"type":"2 wheeler"}`,
+			expectedType:       &Bike{},
+		},
 	}
 
-	assertSuccessDiscriminatorCases(t, tests, UnmarshallAnyOfWithDiscriminator)
+	assertDiscriminatorCases(t, tests, UnmarshallAnyOfWithDiscriminator)
 }
 
-func assertSuccessCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, []*TypeHolder) (any, error)) {
+func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, []*TypeHolder) (any, error)) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var isSuccess bool
@@ -246,7 +328,7 @@ func assertSuccessCases(t *testing.T, tests []UnionTypeCase, caller func([]byte,
 	}
 }
 
-func assertSuccessDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, []*TypeHolder, string) (any, error)) {
+func assertDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, []*TypeHolder, string) (any, error)) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var isSuccess bool
