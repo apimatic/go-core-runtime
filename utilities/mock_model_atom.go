@@ -11,7 +11,7 @@ type Atom struct {
 	NumberOfProtons   int `json:"number_of_protons"`
 }
 
-func (c *Atom) UnmarshalJSON(input []byte) error {
+func (a *Atom) UnmarshalJSON(input []byte) error {
 	var temp atom
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
@@ -21,8 +21,8 @@ func (c *Atom) UnmarshalJSON(input []byte) error {
 	if err != nil {
 		return err
 	}
-	c.NumberOfElectrons = *temp.NumberOfElectrons
-	c.NumberOfProtons = *temp.NumberOfProtons
+	a.NumberOfElectrons = *temp.NumberOfElectrons
+	a.NumberOfProtons = *temp.NumberOfProtons
 	return nil
 }
 

@@ -10,28 +10,28 @@ import (
 
 type TypeHolder struct {
 	value         any
-	flag          *bool
+	isSelected    *bool
 	discriminator string
 	typeError     error
 }
 
-func NewTypeHolder(val any, flag *bool) *TypeHolder {
+func NewTypeHolder(val any, isSelected *bool) *TypeHolder {
 	return &TypeHolder{
-		value: val,
-		flag:  flag,
+		value:      val,
+		isSelected: isSelected,
 	}
 }
 
 func NewTypeHolderDiscriminator(val any, flag *bool, discriminator string) *TypeHolder {
 	return &TypeHolder{
 		value:         val,
-		flag:          flag,
+		isSelected:    flag,
 		discriminator: discriminator,
 	}
 }
 
 func (t *TypeHolder) selectValue() any {
-	*t.flag = true
+	*t.isSelected = true
 	return t.value
 }
 
@@ -98,11 +98,11 @@ func extractDiscriminatorValue(data []byte, discField string) (any, bool) {
 
 // unmarshallUnionType tries to unmarshal the byte array into each of the provided types
 // and return the converted value
-func unmarshallUnionType(data []byte, types []*TypeHolder, isOneOf bool) (any, error) {
+func unmarshallUnionType(data []byte, types []*TypeHolder, matchExactlyOneType bool) (any, error) {
 	var selected *TypeHolder
 	for _, t := range types {
 		if t.tryUnmarshall(data) {
-			if !isOneOf {
+			if !matchExactlyOneType {
 				return t.selectValue(), nil
 			} else if selected != nil {
 				return nil, moreThenOneTypeMatchesError(selected, t, data)
@@ -110,7 +110,7 @@ func unmarshallUnionType(data []byte, types []*TypeHolder, isOneOf bool) (any, e
 			selected = t
 		}
 	}
-	if isOneOf && selected != nil {
+	if matchExactlyOneType && selected != nil {
 		return selected.selectValue(), nil
 	}
 	return nil, noneTypeMatchesError(types, data)

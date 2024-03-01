@@ -19,15 +19,15 @@ type UnionTypeCase struct {
 	expectedErrorMessage string
 }
 
-func (u *UnionTypeCase) Assert(t *testing.T, result any, err error, isSuccess bool) {
+func (u *UnionTypeCase) Assert(t *testing.T, result any, err error, anyTypeHolderSelected bool) {
 	if u.shouldFail {
 		assert.Nil(t, result)
-		assert.False(t, isSuccess)
+		assert.False(t, anyTypeHolderSelected)
 		assert.EqualError(t, err, u.expectedErrorMessage)
 		return
 	}
 	assert.Nil(t, err)
-	assert.True(t, isSuccess)
+	assert.True(t, anyTypeHolderSelected)
 	assert.IsType(t, u.expectedType, result)
 	marshalled, _ := json.Marshal(result)
 	if u.expectedValue == "" {
@@ -36,7 +36,7 @@ func (u *UnionTypeCase) Assert(t *testing.T, result any, err error, isSuccess bo
 	assert.Equal(t, u.expectedValue, string(marshalled))
 }
 
-func TestCommonOAFCases(t *testing.T) {
+func TestCommonOneOfAndAnyOfCases(t *testing.T) {
 	var tests = []UnionTypeCase{
 		{
 			name:         `(string,int) => string1`,
@@ -295,13 +295,13 @@ func TestAnyOfDiscriminator(t *testing.T) {
 func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, ...*TypeHolder) (any, error)) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var isSuccess bool
+			var anyTypeHolderSelected bool
 			var typeHolders []*TypeHolder
 			for _, tt := range test.types {
-				typeHolders = append(typeHolders, NewTypeHolder(tt, &isSuccess))
+				typeHolders = append(typeHolders, NewTypeHolder(tt, &anyTypeHolderSelected))
 			}
 			result, err := caller([]byte(test.testValue), typeHolders...)
-			test.Assert(t, result, err, isSuccess)
+			test.Assert(t, result, err, anyTypeHolderSelected)
 		})
 	}
 }
@@ -309,13 +309,13 @@ func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, ...*Ty
 func assertDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, string, ...*TypeHolder) (any, error)) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var isSuccess bool
+			var anyTypeHolderSelected bool
 			var typeHolders []*TypeHolder
 			for i, tt := range test.types {
-				typeHolders = append(typeHolders, NewTypeHolderDiscriminator(tt, &isSuccess, test.discriminators[i]))
+				typeHolders = append(typeHolders, NewTypeHolderDiscriminator(tt, &anyTypeHolderSelected, test.discriminators[i]))
 			}
 			result, err := caller([]byte(test.testValue), test.discriminatorField, typeHolders...)
-			test.Assert(t, result, err, isSuccess)
+			test.Assert(t, result, err, anyTypeHolderSelected)
 		})
 	}
 }
