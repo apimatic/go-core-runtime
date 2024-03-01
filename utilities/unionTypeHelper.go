@@ -68,17 +68,7 @@ func UnmarshallOneOfWithDiscriminator(data []byte, discField string, types ...*T
 // filterTypeHolders filter out the typeholders from given list based on
 // available discriminator field's value in the data
 func filterTypeHolders(data []byte, types []*TypeHolder, discField string) []*TypeHolder {
-	if discField == "" {
-		return types
-	}
-	dict := map[string]any{}
-	err := json.Unmarshal(data, &dict)
-
-	if err != nil {
-		return types
-	}
-	discValue, ok := dict[discField]
-
+	discValue, ok := extractDiscriminatorValue(data, discField)
 	if !ok {
 		return types
 	}
@@ -88,6 +78,22 @@ func filterTypeHolders(data []byte, types []*TypeHolder, discField string) []*Ty
 		}
 	}
 	return types
+}
+
+// extractDiscriminatorValue extracts the discriminator value using the discriminator field
+func extractDiscriminatorValue(data []byte, discField string) (any, bool) {
+	if discField == "" {
+		return nil, false
+	}
+	dict := map[string]any{}
+	err := json.Unmarshal(data, &dict)
+
+	if err != nil {
+		return nil, false
+	}
+	discValue, ok := dict[discField]
+
+	return discValue, ok
 }
 
 // unmarshallUnionType tries to unmarshal the byte array into each of the provided types
