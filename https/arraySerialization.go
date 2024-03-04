@@ -15,6 +15,15 @@ const (
 	Psv
 )
 
+var ArraySerializationOptionStrings = [...]string{
+	"Indexed",
+	"UnIndexed",
+	"Plain",
+	"Csv",
+	"Tsv",
+	"Psv",
+}
+
 func (option ArraySerializationOption) getSeparator() rune {
 	switch option {
 	case Csv:
@@ -42,9 +51,9 @@ func (option ArraySerializationOption) joinKey(keyPrefix string, index any) stri
 }
 
 func (option ArraySerializationOption) appendMap(result map[string][]string, param map[string][]string) {
-	for k, v := range param {
-		for _, v1 := range v {
-			option.append(result, k, v1)
+	for k, values := range param {
+		for _, value := range values {
+			option.append(result, k, value)
 		}
 	}
 }
