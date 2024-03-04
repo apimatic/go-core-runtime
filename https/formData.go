@@ -187,9 +187,9 @@ func getDefaultValue(in any) string {
 	case string:
 		return in
 	default:
-		bytes, err := json.Marshal(in)
+		dataBytes, err := json.Marshal(in)
 		if err == nil {
-			return string(bytes)
+			return string(dataBytes)
 		} else {
 			return fmt.Sprintf("%v", in)
 		}
