@@ -9,24 +9,30 @@ import (
 )
 
 type TypeHolder struct {
-	value         any
-	isSelected    *bool
-	discriminator string
-	typeError     error
+	value          any
+	originalValue  any
+	isNullableType bool
+	isSelected     *bool
+	discriminator  string
+	typeError      error
 }
 
-func NewTypeHolder(val any, isSelected *bool) *TypeHolder {
+func NewTypeHolder(val any, isNullableType bool, isSelected *bool) *TypeHolder {
 	return &TypeHolder{
-		value:      val,
-		isSelected: isSelected,
+		value:          val,
+		originalValue:  val,
+		isNullableType: isNullableType,
+		isSelected:     isSelected,
 	}
 }
 
-func NewTypeHolderDiscriminator(val any, flag *bool, discriminator string) *TypeHolder {
+func NewTypeHolderDiscriminator(val any, isNullableType bool, isSelected *bool, discriminator string) *TypeHolder {
 	return &TypeHolder{
-		value:         val,
-		isSelected:    flag,
-		discriminator: discriminator,
+		value:          val,
+		originalValue:  val,
+		isNullableType: isNullableType,
+		isSelected:     isSelected,
+		discriminator:  discriminator,
 	}
 }
 
@@ -36,6 +42,15 @@ func (t *TypeHolder) selectValue() any {
 }
 
 func (t *TypeHolder) tryUnmarshall(data []byte) bool {
+	if string(data) == `null` {
+		if t.isNullableType {
+			t.value = nil
+		} else {
+			typeName := reflect.TypeOf(t.originalValue).String()
+			t.typeError = errors.New("json: cannot unmarshal null into Go value of type " + typeName)
+		}
+		return t.isNullableType
+	}
 	err := json.Unmarshal(data, t.value)
 	t.typeError = err
 	return err == nil
@@ -117,8 +132,8 @@ func unmarshallUnionType(data []byte, types []*TypeHolder, matchExactlyOneType b
 }
 
 func moreThenOneTypeMatchesError(type1 *TypeHolder, type2 *TypeHolder, data []byte) error {
-	type1Name := reflect.TypeOf(type1.value).String()
-	type2Name := reflect.TypeOf(type2.value).String()
+	type1Name := reflect.TypeOf(type1.originalValue).String()
+	type2Name := reflect.TypeOf(type2.originalValue).String()
 	return errors.New("There are more than one matching types i.e. {" + type1Name + " and " + type2Name + "} on: " + string(data))
 }
 
@@ -127,7 +142,7 @@ func noneTypeMatchesError(types []*TypeHolder, data []byte) error {
 	reasons := make([]string, len(types))
 
 	for i, t := range types {
-		names[i] = reflect.TypeOf(t.value).String()
+		names[i] = reflect.TypeOf(t.originalValue).String()
 		reasons[i] = "\n\nError " + fmt.Sprint(i+1) + ":\n  => " + t.typeError.Error()
 	}
 

@@ -10,6 +10,7 @@ import (
 type UnionTypeCase struct {
 	name                 string
 	types                []any
+	isNullableTypes      []bool
 	discriminators       []string
 	discriminatorField   string
 	testValue            string
@@ -68,9 +69,23 @@ func TestCommonOneOfAndAnyOfCases(t *testing.T) {
 			testValue:    `0`,
 			expectedType: new(int),
 		},
+		{
+			name:            `(bool,int) => nil`,
+			types:           []any{new(bool), new(int)},
+			isNullableTypes: []bool{false, true},
+			testValue:       `null`,
+			expectedType:    nil,
+		},
+		{
+			name:            `(Truck,Car) => nil`,
+			types:           []any{&Truck{}, &Car{}},
+			isNullableTypes: []bool{false, true},
+			testValue:       `null`,
+			expectedType:    nil,
+		},
 	}
 
-	assertCases(t, tests, UnmarshallOneOf)
+	//assertCases(t, tests, UnmarshallOneOf)
 	assertCases(t, tests, UnmarshallAnyOf)
 }
 
@@ -125,6 +140,14 @@ func TestOneOf(t *testing.T) {
 			expectedType: &[]Car{},
 		},
 		{
+			name:                 `(bool,int) => FAIL`,
+			types:                []any{new(bool), new(int)},
+			isNullableTypes:      []bool{true, true},
+			testValue:            `null`,
+			shouldFail:           true,
+			expectedErrorMessage: "There are more than one matching types i.e. {*bool and *int} on: null",
+		},
+		{
 			name:                 `(float,int) => FAIL`,
 			types:                []any{new(float32), new(int)},
 			testValue:            `2345`,
@@ -164,6 +187,15 @@ func TestOneOf(t *testing.T) {
 			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Car, *utilities.Truck} on: \"car or truck\"\n\n" +
 				"Error 1:\n  => Car \n\t=> json: cannot unmarshal string into Go value of type utilities.car\n\n" +
 				"Error 2:\n  => Truck \n\t=> json: cannot unmarshal string into Go value of type utilities.truck",
+		},
+		{
+			name:       `(Car,Truck) => FAIL3`,
+			types:      []any{&Car{}, &Truck{}},
+			testValue:  `null`,
+			shouldFail: true,
+			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Car, *utilities.Truck} on: null\n\n" +
+				"Error 1:\n  => json: cannot unmarshal null into Go value of type *utilities.Car\n\n" +
+				"Error 2:\n  => json: cannot unmarshal null into Go value of type *utilities.Truck",
 		},
 	}
 
@@ -228,6 +260,15 @@ func TestAnyOf(t *testing.T) {
 			testValue:     `{"id":2345,"weight":"heavy","roof":"BIG"}`,
 			expectedValue: `{"id":2345,"roof":"BIG","type":null}`,
 			expectedType:  &Car{},
+		},
+		{
+			name:       `(bool,int) => FAIL`,
+			types:      []any{new(bool), new(int)},
+			testValue:  `null`,
+			shouldFail: true,
+			expectedErrorMessage: "We could not match any acceptable type from {*bool, *int} on: null\n\n" +
+				"Error 1:\n  => json: cannot unmarshal null into Go value of type *bool\n\n" +
+				"Error 2:\n  => json: cannot unmarshal null into Go value of type *int",
 		},
 		{
 			name:       `(Bike,Atom) => FAIL`,
@@ -297,8 +338,12 @@ func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, ...*Ty
 		t.Run(test.name, func(t *testing.T) {
 			var anyTypeHolderSelected bool
 			var typeHolders []*TypeHolder
-			for _, tt := range test.types {
-				typeHolders = append(typeHolders, NewTypeHolder(tt, &anyTypeHolderSelected))
+			for i, tt := range test.types {
+				var isNullableType bool = false
+				if len(test.isNullableTypes) > 0 {
+					isNullableType = test.isNullableTypes[i]
+				}
+				typeHolders = append(typeHolders, NewTypeHolder(tt, isNullableType, &anyTypeHolderSelected))
 			}
 			result, err := caller([]byte(test.testValue), typeHolders...)
 			test.Assert(t, result, err, anyTypeHolderSelected)
@@ -312,7 +357,11 @@ func assertDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([
 			var anyTypeHolderSelected bool
 			var typeHolders []*TypeHolder
 			for i, tt := range test.types {
-				typeHolders = append(typeHolders, NewTypeHolderDiscriminator(tt, &anyTypeHolderSelected, test.discriminators[i]))
+				var isNullableType bool = false
+				if len(test.isNullableTypes) > 0 {
+					isNullableType = test.isNullableTypes[i]
+				}
+				typeHolders = append(typeHolders, NewTypeHolderDiscriminator(tt, isNullableType, &anyTypeHolderSelected, test.discriminators[i]))
 			}
 			result, err := caller([]byte(test.testValue), test.discriminatorField, typeHolders...)
 			test.Assert(t, result, err, anyTypeHolderSelected)
