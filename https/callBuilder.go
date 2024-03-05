@@ -520,7 +520,7 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	context := pipeline(request)
 
 	if cb.clientError != nil {
-		return nil, cb.clientError
+		err = cb.clientError
 	}
 
 	return &context, err
@@ -566,7 +566,7 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 	cb.InterceptRequest(f)
 	result, err := cb.Call()
 	if err != nil {
-		return nil, nil, err
+		return nil, result.Response, err
 	}
 
 	if result.Response != nil {
@@ -576,7 +576,7 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 
 		return json.NewDecoder(result.Response.Body), result.Response, err
 	}
-	return nil, nil, err
+	return nil, result.Response, err
 }
 
 // CallAsText executes the API call and returns the response body as a string and the HTTP response.
@@ -585,7 +585,7 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 	result, err := cb.Call()
 	if err != nil {
-		return "", nil, err
+		return "", result.Response, err
 	}
 	if result.Response != nil {
 		if result.Response.Body == http.NoBody {
@@ -599,7 +599,7 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 
 		return string(body), result.Response, err
 	}
-	return "", nil, err
+	return "", result.Response, err
 }
 
 // CallAsStream executes the API call and returns the response body as a byte array and the HTTP response.
@@ -607,7 +607,7 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 	result, err := cb.Call()
 	if err != nil {
-		return nil, nil, err
+		return nil, result.Response, err
 	}
 
 	if result.Response != nil {
@@ -622,7 +622,7 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 
 		return bytes, result.Response, err
 	}
-	return nil, nil, err
+	return nil, result.Response, err
 }
 
 // addRetryInterceptor adds a retry interceptor to the call builder. This interceptor will handle retrying the API call
