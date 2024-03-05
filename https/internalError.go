@@ -10,7 +10,7 @@ const AUTHENTICATION_ERROR = "Authentication Error"
 type internalError struct {
 	Body     string
 	FileInfo string
-	Type 	 string
+	Type     string
 }
 
 // Error returns a formatted error string that includes the file information and the descriptive error message.
@@ -19,5 +19,5 @@ func (e internalError) Error() string {
 		return fmt.Sprintf("%v occured at %v due to following errors:%v", e.Type, e.FileInfo, e.Body)
 	}
 
-	return fmt.Sprintf("%v occured at %v \n %v", INTERNAL_ERROR, e.FileInfo, e.Body)
+	return fmt.Sprintf("%v occurred at %v \n %v", INTERNAL_ERROR, e.FileInfo, e.Body)
 }
