@@ -107,55 +107,77 @@ func toMap(keyPrefix string, param any, option ArraySerializationOption) (map[st
 	if param == nil {
 		return map[string][]string{}, nil
 	}
-
-	valueKind := reflect.TypeOf(param).Kind()
-	switch valueKind {
+	switch reflect.TypeOf(param).Kind() {
 	case reflect.Struct, reflect.Ptr:
-		innerMap, err := structToMap(param)
-		if err != nil {
-			return nil, err
-		}
-		innerFlatMap, err := toMap(keyPrefix, innerMap, option)
-		if err != nil {
-			return nil, err
-		}
-		return innerFlatMap, nil
+		return processStructAndPtr(keyPrefix, param, option)
 	case reflect.Map:
-		iter := reflect.ValueOf(param).MapRange()
-		result := make(map[string][]string)
-		for iter.Next() {
-			innerKey := ArraySerializationOption(Indexed).joinKey(keyPrefix, iter.Key())
-			innerValue := iter.Value().Interface()
-			innerFlatMap, err := toMap(innerKey, innerValue, option)
-			if err != nil {
-				return nil, err
-			}
-			option.appendMap(result, innerFlatMap)
-		}
-		return result, nil
+		return processMap(keyPrefix, param, option)
 	case reflect.Slice:
-		reflectValue := reflect.ValueOf(param)
-		result := make(map[string][]string)
-		for i := 0; i < reflectValue.Len(); i++ {
-			var innerStruct = reflectValue.Index(i).Interface()
-			var indexStr any
-			switch innerStruct.(type) {
-			case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128, string:
-				indexStr = nil
-			default:
-				indexStr = fmt.Sprintf("%v", i)
-			}
-			innerKey := option.joinKey(keyPrefix, indexStr)
-			innerFlatMap, err := toMap(innerKey, innerStruct, option)
-			if err != nil {
-				return result, err
-			}
-			option.appendMap(result, innerFlatMap)
-		}
-		return result, nil
+		return processSlice(keyPrefix, param, option)
 	default:
-		return map[string][]string{keyPrefix: {getDefaultValue(param)}}, nil
+		return processDefault(keyPrefix, param)
 	}
+}
+
+func processStructAndPtr(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
+	innerMap, err := structToMap(param)
+	if err != nil {
+		return nil, err
+	}
+	return toMap(keyPrefix, innerMap, option)
+}
+
+func processMap(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
+	iter := reflect.ValueOf(param).MapRange()
+	result := make(map[string][]string)
+	for iter.Next() {
+		innerKey := option.joinKey(keyPrefix, iter.Key().Interface())
+		innerValue := iter.Value().Interface()
+		innerFlatMap, err := toMap(innerKey, innerValue, option)
+		if err != nil {
+			return nil, err
+		}
+		option.appendMap(result, innerFlatMap)
+	}
+	return result, nil
+}
+
+func processSlice(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
+	reflectValue := reflect.ValueOf(param)
+	result := make(map[string][]string)
+	for i := 0; i < reflectValue.Len(); i++ {
+		innerStruct := reflectValue.Index(i).Interface()
+		var indexStr interface{}
+		switch innerStruct.(type) {
+		case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128, string:
+			indexStr = nil
+		default:
+			indexStr = fmt.Sprintf("%v", i)
+		}
+		innerKey := option.joinKey(keyPrefix, indexStr)
+		innerFlatMap, err := toMap(innerKey, innerStruct, option)
+		if err != nil {
+			return result, err
+		}
+		option.appendMap(result, innerFlatMap)
+	}
+	return result, nil
+}
+
+func processDefault(keyPrefix string, param any) (map[string][]string, error) {
+	var defaultValue string
+	switch in := param.(type) {
+	case string:
+		defaultValue = in
+	default:
+		dataBytes, err := json.Marshal(in)
+		if err == nil {
+			defaultValue = string(dataBytes)
+		} else {
+			defaultValue = fmt.Sprintf("%v", in)
+		}
+	}
+	return map[string][]string{keyPrefix: {defaultValue}}, nil
 }
 
 // structToMap converts a given data structure to a map.
@@ -180,18 +202,4 @@ func toStructPtr(obj any) any {
 	// NOTE: `vp.Elem().Set(reflect.ValueOf(&obj).Elem())` does not work
 	// Return a `Cat` pointer to obj -- i.e. &obj.(*Cat)
 	return vp.Interface()
-}
-
-func getDefaultValue(in any) string {
-	switch in := in.(type) {
-	case string:
-		return in
-	default:
-		dataBytes, err := json.Marshal(in)
-		if err == nil {
-			return string(dataBytes)
-		} else {
-			return fmt.Sprintf("%v", in)
-		}
-	}
 }
