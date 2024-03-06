@@ -66,6 +66,7 @@ type CallBuilder interface {
 	CallAsStream() ([]byte, *http.Response, error)
 	Authenticate(authGroup AuthGroup)
 	RequestRetryOption(option RequestRetryOption)
+	ArraySerializationOption(option ArraySerializationOption)
 }
 
 // defaultCallBuilder is a struct that implements the CallBuilder interface for making API calls.
@@ -94,6 +95,7 @@ type defaultCallBuilder struct {
 	formParams             FormParams
 	queryParams            FormParams
 	errors                 map[string]ErrorBuilder[error]
+	arraySerializationOption ArraySerializationOption
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -105,17 +107,19 @@ func newDefaultCallBuilder(
 	baseUrlProvider baseUrlProvider,
 	authProvider map[string]AuthInterface,
 	retryConfig RetryConfiguration,
+	option ArraySerializationOption,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
-		httpClient:      httpClient,
-		path:            path,
-		httpMethod:      httpMethod,
-		authProvider:    authProvider,
-		baseUrlProvider: baseUrlProvider,
-		retryOption:     RequestRetryOption(Default),
-		clientError:     nil,
-		retryConfig:     retryConfig,
-		ctx:             ctx,
+		httpClient:               httpClient,
+		path:                     path,
+		httpMethod:               httpMethod,
+		authProvider:             authProvider,
+		baseUrlProvider:          baseUrlProvider,
+		retryOption:              RequestRetryOption(Default),
+		clientError:              nil,
+		retryConfig:              retryConfig,
+		ctx:                      ctx,
+		arraySerializationOption: option,
 	}
 	cb.addRetryInterceptor()
 	return &cb
@@ -146,6 +150,10 @@ func (cb *defaultCallBuilder) Authenticate(authGroup AuthGroup) {
 // It allows users to configure the retry behavior for the request.
 func (cb *defaultCallBuilder) RequestRetryOption(option RequestRetryOption) {
 	cb.retryOption = option
+}
+
+func (cb *defaultCallBuilder) ArraySerializationOption(option ArraySerializationOption) {
+	cb.arraySerializationOption = option
 }
 
 // AppendPath appends the provided path to the existing path in the CallBuilder.
@@ -268,7 +276,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		err := cb.queryParams.prepareFormFields(cb.query)
+		err := cb.queryParams.prepareFormFields(cb.query, cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
 		}
@@ -298,7 +306,7 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		err := cb.formParams.prepareFormFields(cb.form)
+		err := cb.formParams.prepareFormFields(cb.form, cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
 		}
@@ -321,7 +329,7 @@ func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
 	var err error = nil
 	if len(cb.formFields) != 0 {
-		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields()
+		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields(cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
 		}
@@ -362,7 +370,13 @@ func (cb *defaultCallBuilder) validateJson() error {
 			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
 		}
 		cb.body = string(bytes)
-		cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
+		contentType := JSON_CONTENT_TYPE
+		var testMap map[string]any
+		errTest := json.Unmarshal(bytes, &testMap)
+		if errTest != nil {
+			contentType = TEXT_CONTENT_TYPE
+		}
+		cb.setContentTypeIfNotSet(contentType)
 	}
 	return nil
 }
@@ -594,7 +608,7 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 
 		body, err := io.ReadAll(result.Response.Body)
 		if err != nil {
-			return "", result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
+			return "", result.Response, fmt.Errorf("error reading Response body: %v", err.Error())
 		}
 
 		return string(body), result.Response, err
@@ -617,7 +631,7 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 
 		bytes, err := io.ReadAll(result.Response.Body)
 		if err != nil {
-			return nil, result.Response, fmt.Errorf("Error reading Response body: %v", err.Error())
+			return nil, result.Response, fmt.Errorf("error reading Response body: %v", err.Error())
 		}
 
 		return bytes, result.Response, err
@@ -704,11 +718,13 @@ func CreateCallBuilderFactory(
 	auth map[string]AuthInterface,
 	httpClient HttpClient,
 	retryConfig RetryConfiguration,
+	option ArraySerializationOption,
 ) CallBuilderFactory {
 	return func(
 		ctx context.Context,
 		httpMethod,
 		path string,
+
 	) CallBuilder {
 		return newDefaultCallBuilder(
 			ctx,
@@ -718,6 +734,7 @@ func CreateCallBuilderFactory(
 			baseUrlProvider,
 			auth,
 			retryConfig,
+			option,
 		)
 	}
 }

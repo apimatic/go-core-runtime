@@ -108,7 +108,7 @@ type Attributes struct {
 
 func TestKeysAndValuesBodyMatcherEmpty(t *testing.T) {
 	expected := `{}`
-	KeysAndValuesBodyMatcher(t, expected, nil, false, false)
+	KeysAndValuesBodyMatcher[any](t, expected, nil, false, false)
 }
 
 func TestKeysAndValuesBodyMatcherObject(t *testing.T) {

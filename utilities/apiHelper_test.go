@@ -73,10 +73,10 @@ func TestDefaultNullableTimeToStringMap(t *testing.T) {
 	result := NullableTimeToStringMap(input, DEFAULT_DATE)
 
 	expected := make(map[string]*string)
-	expectedtime1 := "2022-08-20"
-	expectedtime2 := "2021-08-20"
-	expected["time1"] = &expectedtime1
-	expected["time2"] = &expectedtime2
+	expectedTime1 := "2022-08-20"
+	expectedTime2 := "2021-08-20"
+	expected["time1"] = &expectedTime1
+	expected["time2"] = &expectedTime2
 	expected["time3"] = nil
 
 	if !reflect.DeepEqual(result, expected) {
@@ -655,7 +655,7 @@ func TestPrepareQueryParamsAppendEmptyData(t *testing.T) {
 // UpdateUserAgent
 func TestUpdateUserAgentAllArguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine} {engine-version}")
-	if !strings.Contains(result, "userAgent linux go") {
+	if !strings.Contains(result, "userAgent linux go") && !strings.Contains(result, "userAgent darwin go") {
 		t.Error("Incorrect UserAgent. Got:", result)
 	}
 }
@@ -669,7 +669,7 @@ func TestUpdateUserAgentEmptyArguments(t *testing.T) {
 
 func TestUpdateUserAgent2Arguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine}")
-	if !strings.Contains(result, "userAgent linux go") {
+	if !strings.Contains(result, "userAgent linux go") && !strings.Contains(result, "userAgent darwin go") {
 		t.Error("Incorrect UserAgent. Got:", result)
 	}
 }

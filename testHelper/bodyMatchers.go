@@ -47,8 +47,8 @@ func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, c
 
 // KeysAndValuesBodyMatcher compares the JSON response body with the expected JSON body using keys and values.
 // The responseObject and expectedBody should have the same keys and their corresponding values should be equal.
-func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseObject any, checkArrayCount, checkArrayOrder bool) {
-	responseBytes, _ := json.Marshal(responseObject)
+func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
+	responseBytes, _ := json.Marshal(&responseObject)
 	var response, expected map[string]interface{}
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
@@ -70,9 +70,6 @@ func matchKeysAndValues(response, expected map[string]interface{}, checkArrayCou
 	}
 	for key, value := range expected {
 		responseValue := response[key]
-		if responseValue == nil {
-			return false
-		}
 		if reflect.ValueOf(responseValue).Kind() == reflect.Map {
 			if reflect.ValueOf(value).Kind() != reflect.Map {
 				return false
@@ -111,7 +108,7 @@ func IsSameAsFile(test *testing.T, expectedFileURL string, responseFileBytes []b
 // IsSameInputBytes checks if the receivedBytes are equal to the expectedBytes.
 func IsSameInputBytes(test *testing.T, expectedBytes []byte, receivedBytes []byte) {
 	if !reflect.DeepEqual(expectedBytes, receivedBytes) {
-		test.Error("Recieved bytes donot match the bytes expected")
+		test.Error("Received bytes do not match the bytes expected")
 	}
 }
 

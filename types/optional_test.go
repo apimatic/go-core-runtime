@@ -18,7 +18,7 @@ func TestNewOptional(t *testing.T) {
 
 func TestEmptyOptional(t *testing.T) {
 	expected := Optional[any]{value: nil, set: false}
-	result := EmptyOptional()
+	result := EmptyOptional[any]()
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -41,10 +41,10 @@ func TestGetterSetters(t *testing.T) {
 func TestUnmarshalJSON(t *testing.T) {
 	value := "Optional Value"
 	expected := Optional[string]{value: &value, set: true}
-	type tempstruct struct {
+	type tempStruct struct {
 		Optional Optional[string] `json:"optional"`
 	}
-	var result tempstruct
+	var result tempStruct
 	json.Unmarshal([]byte(`{"optional": "Optional Value"}`), &result)
 
 	if expected.IsValueSet() != result.Optional.IsValueSet() && expected.Value() != result.Optional.Value() {
