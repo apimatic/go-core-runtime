@@ -137,7 +137,7 @@ func TimeToStringSlice(slice []time.Time, format string) []string {
 
 // ToTimeMap converts a map with string or int64 values to a map with time.Time values using the specified format.
 func ToTimeMap(dict interface{}, format string) (map[string]time.Time, error) {
-	result := make(map[string]time.Time, 0)
+	result := make(map[string]time.Time)
 	if dict == nil {
 		return map[string]time.Time{}, nil
 	}
@@ -161,7 +161,7 @@ func ToTimeMap(dict interface{}, format string) (map[string]time.Time, error) {
 
 // ToNullableTimeMap converts a map with nullable string or int64 values to a map with nullable time.Time values using the specified format.
 func ToNullableTimeMap(dict interface{}, format string) (map[string]*time.Time, error) {
-	result := make(map[string]*time.Time, 0)
+	result := make(map[string]*time.Time)
 	if dict == nil {
 		return map[string]*time.Time{}, nil
 	}
@@ -193,7 +193,7 @@ func ToNullableTimeMap(dict interface{}, format string) (map[string]*time.Time, 
 
 // TimeToStringMap converts a map with time.Time values to a map with strings using the specified format.
 func TimeToStringMap(dict map[string]time.Time, format string) map[string]string {
-	result := make(map[string]string, 0)
+	result := make(map[string]string)
 	if dict == nil {
 		return map[string]string{}
 	}
@@ -212,7 +212,7 @@ func TimeToStringMap(dict map[string]time.Time, format string) map[string]string
 
 // NullableTimeToStringMap converts a map with nullable time.Time values to a map with nullable strings using the specified format.
 func NullableTimeToStringMap(dict map[string]*time.Time, format string) map[string]*string {
-	result := make(map[string]*string, 0)
+	result := make(map[string]*string)
 	if dict == nil {
 		return map[string]*string{}
 	}
