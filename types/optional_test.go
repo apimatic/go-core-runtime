@@ -18,7 +18,7 @@ func TestNewOptional(t *testing.T) {
 
 func TestEmptyOptional(t *testing.T) {
 	expected := Optional[any]{value: nil, set: false}
-	result := EmptyOptional()
+	result := EmptyOptional[any]()
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
