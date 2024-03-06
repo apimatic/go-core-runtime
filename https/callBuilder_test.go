@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var ctx context.Context = context.Background()
+var ctx = context.Background()
 
 func GetCallBuilder(ctx context.Context, method, path string, auth map[string]AuthInterface) CallBuilder {
 	client := NewHttpClient(NewHttpConfiguration())
@@ -253,7 +253,7 @@ func TestQueryParam(t *testing.T) {
 
 func TestQueryParams(t *testing.T) {
 	request := GetCallBuilder(ctx, "GET", "", nil)
-	request.QueryParams(map[string]interface{}{"param": "query", "param1": "query"})
+	request.QueryParams(map[string]any{"param": "query", "param1": "query"})
 	result, err := request.toRequest()
 
 	if !strings.Contains(result.URL.RawQuery, "param=query&param1=query") || err != nil {
@@ -294,7 +294,7 @@ func TestJson(t *testing.T) {
 	result, err := request.toRequest()
 
 	stringBuilder := new(strings.Builder)
-	io.Copy(stringBuilder, result.Body)
+	_, _ = io.Copy(stringBuilder, result.Body)
 
 	if !strings.Contains(stringBuilder.String(), "TestString") || err != nil {
 		t.Errorf("Failed:\nExpected json in body\n%v", stringBuilder.String())

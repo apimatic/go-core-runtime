@@ -20,6 +20,15 @@ type FormParam struct {
 	Headers http.Header
 }
 
+type formParam struct {
+	Key                      string
+	Value                    any
+	Headers                  http.Header
+	ArraySerializationOption ArraySerializationOption
+}
+
+type formParams []formParam
+
 // FormParams represents a collection of FormParam objects.
 type FormParams []FormParam
 
@@ -30,14 +39,21 @@ func (fp *FormParams) Add(formParam FormParam) {
 	}
 }
 
+// Add appends a FormParam to the FormParams collection.
+func (fp *formParams) add(formParam formParam) {
+	if formParam.Value != nil {
+		*fp = append(*fp, formParam)
+	}
+}
+
 // prepareFormFields prepares the form fields from the given FormParams and adds them to the url.Values.
 // It processes each FormParam field and encodes the value according to its data type.
-func (fp *FormParams) prepareFormFields(form url.Values, option ArraySerializationOption) error {
+func (fp *formParams) prepareFormFields(form url.Values) error {
 	if form == nil {
 		form = url.Values{}
 	}
 	for _, param := range *fp {
-		paramsMap, err := toMap(param.Key, param.Value, option)
+		paramsMap, err := toMap(param.Key, param.Value, param.ArraySerializationOption)
 		if err != nil {
 			return err
 		}
@@ -52,7 +68,7 @@ func (fp *FormParams) prepareFormFields(form url.Values, option ArraySerializati
 
 // prepareMultipartFields prepares the multipart fields from the given FormParams and
 // returns the body as a bytes.Buffer, along with the Content-Type header for the multipart form data.
-func (fp *FormParams) prepareMultipartFields(option ArraySerializationOption) (bytes.Buffer, string, error) {
+func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for _, field := range *fp {
@@ -64,7 +80,7 @@ func (fp *FormParams) prepareMultipartFields(option ArraySerializationOption) (b
 			}
 			formParamWriter(writer, field.Headers, mediaParam, fieldValue.File)
 		default:
-			paramsMap, err := toMap(field.Key, field.Value, option)
+			paramsMap, err := toMap(field.Key, field.Value, field.ArraySerializationOption)
 			if err != nil {
 				return *body, writer.FormDataContentType(), err
 			}
