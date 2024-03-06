@@ -32,17 +32,11 @@ func TestJoinKey(t *testing.T) {
 		expected  string
 	}{
 		{UnIndexed, "prefix", nil, "prefix[]"},
-		{UnIndexed, "prefix", "index", "prefix[index]"},
 		{Indexed, "prefix", nil, "prefix"},
-		{Indexed, "prefix", "index", "prefix[index]"},
 		{Plain, "prefix", nil, "prefix"},
-		{Plain, "prefix", "index", "prefix[index]"},
 		{Tsv, "prefix", nil, "prefix"},
-		{Tsv, "prefix", "index", "prefix[index]"},
 		{Csv, "prefix", nil, "prefix"},
-		{Csv, "prefix", "index", "prefix[index]"},
 		{Psv, "prefix", nil, "prefix"},
-		{Psv, "prefix", "index", "prefix[index]"},
 	}
 
 	for _, tc := range testCases {
@@ -50,6 +44,16 @@ func TestJoinKey(t *testing.T) {
 		if actual != tc.expected {
 			t.Errorf("For option %s, keyPrefix %s, and index %v, expected %q but got %q",
 				ArraySerializationOptionStrings[tc.option], tc.keyPrefix, tc.index, tc.expected, actual)
+		}
+	}
+
+	// test cases with index
+	// when index is provided the value will always be equal to `"prefix[index]"`
+	for _, tc := range testCases {
+		actual := tc.option.joinKey(tc.keyPrefix, "index")
+		if actual != "prefix[index]" {
+			t.Errorf("For option %s, keyPrefix %s, and index %v, expected %q but got %q",
+				ArraySerializationOptionStrings[tc.option], tc.keyPrefix, "index", "prefix[index]", actual)
 		}
 	}
 }
