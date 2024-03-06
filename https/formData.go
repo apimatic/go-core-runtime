@@ -108,9 +108,16 @@ func toMap(keyPrefix string, paramObj any, option ArraySerializationOption) (map
 		return map[string][]string{}, nil
 	}
 
-	bytes, _ := json.Marshal(toStructPtr(paramObj))
 	var param any
-	_ = json.Unmarshal(bytes, &param)
+	bytes, err := json.Marshal(toStructPtr(paramObj))
+	if err == nil {
+		err = json.Unmarshal(bytes, &param)
+		if err != nil {
+			return map[string][]string{}, nil
+		}
+	} else {
+		param = paramObj
+	}
 
 	switch reflect.TypeOf(param).Kind() {
 	case reflect.Struct, reflect.Ptr:
