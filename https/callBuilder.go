@@ -46,10 +46,12 @@ type CallBuilder interface {
 	ContentType(contentTypeHeaderValue string)
 	Header(name string, value interface{})
 	CombineHeaders(headersToMerge map[string]string)
-	QueryParam(name string, value interface{})
+	QueryParam(name string, value any)
+	QueryParamWithArraySerializationOption(name string, value any, option ArraySerializationOption)
 	validateQueryParams() error
-	QueryParams(parameters map[string]interface{})
-	FormParam(name string, value interface{})
+	QueryParams(parameters map[string]any)
+	FormParam(name string, value any)
+	FormParamWithArraySerializationOption(name string, value any, opt ArraySerializationOption)
 	validateFormParams() error
 	FormData(fields FormParams)
 	validateFormData() error
@@ -71,30 +73,30 @@ type CallBuilder interface {
 
 // defaultCallBuilder is a struct that implements the CallBuilder interface for making API calls.
 type defaultCallBuilder struct {
-	ctx                    context.Context
-	path                   string
-	baseUrlArg             string
-	baseUrlProvider        baseUrlProvider
-	httpMethod             string
-	acceptHeaderValue      string
-	contentTypeHeaderValue string
-	headers                map[string]string
-	query                  url.Values
-	form                   url.Values
-	formData               bytes.Buffer
-	body                   string
-	streamBody             []byte
-	httpClient             HttpClient
-	interceptors           []HttpInterceptor
-	authProvider           map[string]AuthInterface
-	retryOption            RequestRetryOption
-	retryConfig            RetryConfiguration
-	clientError            error
-	jsonData               interface{}
-	formFields             FormParams
-	formParams             FormParams
-	queryParams            FormParams
-	errors                 map[string]ErrorBuilder[error]
+	ctx                      context.Context
+	path                     string
+	baseUrlArg               string
+	baseUrlProvider          baseUrlProvider
+	httpMethod               string
+	acceptHeaderValue        string
+	contentTypeHeaderValue   string
+	headers                  map[string]string
+	query                    url.Values
+	form                     url.Values
+	formData                 bytes.Buffer
+	body                     string
+	streamBody               []byte
+	httpClient               HttpClient
+	interceptors             []HttpInterceptor
+	authProvider             map[string]AuthInterface
+	retryOption              RequestRetryOption
+	retryConfig              RetryConfiguration
+	clientError              error
+	jsonData                 interface{}
+	formFields               formParams
+	formParams               formParams
+	queryParams              formParams
+	errors                   map[string]ErrorBuilder[error]
 	arraySerializationOption ArraySerializationOption
 }
 
@@ -265,9 +267,19 @@ func (cb *defaultCallBuilder) CombineHeaders(headersToMerge map[string]string) {
 // It takes the name and value of the query parameter as arguments.
 func (cb *defaultCallBuilder) QueryParam(
 	name string,
-	value interface{},
+	value any,
 ) {
-	cb.queryParams.Add(FormParam{name, value, nil})
+	cb.queryParams.add(formParam{name, value, nil, cb.arraySerializationOption})
+}
+
+// QueryParamWithArraySerializationOption adds a query parameter to the API call.
+// It takes the name and value of the query parameter as arguments.
+func (cb *defaultCallBuilder) QueryParamWithArraySerializationOption(
+	name string,
+	value any,
+	option ArraySerializationOption,
+) {
+	cb.queryParams.add(formParam{name, value, nil, option})
 }
 
 // validateQueryParams validates the query parameters in the CallBuilder.
@@ -276,7 +288,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		err := cb.queryParams.prepareFormFields(cb.query, cb.arraySerializationOption)
+		err := cb.queryParams.prepareFormFields(cb.query)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
 		}
@@ -294,9 +306,19 @@ func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
 // It takes the name and value of the form parameter as arguments.
 func (cb *defaultCallBuilder) FormParam(
 	name string,
-	value interface{},
+	value any,
 ) {
-	cb.formParams.Add(FormParam{name, value, nil})
+	cb.formParams.add(formParam{name, value, nil, cb.arraySerializationOption})
+}
+
+// FormParamWithArraySerializationOption adds a form parameter to the API call.
+// It takes the name and value of the form parameter as arguments.
+func (cb *defaultCallBuilder) FormParamWithArraySerializationOption(
+	name string,
+	value any,
+	option ArraySerializationOption,
+) {
+	cb.formParams.add(formParam{name, value, nil, option})
 }
 
 // validateFormParams validates the form parameters in the CallBuilder.
@@ -306,7 +328,7 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		err := cb.formParams.prepareFormFields(cb.form, cb.arraySerializationOption)
+		err := cb.formParams.prepareFormFields(cb.form)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
 		}
@@ -319,7 +341,9 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 // It takes a slice of FormParam representing the form fields.
 func (cb *defaultCallBuilder) FormData(fields FormParams) {
 	if fields != nil {
-		cb.formFields = fields
+		for _, field := range fields {
+			cb.formFields.add(formParam{field.Key, field.Value, field.Headers, cb.arraySerializationOption})
+		}
 	}
 }
 
@@ -329,7 +353,7 @@ func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
 	var err error = nil
 	if len(cb.formFields) != 0 {
-		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields(cb.arraySerializationOption)
+		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields()
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
 		}

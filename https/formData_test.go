@@ -78,9 +78,9 @@ func TestFormEncodeMapStructType(t *testing.T) {
 }
 
 func TestPrepareFormFieldsNil(t *testing.T) {
-	params := FormParams{{"param", "value", nil}}
+	params := formParams{{"param", "value", nil, Indexed}}
 	result := url.Values{}
-	_ = params.prepareFormFields(result, Indexed)
+	_ = params.prepareFormFields(result)
 
 	expected := url.Values{}
 	expected.Add("param", "value")
@@ -94,8 +94,8 @@ func TestPrepareFormFields(t *testing.T) {
 	result := url.Values{}
 	result.Add("param", "val")
 	result.Add("param", "val1")
-	params := FormParams{{"param2", "value", nil}}
-	_ = params.prepareFormFields(result, Indexed)
+	params := formParams{{"param2", "value", nil, Indexed}}
+	_ = params.prepareFormFields(result)
 
 	expected := url.Values{}
 	expected.Add("param", "val")
@@ -111,8 +111,8 @@ func TestPrepareFormFieldsBoolSlice(t *testing.T) {
 	result := url.Values{}
 	result.Add("param", "val")
 	result.Add("param", "val1")
-	params := FormParams{{"param2", []bool{false, true}, nil}}
-	_ = params.prepareFormFields(result, Indexed)
+	params := formParams{{"param2", []bool{false, true}, nil, Indexed}}
+	_ = params.prepareFormFields(result)
 
 	expected := result
 	expected.Add("param2", "false")
@@ -125,9 +125,9 @@ func TestPrepareFormFieldsBoolSlice(t *testing.T) {
 
 func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 	floatV := math.Inf(1)
-	params := FormParams{{"param", &floatV, nil}}
+	params := formParams{{"param", &floatV, nil, Indexed}}
 	result := url.Values{}
-	err := params.prepareFormFields(result, Indexed)
+	err := params.prepareFormFields(result)
 	if err == nil {
 		t.Errorf("Failed:\nExpected: nil \nGot: %v", result)
 	}
@@ -136,8 +136,8 @@ func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 func TestPrepareMultipartFieldsString(t *testing.T) {
 	header := http.Header{}
 	header.Add("Content-Type", TEXT_CONTENT_TYPE)
-	params := FormParams{{"param", "value", header}}
-	bytes, str, _ := params.prepareMultipartFields(Indexed)
+	params := formParams{{"param", "value", header, Indexed}}
+	bytes, str, _ := params.prepareMultipartFields()
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -147,8 +147,8 @@ func TestPrepareMultipartFieldsString(t *testing.T) {
 func TestPrepareMultipartFields(t *testing.T) {
 	header := http.Header{}
 	header.Add("Content-Type", TEXT_CONTENT_TYPE)
-	params := FormParams{{"param", 40, header}}
-	bytes, str, _ := params.prepareMultipartFields(Indexed)
+	params := formParams{{"param", 40, header, Indexed}}
+	bytes, str, _ := params.prepareMultipartFields()
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -157,8 +157,8 @@ func TestPrepareMultipartFields(t *testing.T) {
 
 func TestPrepareMultipartFieldsWithPointer(t *testing.T) {
 	floatV := math.Inf(0)
-	params := FormParams{{"param", &floatV, nil}}
-	bytes, str, _ := params.prepareMultipartFields(Indexed)
+	params := formParams{{"param", &floatV, nil, Indexed}}
+	bytes, str, _ := params.prepareMultipartFields()
 
 	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
@@ -172,8 +172,8 @@ func TestPrepareMultipartFieldsWithFile(t *testing.T) {
 	}
 	header := http.Header{}
 	header.Add("Content-Type", "image/png")
-	params := FormParams{{"param", file, header}}
-	bytes, _, _ := params.prepareMultipartFields(Indexed)
+	params := formParams{{"param", file, header, Indexed}}
+	bytes, _, _ := params.prepareMultipartFields()
 
 	if !strings.Contains(bytes.String(), `filename=googles-new-logo`) {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
