@@ -9,10 +9,9 @@ type HttpConfigurationOptions func(*HttpConfiguration)
 
 // HttpConfiguration holds the configuration options for the HTTP client.
 type HttpConfiguration struct {
-	timeout                  float64
-	transport                http.RoundTripper
-	retryConfiguration       RetryConfiguration
-	arraySerializationOption ArraySerializationOption
+	timeout            float64
+	transport          http.RoundTripper
+	retryConfiguration RetryConfiguration
 }
 
 // Timeout returns the configured timeout value for the HTTP client.
