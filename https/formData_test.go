@@ -80,7 +80,7 @@ func TestFormEncodeMapStructType(t *testing.T) {
 func TestPrepareFormFieldsNil(t *testing.T) {
 	params := formParams{{"param", "value", nil, Indexed}}
 	result := url.Values{}
-	_ = params.prepareFormFields(result)
+	_ = params.prepareFormFields(result, Indexed)
 
 	expected := url.Values{}
 	expected.Add("param", "value")
@@ -127,7 +127,7 @@ func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 	floatV := math.Inf(1)
 	params := formParams{{"param", &floatV, nil, Indexed}}
 	result := url.Values{}
-	err := params.prepareFormFields(result)
+	err := params.prepareFormFields(result, Indexed)
 	if err == nil {
 		t.Errorf("Failed:\nExpected: nil \nGot: %v", result)
 	}

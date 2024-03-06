@@ -288,7 +288,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		err := cb.queryParams.prepareFormFields(cb.query)
+		err := cb.queryParams.prepareFormFields(cb.query, cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
 		}
@@ -328,7 +328,7 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		err := cb.formParams.prepareFormFields(cb.form)
+		err := cb.formParams.prepareFormFields(cb.form, cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
 		}
@@ -353,7 +353,7 @@ func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
 	var err error = nil
 	if len(cb.formFields) != 0 {
-		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields()
+		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields(cb.arraySerializationOption)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
 		}
@@ -394,7 +394,13 @@ func (cb *defaultCallBuilder) validateJson() error {
 			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
 		}
 		cb.body = string(bytes)
-		cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
+		contentType := JSON_CONTENT_TYPE
+		var testMap map[string]any
+		errTest := json.Unmarshal(bytes, &testMap)
+		if errTest != nil {
+			contentType = TEXT_CONTENT_TYPE
+		}
+		cb.setContentTypeIfNotSet(contentType)
 	}
 	return nil
 }

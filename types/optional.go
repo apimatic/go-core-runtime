@@ -20,8 +20,8 @@ func NewOptional[T any](value *T) Optional[T] {
 }
 
 // EmptyOptional creates and returns an empty Optional instance with no value set.
-func EmptyOptional() Optional[any] {
-	return Optional[any]{
+func EmptyOptional[T any]() Optional[T] {
+	return Optional[T]{
 		value: nil,
 		set:   false,
 	}

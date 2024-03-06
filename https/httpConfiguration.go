@@ -30,6 +30,11 @@ func (h *HttpConfiguration) RetryConfiguration() RetryConfiguration {
 	return h.retryConfiguration
 }
 
+// ArraySerializationOption returns the configured array serialization option for the HTTP client.
+func (h *HttpConfiguration) ArraySerializationOption() ArraySerializationOption {
+	return h.arraySerializationOption
+}
+
 // NewHttpConfiguration creates a new HttpConfiguration with the provided options and returns it.
 // The options parameter allows setting different configuration options for the HTTP client.
 func NewHttpConfiguration(options ...HttpConfigurationOptions) HttpConfiguration {
@@ -59,5 +64,12 @@ func WithTransport(transport http.RoundTripper) HttpConfigurationOptions {
 func WithRetryConfiguration(retryConfig RetryConfiguration) HttpConfigurationOptions {
 	return func(h *HttpConfiguration) {
 		h.retryConfiguration = retryConfig
+	}
+}
+
+// WithArraySerializationOption sets the array serialization option for the HTTP client.
+func WithArraySerializationOption(option ArraySerializationOption) HttpConfigurationOptions {
+	return func(h *HttpConfiguration) {
+		h.arraySerializationOption = option
 	}
 }
