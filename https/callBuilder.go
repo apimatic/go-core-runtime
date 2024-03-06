@@ -288,7 +288,7 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 		if cb.query == nil {
 			cb.query = url.Values{}
 		}
-		err := cb.queryParams.prepareFormFields(cb.query, cb.arraySerializationOption)
+		err := cb.queryParams.prepareFormFields(cb.query)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateQueryParams"}
 		}
@@ -328,7 +328,7 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 		if cb.form == nil {
 			cb.form = url.Values{}
 		}
-		err := cb.formParams.prepareFormFields(cb.form, cb.arraySerializationOption)
+		err := cb.formParams.prepareFormFields(cb.form)
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormParams"}
 		}
@@ -353,7 +353,7 @@ func (cb *defaultCallBuilder) validateFormData() error {
 	var headerVal string
 	var err error = nil
 	if len(cb.formFields) != 0 {
-		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields(cb.arraySerializationOption)
+		cb.formData, headerVal, err = cb.formFields.prepareMultipartFields()
 		if err != nil {
 			return internalError{Body: err.Error(), FileInfo: "CallBuilder.go/validateFormData"}
 		}
