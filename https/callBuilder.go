@@ -340,10 +340,8 @@ func (cb *defaultCallBuilder) validateFormParams() error {
 // FormData sets form fields for the API call.
 // It takes a slice of FormParam representing the form fields.
 func (cb *defaultCallBuilder) FormData(fields FormParams) {
-	if fields != nil {
-		for _, field := range fields {
-			cb.formFields.add(formParam{field.Key, field.Value, field.Headers, cb.arraySerializationOption})
-		}
+	for _, field := range fields {
+		cb.formFields.add(formParam{field.Key, field.Value, field.Headers, cb.arraySerializationOption})
 	}
 }
 
