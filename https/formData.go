@@ -103,10 +103,15 @@ func formParamWriter(
 	return nil
 }
 
-func toMap(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
-	if param == nil {
+func toMap(keyPrefix string, paramObj any, option ArraySerializationOption) (map[string][]string, error) {
+	if paramObj == nil {
 		return map[string][]string{}, nil
 	}
+
+	bytes, _ := json.Marshal(toStructPtr(paramObj))
+	var param any
+	_ = json.Unmarshal(bytes, &param)
+
 	switch reflect.TypeOf(param).Kind() {
 	case reflect.Struct, reflect.Ptr:
 		return processStructAndPtr(keyPrefix, param, option)

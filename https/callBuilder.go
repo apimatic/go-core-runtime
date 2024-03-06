@@ -370,7 +370,13 @@ func (cb *defaultCallBuilder) validateJson() error {
 			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
 		}
 		cb.body = string(bytes)
-		cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
+		contentType := JSON_CONTENT_TYPE
+		var testMap map[string]any
+		errTest := json.Unmarshal(bytes, &testMap)
+		if errTest != nil {
+			contentType = TEXT_CONTENT_TYPE
+		}
+		cb.setContentTypeIfNotSet(contentType)
 	}
 	return nil
 }
