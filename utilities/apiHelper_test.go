@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"net/url"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // NullableTimeToStringMap
@@ -655,9 +658,10 @@ func TestPrepareQueryParamsAppendEmptyData(t *testing.T) {
 // UpdateUserAgent
 func TestUpdateUserAgentAllArguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine} {engine-version}")
-	if !strings.Contains(result, "userAgent linux go") && !strings.Contains(result, "userAgent darwin go") {
-		t.Error("Incorrect UserAgent. Got:", result)
-	}
+	os := runtime.GOOS
+	engine := runtime.Version()
+	engineVer := strings.Replace(runtime.Version(), "go", "", 1)
+	assert.Equal(t, "userAgent "+os+" "+engine+" "+engineVer, result)
 }
 
 func TestUpdateUserAgentEmptyArguments(t *testing.T) {
@@ -669,9 +673,9 @@ func TestUpdateUserAgentEmptyArguments(t *testing.T) {
 
 func TestUpdateUserAgent2Arguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine}")
-	if !strings.Contains(result, "userAgent linux go") && !strings.Contains(result, "userAgent darwin go") {
-		t.Error("Incorrect UserAgent. Got:", result)
-	}
+	os := runtime.GOOS
+	engine := runtime.Version()
+	assert.Equal(t, "userAgent "+os+" "+engine, result)
 }
 
 func TestUpdateUserAgentWrongArguments(t *testing.T) {
