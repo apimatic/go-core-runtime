@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -387,17 +388,21 @@ func (cb *defaultCallBuilder) Json(data interface{}) {
 // If there is an error during marshaling, it returns an internalError.
 func (cb *defaultCallBuilder) validateJson() error {
 	if cb.jsonData != nil {
-		bytes, err := json.Marshal(cb.jsonData)
+		dataBytes, err := json.Marshal(cb.jsonData)
 		if err != nil {
 			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
 		}
-		cb.body = string(bytes)
+		cb.body = string(dataBytes)
 		contentType := JSON_CONTENT_TYPE
-		var testMap map[string]any
-		errTest := json.Unmarshal(bytes, &testMap)
-		if errTest != nil {
-			cb.body = fmt.Sprintf("%v", cb.jsonData)
-			contentType = TEXT_CONTENT_TYPE
+		
+		switch reflect.TypeOf(cb.jsonData).Kind() {
+		case reflect.Struct, reflect.Ptr:
+			var testObj map[string]any
+			structErr := json.Unmarshal(dataBytes, &testObj)
+			if structErr != nil {
+				cb.body = fmt.Sprintf("%v", cb.jsonData)
+				contentType = TEXT_CONTENT_TYPE
+			}
 		}
 		cb.setContentTypeIfNotSet(contentType)
 	}
