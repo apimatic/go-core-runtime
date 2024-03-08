@@ -21,10 +21,10 @@ type FormParam struct {
 }
 
 type formParam struct {
-	Key                      string
-	Value                    any
-	Headers                  http.Header
-	ArraySerializationOption ArraySerializationOption
+	key                      string
+	value                    any
+	headers                  http.Header
+	arraySerializationOption ArraySerializationOption
 }
 
 type formParams []formParam
@@ -41,7 +41,7 @@ func (fp *FormParams) Add(formParam FormParam) {
 
 // Add appends a FormParam to the FormParams collection.
 func (fp *formParams) add(formParam formParam) {
-	if formParam.Value != nil {
+	if formParam.value != nil {
 		*fp = append(*fp, formParam)
 	}
 }
@@ -53,7 +53,7 @@ func (fp *formParams) prepareFormFields(form url.Values) error {
 		form = url.Values{}
 	}
 	for _, param := range *fp {
-		paramsMap, err := toMap(param.Key, param.Value, param.ArraySerializationOption)
+		paramsMap, err := toMap(param.key, param.value, param.arraySerializationOption)
 		if err != nil {
 			return err
 		}
@@ -72,22 +72,22 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	for _, field := range *fp {
-		switch fieldValue := field.Value.(type) {
+		switch fieldValue := field.value.(type) {
 		case FileWrapper:
 			mediaParam := map[string]string{
-				"name":     field.Key,
+				"name":     field.key,
 				"filename": fieldValue.FileName,
 			}
-			formParamWriter(writer, field.Headers, mediaParam, fieldValue.File)
+			formParamWriter(writer, field.headers, mediaParam, fieldValue.File)
 		default:
-			paramsMap, err := toMap(field.Key, field.Value, field.ArraySerializationOption)
+			paramsMap, err := toMap(field.key, field.value, field.arraySerializationOption)
 			if err != nil {
 				return *body, writer.FormDataContentType(), err
 			}
 			for key, values := range paramsMap {
 				mediaParam := map[string]string{"name": key}
 				for _, value := range values {
-					formParamWriter(writer, field.Headers, mediaParam, []byte(value))
+					formParamWriter(writer, field.headers, mediaParam, []byte(value))
 				}
 			}
 		}
