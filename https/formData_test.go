@@ -19,7 +19,7 @@ func GetStruct() Person {
 }
 
 func TestStructToMap(t *testing.T) {
-	result, _ := structToMap(GetStruct())
+	result, _ := structToAny(GetStruct())
 
 	expected := map[string]interface{}{
 		"Name":     "Bisma",
@@ -32,7 +32,7 @@ func TestStructToMap(t *testing.T) {
 }
 
 func TestStructToMapMarshallingError(t *testing.T) {
-	result, err := structToMap(math.Inf(1))
+	result, err := structToAny(math.Inf(1))
 
 	if err == nil && result != nil {
 		t.Error("Failed:\nExpected error in marshalling infinity number")

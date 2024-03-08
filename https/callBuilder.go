@@ -396,6 +396,7 @@ func (cb *defaultCallBuilder) validateJson() error {
 		var testMap map[string]any
 		errTest := json.Unmarshal(bytes, &testMap)
 		if errTest != nil {
+			cb.body = fmt.Sprintf("%v", cb.jsonData)
 			contentType = TEXT_CONTENT_TYPE
 		}
 		cb.setContentTypeIfNotSet(contentType)

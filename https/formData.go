@@ -119,40 +119,35 @@ func formParamWriter(
 	return nil
 }
 
-func toMap(keyPrefix string, paramObj any, option ArraySerializationOption) (map[string][]string, error) {
-	if paramObj == nil {
+func toMap(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
+	if param == nil {
 		return map[string][]string{}, nil
 	}
 
-	var param any
-	marshalBytes, err := json.Marshal(toStructPtr(paramObj))
-	if err == nil && reflect.TypeOf(paramObj).Kind() != reflect.Map {
-		err = json.Unmarshal(marshalBytes, &param)
-		if err != nil {
-			return map[string][]string{}, nil
-		}
-	} else {
-		param = paramObj
-	}
-
-	switch reflect.TypeOf(param).Kind() {
-	case reflect.Struct, reflect.Ptr:
+	switch paramKind := reflect.TypeOf(param).Kind(); paramKind {
+	case reflect.Ptr:
 		return processStructAndPtr(keyPrefix, param, option)
+	case reflect.Struct:
+		return processStructAndPtr(keyPrefix, toStructPtr(param), option)
 	case reflect.Map:
 		return processMap(keyPrefix, param, option)
 	case reflect.Slice:
 		return processSlice(keyPrefix, param, option)
 	default:
-		return processDefault(keyPrefix, param)
+		return processDefault(paramKind, keyPrefix, param)
 	}
 }
 
 func processStructAndPtr(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
-	innerMap, err := structToMap(param)
-	if err != nil {
-		return nil, err
-	}
-	return toMap(keyPrefix, innerMap, option)
+	innerData, err := structToAny(param)
+	if err != nil { return nil, err }
+
+	switch innerData := innerData.(type) {
+	case map[string]any:
+		return toMap(keyPrefix, innerData, option)
+	default:
+		return toMap(keyPrefix, innerData, option)
+	} 
 }
 
 func processMap(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
@@ -192,34 +187,31 @@ func processSlice(keyPrefix string, param any, option ArraySerializationOption) 
 	return result, nil
 }
 
-func processDefault(keyPrefix string, param any) (map[string][]string, error) {
+func processDefault(paramKind reflect.Kind, keyPrefix string, param any) (map[string][]string, error) {
 	var defaultValue string
-	switch in := param.(type) {
-	case string:
-		defaultValue = in
+	switch paramKind {
+	case reflect.String:
+		defaultValue = param.(string)
 	default:
-		dataBytes, err := json.Marshal(in)
+		dataBytes, err := json.Marshal(param)
 		if err == nil {
 			defaultValue = string(dataBytes)
 		} else {
-			defaultValue = fmt.Sprintf("%v", in)
+			defaultValue = fmt.Sprintf("%v", param)
 		}
 	}
 	return map[string][]string{keyPrefix: {defaultValue}}, nil
 }
 
-// structToMap converts a given data structure to a map.
-func structToMap(data any) (map[string]any, error) {
-	if reflect.TypeOf(data).Kind() != reflect.Ptr {
-		data = toStructPtr(data)
-	}
+// structToAny converts a given data structure into an any type.
+func structToAny(data any) (any, error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
-	mapData := make(map[string]interface{})
-	err = json.Unmarshal(dataBytes, &mapData)
-	return mapData, err
+	var innerData any
+	err = json.Unmarshal(dataBytes, &innerData)
+	return innerData, err
 }
 
 // Return a pointer to the supplied struct via interface{}
