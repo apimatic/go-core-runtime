@@ -191,7 +191,7 @@ func processDefault(paramKind reflect.Kind, keyPrefix string, param any) (map[st
 	var defaultValue string
 	switch paramKind {
 	case reflect.String:
-		defaultValue = param.(string)
+		defaultValue = fmt.Sprintf("%v", param)
 	default:
 		dataBytes, err := json.Marshal(param)
 		if err == nil {
