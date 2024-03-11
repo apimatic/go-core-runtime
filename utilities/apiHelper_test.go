@@ -559,7 +559,7 @@ func TestPrepareQueryParamsDuplicateData(t *testing.T) {
 		"key":  []string{"value"},
 		"key1": []string{"1"},
 	}
-	data := map[string]interface{}{
+	data := map[string]any{
 		"key":  "value",
 		"key1": 1,
 	}
@@ -590,7 +590,7 @@ func TestPrepareQueryParamsNilData(t *testing.T) {
 }
 
 func TestPrepareQueryParamsNilQueryParams(t *testing.T) {
-	data := map[string]interface{}{
+	data := map[string]any{
 		"key":  "value",
 		"key1": 1,
 	}
@@ -606,7 +606,7 @@ func TestPrepareQueryParamsNilQueryParams(t *testing.T) {
 
 func TestPrepareQueryParamsEmptyQueryParams(t *testing.T) {
 	queryParams := url.Values{}
-	data := map[string]interface{}{
+	data := map[string]any{
 		"key":  "value",
 		"key1": 1,
 	}
@@ -625,7 +625,7 @@ func TestPrepareQueryParamsAppendQueryParams(t *testing.T) {
 		"key":  []string{"value"},
 		"key1": []string{"1"},
 	}
-	data := map[string]interface{}{
+	data := map[string]any{
 		"key":  "value1",
 		"key1": 2,
 	}
@@ -644,7 +644,7 @@ func TestPrepareQueryParamsAppendEmptyData(t *testing.T) {
 		"key":  []string{"value"},
 		"key1": []string{"1"},
 	}
-	data := map[string]interface{}{}
+	data := map[string]any{}
 	result := PrepareQueryParams(queryParams, data)
 	expected := url.Values{
 		"key":  []string{"value"},
@@ -766,7 +766,7 @@ func GetTimeSlice(format string) []time.Time {
 	return []time.Time{time1, time2}
 }
 
-func GetJsonDecoded(arr interface{}) *json.Decoder {
+func GetJsonDecoded(arr any) *json.Decoder {
 	buffer := &bytes.Buffer{}
 	json.NewEncoder(buffer).Encode(arr)
 	byteSlice := buffer.Bytes()

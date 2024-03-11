@@ -170,7 +170,7 @@ func processSlice(keyPrefix string, param any, option ArraySerializationOption) 
 	result := make(map[string][]string)
 	for i := 0; i < reflectValue.Len(); i++ {
 		innerStruct := reflectValue.Index(i).Interface()
-		var indexStr interface{}
+		var indexStr any
 		switch innerStruct.(type) {
 		case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128, string:
 			indexStr = nil
@@ -214,7 +214,7 @@ func structToAny(data any) (any, error) {
 	return innerData, err
 }
 
-// Return a pointer to the supplied struct via interface{}
+// Return a pointer to the supplied struct via any
 func toStructPtr(obj any) any {
 	// Create a new instance of the underlying type
 	vp := reflect.New(reflect.TypeOf(obj))

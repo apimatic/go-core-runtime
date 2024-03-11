@@ -21,7 +21,7 @@ func GetStruct() Person {
 func TestStructToMap(t *testing.T) {
 	result, _ := structToAny(GetStruct())
 
-	expected := map[string]interface{}{
+	expected := map[string]any{
 		"Name":     "Bisma",
 		"Employed": true,
 	}
