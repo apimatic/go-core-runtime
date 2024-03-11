@@ -392,21 +392,25 @@ func (cb *defaultCallBuilder) validateJson() error {
 		if err != nil {
 			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
 		}
-		cb.body = string(dataBytes)
-		contentType := JSON_CONTENT_TYPE
-		
-		switch reflect.TypeOf(cb.jsonData).Kind() {
-		case reflect.Struct, reflect.Ptr:
-			var testObj map[string]any
-			structErr := json.Unmarshal(dataBytes, &testObj)
-			if structErr != nil {
-				cb.body = fmt.Sprintf("%v", cb.jsonData)
-				contentType = TEXT_CONTENT_TYPE
-			}
+		if !cb.isOAFJson(dataBytes) {
+			cb.body = string(dataBytes)
+			cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
 		}
-		cb.setContentTypeIfNotSet(contentType)
 	}
 	return nil
+}
+
+func (cb *defaultCallBuilder) isOAFJson(dataBytes []byte) bool {
+	switch reflect.TypeOf(cb.jsonData).Kind() {
+	case reflect.Struct, reflect.Ptr:
+		var testObj map[string]any
+		structErr := json.Unmarshal(dataBytes, &testObj)
+		if structErr != nil {
+			cb.Text(fmt.Sprintf("%v", cb.jsonData))
+			return true
+		}
+	}
+	return false
 }
 
 // setContentTypeIfNotSet sets the "Content-Type" header if it is not already set in the CallBuilder.

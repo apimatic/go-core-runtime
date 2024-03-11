@@ -124,7 +124,7 @@ func toMap(keyPrefix string, param any, option ArraySerializationOption) (map[st
 		return map[string][]string{}, nil
 	}
 
-	switch paramKind := reflect.TypeOf(param).Kind(); paramKind {
+	switch reflect.TypeOf(param).Kind() {
 	case reflect.Ptr:
 		return processStructAndPtr(keyPrefix, param, option)
 	case reflect.Struct:
@@ -134,7 +134,7 @@ func toMap(keyPrefix string, param any, option ArraySerializationOption) (map[st
 	case reflect.Slice:
 		return processSlice(keyPrefix, param, option)
 	default:
-		return processDefault(paramKind, keyPrefix, param)
+		return processDefault(keyPrefix, param)
 	}
 }
 
@@ -142,12 +142,7 @@ func processStructAndPtr(keyPrefix string, param any, option ArraySerializationO
 	innerData, err := structToAny(param)
 	if err != nil { return nil, err }
 
-	switch innerData := innerData.(type) {
-	case map[string]any:
-		return toMap(keyPrefix, innerData, option)
-	default:
-		return toMap(keyPrefix, innerData, option)
-	} 
+	return toMap(keyPrefix, innerData, option)
 }
 
 func processMap(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
@@ -187,9 +182,9 @@ func processSlice(keyPrefix string, param any, option ArraySerializationOption) 
 	return result, nil
 }
 
-func processDefault(paramKind reflect.Kind, keyPrefix string, param any) (map[string][]string, error) {
+func processDefault(keyPrefix string, param any) (map[string][]string, error) {
 	var defaultValue string
-	switch paramKind {
+	switch reflect.TypeOf(param).Kind() {
 	case reflect.String:
 		defaultValue = fmt.Sprintf("%v", param)
 	default:
