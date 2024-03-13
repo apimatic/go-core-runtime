@@ -170,7 +170,7 @@ func (cb *defaultCallBuilder) AppendPath(path string) {
 
 // AppendTemplateParam appends the provided parameter to the existing path in the CallBuilder as a URL template parameter.
 func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
-	if strings.Contains(cb.path, "%s") {
+	if strings.Contains(cb.path, "%v") {
 		cb.path = fmt.Sprintf(cb.path, "/"+url.QueryEscape(param))
 	} else {
 		cb.AppendPath(url.QueryEscape(param))
@@ -180,14 +180,18 @@ func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
 // AppendTemplateParams appends the provided parameters to the existing path in the CallBuilder as URL template parameters.
 // It accepts a slice of strings or a slice of integers as the params argument.
 func (cb *defaultCallBuilder) AppendTemplateParams(params any) {
-	switch x := params.(type) {
-	case []string:
-		for _, param := range x {
-			cb.AppendTemplateParam(param)
-		}
-	case []int:
-		for _, param := range x {
-			cb.AppendTemplateParam(strconv.Itoa(int(param)))
+	reflectValue := reflect.ValueOf(params)
+	if reflectValue.Type().Kind() == reflect.Slice {
+		for i := 0; i < reflectValue.Len(); i++ {
+			innerParam := reflectValue.Index(i).Interface()
+			switch x := innerParam.(type) {
+			case string:
+				cb.AppendTemplateParam(x)
+			case int:
+				cb.AppendTemplateParam(strconv.Itoa(int(x)))
+			default:
+				cb.AppendTemplateParam(fmt.Sprintf("%v", x))
+			}
 		}
 	}
 }
