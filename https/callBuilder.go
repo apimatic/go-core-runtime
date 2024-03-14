@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -37,14 +38,14 @@ type baseUrlProvider func(server string) string
 type CallBuilder interface {
 	AppendPath(path string)
 	AppendTemplateParam(param string)
-	AppendTemplateParams(params interface{})
+	AppendTemplateParams(params any)
 	AppendErrors(errors map[string]ErrorBuilder[error])
 	BaseUrl(arg string)
 	Method(httpMethodName string)
 	validateMethod() error
 	Accept(acceptHeaderValue string)
 	ContentType(contentTypeHeaderValue string)
-	Header(name string, value interface{})
+	Header(name string, value any)
 	CombineHeaders(headersToMerge map[string]string)
 	QueryParam(name string, value any)
 	QueryParamWithArraySerializationOption(name string, value any, option ArraySerializationOption)
@@ -57,7 +58,7 @@ type CallBuilder interface {
 	validateFormData() error
 	Text(body string)
 	FileStream(file FileWrapper)
-	Json(data interface{})
+	Json(data any)
 	validateJson() error
 	intercept(interceptor HttpInterceptor)
 	InterceptRequest(interceptor func(httpRequest *http.Request) *http.Request)
@@ -92,7 +93,7 @@ type defaultCallBuilder struct {
 	retryOption              RequestRetryOption
 	retryConfig              RetryConfiguration
 	clientError              error
-	jsonData                 interface{}
+	jsonData                 any
 	formFields               formParams
 	formParams               formParams
 	queryParams              formParams
@@ -169,7 +170,7 @@ func (cb *defaultCallBuilder) AppendPath(path string) {
 
 // AppendTemplateParam appends the provided parameter to the existing path in the CallBuilder as a URL template parameter.
 func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
-	if strings.Contains(cb.path, "%s") {
+	if strings.Contains(cb.path, "%v") {
 		cb.path = fmt.Sprintf(cb.path, "/"+url.QueryEscape(param))
 	} else {
 		cb.AppendPath(url.QueryEscape(param))
@@ -178,15 +179,19 @@ func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
 
 // AppendTemplateParams appends the provided parameters to the existing path in the CallBuilder as URL template parameters.
 // It accepts a slice of strings or a slice of integers as the params argument.
-func (cb *defaultCallBuilder) AppendTemplateParams(params interface{}) {
-	switch x := params.(type) {
-	case []string:
-		for _, param := range x {
-			cb.AppendTemplateParam(param)
-		}
-	case []int:
-		for _, param := range x {
-			cb.AppendTemplateParam(strconv.Itoa(int(param)))
+func (cb *defaultCallBuilder) AppendTemplateParams(params any) {
+	reflectValue := reflect.ValueOf(params)
+	if reflectValue.Type().Kind() == reflect.Slice {
+		for i := 0; i < reflectValue.Len(); i++ {
+			innerParam := reflectValue.Index(i).Interface()
+			switch x := innerParam.(type) {
+			case string:
+				cb.AppendTemplateParam(x)
+			case int:
+				cb.AppendTemplateParam(strconv.Itoa(int(x)))
+			default:
+				cb.AppendTemplateParam(fmt.Sprintf("%v", x))
+			}
 		}
 	}
 }
@@ -250,7 +255,7 @@ func (cb *defaultCallBuilder) ContentType(contentTypeHeaderValue string) {
 // It takes the name of the header and the value of the header as arguments.
 func (cb *defaultCallBuilder) Header(
 	name string,
-	value interface{},
+	value any,
 ) {
 	if cb.headers == nil {
 		cb.headers = make(map[string]string)
@@ -297,8 +302,8 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 }
 
 // QueryParams sets multiple query parameters for the API call.
-// It takes a map of string keys and interface{} values representing the query parameters.
-func (cb *defaultCallBuilder) QueryParams(parameters map[string]interface{}) {
+// It takes a map of string keys and any values representing the query parameters.
+func (cb *defaultCallBuilder) QueryParams(parameters map[string]any) {
 	cb.query = utilities.PrepareQueryParams(cb.query, parameters)
 }
 
@@ -377,7 +382,7 @@ func (cb *defaultCallBuilder) FileStream(file FileWrapper) {
 }
 
 // Json sets the request body for the API call as JSON.
-func (cb *defaultCallBuilder) Json(data interface{}) {
+func (cb *defaultCallBuilder) Json(data any) {
 	cb.jsonData = data
 }
 
@@ -387,20 +392,29 @@ func (cb *defaultCallBuilder) Json(data interface{}) {
 // If there is an error during marshaling, it returns an internalError.
 func (cb *defaultCallBuilder) validateJson() error {
 	if cb.jsonData != nil {
-		bytes, err := json.Marshal(cb.jsonData)
+		dataBytes, err := json.Marshal(cb.jsonData)
 		if err != nil {
 			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
 		}
-		cb.body = string(bytes)
-		contentType := JSON_CONTENT_TYPE
-		var testMap map[string]any
-		errTest := json.Unmarshal(bytes, &testMap)
-		if errTest != nil {
-			contentType = TEXT_CONTENT_TYPE
+		if !cb.isOAFJson(dataBytes) {
+			cb.body = string(dataBytes)
+			cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
 		}
-		cb.setContentTypeIfNotSet(contentType)
 	}
 	return nil
+}
+
+func (cb *defaultCallBuilder) isOAFJson(dataBytes []byte) bool {
+	switch reflect.TypeOf(cb.jsonData).Kind() {
+	case reflect.Struct, reflect.Ptr:
+		var testObj map[string]any
+		structErr := json.Unmarshal(dataBytes, &testObj)
+		if structErr != nil {
+			cb.Text(fmt.Sprintf("%v", cb.jsonData))
+			return true
+		}
+	}
+	return false
 }
 
 // setContentTypeIfNotSet sets the "Content-Type" header if it is not already set in the CallBuilder.
