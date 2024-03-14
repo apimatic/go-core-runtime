@@ -6,7 +6,7 @@ import (
 	"github.com/apimatic/go-core-runtime/https"
 )
 
-//  Native Body Matcher Tests
+// Native Body Matcher Tests
 func TestNativeBodyMatcherNumber(t *testing.T) {
 	expected := `4`
 	var result int = 4
@@ -53,7 +53,7 @@ func TestNativeBodyMatcherBooleanError(t *testing.T) {
 	NativeBodyMatcher(&testing.T{}, expected, result)
 }
 
-//  Raw Body Matcher Tests
+// Raw Body Matcher Tests
 func TestRawBodyMatcherIntSlice(t *testing.T) {
 	expected := `[1,2,3,4,5]`
 	var result []int = []int{
@@ -68,7 +68,7 @@ func TestRawBodyMatcherBooleanError(t *testing.T) {
 	RawBodyMatcher(&testing.T{}, expected, result)
 }
 
-//  Is Same File Tests
+// Is Same File Tests
 func TestIsSameFile(t *testing.T) {
 	expected := `https://www.gstatic.com/webp/gallery/1.jpg`
 	result, err := https.GetFile(expected)
@@ -90,13 +90,13 @@ func TestIsSameFileErrorURL(t *testing.T) {
 	IsSameAsFile(&testing.T{}, expected, result.File)
 }
 
-//  Slice to Comma Separated String Tests
+// Slice to Comma Separated String Tests
 func TestSliceToCommaSeparatedString(t *testing.T) {
 	expected := `{"isMap": false,"id": "5a9fcb01caacc310dc6bab50"}`
 	SliceToCommaSeparatedString(expected)
 }
 
-//  Keys And Values Body Matcher Tests
+// Keys And Values Body Matcher Tests
 type Response struct {
 	IsMap      bool       `json:"isMap"`
 	Attributes Attributes `json:"attributes"`
@@ -205,10 +205,10 @@ func TestKeysAndValuesBodyMatcherUnmarshallingError(t *testing.T) {
 	KeysAndValuesBodyMatcher(&testing.T{}, expected, result, true, false)
 }
 
-//  Keys Body Matcher Tests
+// Keys Body Matcher Tests
 func TestKeysBodyMatcherEmpty(t *testing.T) {
 	expected := `{}`
-	KeysBodyMatcher(t, expected, nil, false, false)
+	KeysBodyMatcher[any](t, expected, nil, false, false)
 }
 
 func TestKeysBodyMatcherObject(t *testing.T) {
