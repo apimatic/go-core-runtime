@@ -12,9 +12,19 @@ import (
 	"github.com/apimatic/go-core-runtime/https"
 )
 
+// RawBodyMatcher checks if the expectedBody is contained within the JSON response body.
+func RawBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
+	responseBytes, _ := json.Marshal(&responseObject)
+	responseBody := string(responseBytes)
+
+	if !strings.Contains(responseBody, expectedBody) {
+		test.Errorf("got \n%v \nbut expected %v", responseBody, expectedBody)
+	}
+}
+
 // NativeBodyMatcher compares the JSON response body with the expected JSON body.
-func NativeBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
-	responseBytes, _ := json.Marshal(responseObject)
+func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
+	responseBytes, _ := json.Marshal(&responseObject)
 	var expected, response any
 	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
 	responseError := json.Unmarshal(responseBytes, &response)
@@ -30,8 +40,8 @@ func NativeBodyMatcher(test *testing.T, expectedBody string, responseObject any)
 
 // KeysBodyMatcher compares the JSON response body with the expected JSON body using keys only.
 // The responseObject and expectedBody should have the same keys.
-func KeysBodyMatcher(test *testing.T, expectedBody string, responseObject any, checkArrayCount, checkArrayOrder bool) {
-	responseBytes, _ := json.Marshal(responseObject)
+func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
+	responseBytes, _ := json.Marshal(&responseObject)
 	var response, expected map[string]any
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
@@ -84,16 +94,6 @@ func matchKeysAndValues(response, expected map[string]any, checkArrayCount, chec
 		}
 	}
 	return true
-}
-
-// RawBodyMatcher checks if the expectedBody is contained within the JSON response body.
-func RawBodyMatcher(test *testing.T, expectedBody string, responseObject any) {
-	responseBytes, _ := json.Marshal(responseObject)
-	responseBody := string(responseBytes)
-
-	if !strings.Contains(responseBody, expectedBody) {
-		test.Errorf("got \n%v \nbut expected %v", responseBody, expectedBody)
-	}
 }
 
 // IsSameAsFile checks if the responseFileBytes is the same as the content of the file fetched from the expectedFileURL.
