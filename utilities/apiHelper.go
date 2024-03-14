@@ -29,7 +29,7 @@ func DecodeResults[T any](decoder *json.Decoder) (T, error) {
 }
 
 // PrepareQueryParams adds key-value pairs from the data map to the existing URL query parameters.
-func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) url.Values {
+func PrepareQueryParams(queryParams url.Values, data map[string]any) url.Values {
 	if queryParams == nil {
 		queryParams = url.Values{}
 	}
@@ -42,58 +42,26 @@ func PrepareQueryParams(queryParams url.Values, data map[string]interface{}) url
 
 // JsonDecoderToString decodes a JSON value from the provided json.Decoder into a string.
 func JsonDecoderToString(dec *json.Decoder) (string, error) {
-	var str string
-	for {
-		if err := dec.Decode(&str); err == io.EOF {
-			break
-		} else if err != nil {
-			return "", err
-		}
-	}
-	return str, nil
+	return DecodeResults[string](dec)
 }
 
 // JsonDecoderToStringSlice decodes a JSON array from the provided json.Decoder into a string slice.
 func JsonDecoderToStringSlice(dec *json.Decoder) ([]string, error) {
-	var arr []string
-	for {
-		if err := dec.Decode(&arr); err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-	}
-	return arr, nil
+	return DecodeResults[[]string](dec)
 }
 
 // JsonDecoderToIntSlice decodes a JSON array from the provided json.Decoder into an int slice.
 func JsonDecoderToIntSlice(dec *json.Decoder) ([]int, error) {
-	var arr []int
-	for {
-		if err := dec.Decode(&arr); err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-	}
-	return arr, nil
+	return DecodeResults[[]int](dec)
 }
 
 // JsonDecoderToBooleanSlice decodes a JSON array from the provided json.Decoder into a bool slice.
 func JsonDecoderToBooleanSlice(dec *json.Decoder) ([]bool, error) {
-	var arr []bool
-	for {
-		if err := dec.Decode(&arr); err == io.EOF {
-			break
-		} else if err != nil {
-			return nil, err
-		}
-	}
-	return arr, nil
+	return DecodeResults[[]bool](dec)
 }
 
 // ToTimeSlice converts a slice of strings or int64 values to a slice of time.Time values using the specified format.
-func ToTimeSlice(slice interface{}, format string) ([]time.Time, error) {
+func ToTimeSlice(slice any, format string) ([]time.Time, error) {
 	result := make([]time.Time, 0)
 	if slice == nil {
 		return []time.Time{}, nil
@@ -136,7 +104,7 @@ func TimeToStringSlice(slice []time.Time, format string) []string {
 }
 
 // ToTimeMap converts a map with string or int64 values to a map with time.Time values using the specified format.
-func ToTimeMap(dict interface{}, format string) (map[string]time.Time, error) {
+func ToTimeMap(dict any, format string) (map[string]time.Time, error) {
 	result := make(map[string]time.Time)
 	if dict == nil {
 		return map[string]time.Time{}, nil
@@ -160,7 +128,7 @@ func ToTimeMap(dict interface{}, format string) (map[string]time.Time, error) {
 }
 
 // ToNullableTimeMap converts a map with nullable string or int64 values to a map with nullable time.Time values using the specified format.
-func ToNullableTimeMap(dict interface{}, format string) (map[string]*time.Time, error) {
+func ToNullableTimeMap(dict any, format string) (map[string]*time.Time, error) {
 	result := make(map[string]*time.Time)
 	if dict == nil {
 		return map[string]*time.Time{}, nil

@@ -12,10 +12,20 @@ import (
 	"github.com/apimatic/go-core-runtime/https"
 )
 
+// RawBodyMatcher checks if the expectedBody is contained within the JSON response body.
+func RawBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
+	responseBytes, _ := json.Marshal(&responseObject)
+	responseBody := string(responseBytes)
+
+	if !strings.Contains(responseBody, expectedBody) {
+		test.Errorf("got \n%v \nbut expected %v", responseBody, expectedBody)
+	}
+}
+
 // NativeBodyMatcher compares the JSON response body with the expected JSON body.
 func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	var expected, response interface{}
+	var expected, response any
 	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
 	responseError := json.Unmarshal(responseBytes, &response)
 
@@ -28,21 +38,11 @@ func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObje
 	}
 }
 
-// RawBodyMatcher checks if the expectedBody is contained within the JSON response body.
-func RawBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
-	responseBytes, _ := json.Marshal(&responseObject)
-	responseBody := string(responseBytes)
-
-	if !strings.Contains(responseBody, expectedBody) {
-		test.Errorf("got \n%v \nbut expected %v", responseBody, expectedBody)
-	}
-}
-
 // KeysBodyMatcher compares the JSON response body with the expected JSON body using keys only.
 // The responseObject and expectedBody should have the same keys.
 func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	var response, expected map[string]interface{}
+	var response, expected map[string]any
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
@@ -59,7 +59,7 @@ func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject
 // The responseObject and expectedBody should have the same keys and their corresponding values should be equal.
 func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	var response, expected map[string]interface{}
+	var response, expected map[string]any
 	responseErr := json.Unmarshal(responseBytes, &response)
 	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
@@ -74,7 +74,7 @@ func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, respo
 
 // matchKeysAndValues is a helper function used by KeysBodyMatcher and KeysAndValuesBodyMatcher
 // to compare the JSON keys and values.
-func matchKeysAndValues(response, expected map[string]interface{}, checkArrayCount, checkArrayOrder, checkValues bool) bool {
+func matchKeysAndValues(response, expected map[string]any, checkArrayCount, checkArrayOrder, checkValues bool) bool {
 	if checkArrayCount && len(expected) != len(response) {
 		return false
 	}
@@ -84,8 +84,8 @@ func matchKeysAndValues(response, expected map[string]interface{}, checkArrayCou
 			if reflect.ValueOf(value).Kind() != reflect.Map {
 				return false
 			}
-			responseSubMap := responseValue.(map[string]interface{})
-			expectedSubMap := value.(map[string]interface{})
+			responseSubMap := responseValue.(map[string]any)
+			expectedSubMap := value.(map[string]any)
 			if !matchKeysAndValues(responseSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
 				return false
 			}
@@ -113,6 +113,6 @@ func IsSameInputBytes(test *testing.T, expectedBytes []byte, receivedBytes []byt
 }
 
 // SliceToCommaSeparatedString converts a slice to a comma-separated string representation.
-func SliceToCommaSeparatedString(slice interface{}) string {
+func SliceToCommaSeparatedString(slice any) string {
 	return strings.Join(strings.Split(fmt.Sprint(slice), " "), ",")
 }

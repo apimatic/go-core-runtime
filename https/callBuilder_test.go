@@ -90,7 +90,7 @@ func TestAppendPathEmptyPath(t *testing.T) {
 }
 
 func TestAppendTemplateParamsStrings(t *testing.T) {
-	request := GetCallBuilder(ctx, "GET", "/template/%s", nil)
+	request := GetCallBuilder(ctx, "GET", "/template/%v", nil)
 	request.AppendTemplateParams([]string{"abc", "def"})
 	_, response, err := request.CallAsJson()
 	if err != nil {
@@ -105,7 +105,7 @@ func TestAppendTemplateParamsStrings(t *testing.T) {
 }
 
 func TestAppendTemplateParamsIntegers(t *testing.T) {
-	request := GetCallBuilder(ctx, "GET", "/template/%s", nil)
+	request := GetCallBuilder(ctx, "GET", "/template/%v", nil)
 	request.AppendTemplateParams([]int{1, 2, 3, 4, 5})
 	_, response, err := request.CallAsJson()
 	if err != nil {
