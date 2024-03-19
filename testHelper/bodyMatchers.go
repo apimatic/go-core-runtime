@@ -42,11 +42,8 @@ func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObje
 // The responseObject and expectedBody should have the same keys.
 func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	actual, expected, ok := extractAsMaps(responseBytes, []byte(expectedBody))
-	if !ok {
-		test.Error("error while unmarshalling for comparison")
-	}
-	if !matchKeysAndValues(actual, expected, checkArrayCount, checkArrayOrder, false) {
+
+	if !matchKeysAndValues(responseBytes, []byte(expectedBody), checkArrayCount, checkArrayOrder, false) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
@@ -55,16 +52,49 @@ func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject
 // The responseObject and expectedBody should have the same keys and their corresponding values should be equal.
 func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	actual, expected, ok := extractAsMaps(responseBytes, []byte(expectedBody))
-	if !ok {
-		test.Error("error while unmarshalling for comparison")
-	}
-	if !matchKeysAndValues(actual, expected, checkArrayCount, checkArrayOrder, true) {
+
+	if !matchKeysAndValues(responseBytes, []byte(expectedBody), checkArrayCount, checkArrayOrder, true) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
 
-func extractAsMaps(actualBytes []byte, expectedBytes []byte) (map[string]any, map[string]any, bool) {
+// matchKeysAndValues is a helper function used by KeysBodyMatcher and KeysAndValuesBodyMatcher
+// to compare the bytes for keys and values.
+func matchKeysAndValues(actualBytes, expectedBytes []byte, checkArrayCount, checkArrayOrder, checkValues bool) bool {
+	actual, expected, ok := extractAsMaps(actualBytes, expectedBytes)
+	if !ok {
+		return false
+	}
+	return matchKeysAndValuesAsMap(actual, expected, checkArrayCount, checkArrayOrder, checkValues)
+}
+
+// matchKeysAndValuesAsMap is a helper function used by matchKeysAndValues
+// to compare the JSON keys and values recursively.
+func matchKeysAndValuesAsMap(actual, expected map[string]any, checkArrayCount, checkArrayOrder, checkValues bool) bool {
+	if checkArrayCount && len(expected) != len(actual) {
+		return false
+	}
+	for key, value := range expected {
+		responseValue := actual[key]
+		if reflect.ValueOf(responseValue).Kind() == reflect.Map {
+			if reflect.ValueOf(value).Kind() != reflect.Map {
+				return false
+			}
+			responseSubMap := responseValue.(map[string]any)
+			expectedSubMap := value.(map[string]any)
+			if !matchKeysAndValuesAsMap(responseSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
+				return false
+			}
+		} else if checkValues && !reflect.DeepEqual(responseValue, value) {
+			return false
+		}
+	}
+	return true
+}
+
+// extractAsMaps converts the bytes into maps, if the bytes yield as array,
+// then the array indexes will be used as map keys.
+func extractAsMaps(actualBytes, expectedBytes []byte) (map[string]any, map[string]any, bool) {
 	var actual, expected = make(map[string]any), make(map[string]any)
 	var actualErr, expectedErr error
 
@@ -90,30 +120,6 @@ func extractAsMaps(actualBytes []byte, expectedBytes []byte) (map[string]any, ma
 		return nil, nil, false
 	}
 	return actual, expected, true
-}
-
-// matchKeysAndValues is a helper function used by KeysBodyMatcher and KeysAndValuesBodyMatcher
-// to compare the JSON keys and values.
-func matchKeysAndValues(response, expected map[string]any, checkArrayCount, checkArrayOrder, checkValues bool) bool {
-	if checkArrayCount && len(expected) != len(response) {
-		return false
-	}
-	for key, value := range expected {
-		responseValue := response[key]
-		if reflect.ValueOf(responseValue).Kind() == reflect.Map {
-			if reflect.ValueOf(value).Kind() != reflect.Map {
-				return false
-			}
-			responseSubMap := responseValue.(map[string]any)
-			expectedSubMap := value.(map[string]any)
-			if !matchKeysAndValues(responseSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
-				return false
-			}
-		} else if checkValues && !reflect.DeepEqual(responseValue, value) {
-			return false
-		}
-	}
-	return true
 }
 
 // IsSameAsFile checks if the responseFileBytes is the same as the content of the file fetched from the expectedFileURL.
