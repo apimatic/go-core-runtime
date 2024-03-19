@@ -391,28 +391,30 @@ func (cb *defaultCallBuilder) Json(data any) {
 // Additionally, it sets the "Content-Type" header to "application/json" if not already set.
 // If there is an error during marshaling, it returns an internalError.
 func (cb *defaultCallBuilder) validateJson() error {
-	if cb.jsonData != nil {
-		dataBytes, err := json.Marshal(cb.jsonData)
-		if err != nil {
-			return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
-		}
-		if !cb.isOAFJson(dataBytes) {
-			cb.body = string(dataBytes)
-			cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
-		}
+	if cb.jsonData == nil {
+		return nil
 	}
+	dataBytes, err := json.Marshal(cb.jsonData)
+	if err != nil {
+		return internalError{Body: fmt.Sprintf("Unable to marshal the given data: %v", err.Error()), FileInfo: "CallBuilder.go/validateJson"}
+	}
+	if cb.isJSONData(dataBytes) {
+		cb.body = string(dataBytes)
+		cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
+		return nil
+	}
+	cb.Text(fmt.Sprint(cb.jsonData))
 	return nil
 }
 
-func (cb *defaultCallBuilder) isOAFJson(dataBytes []byte) bool {
-	switch reflect.TypeOf(cb.jsonData).Kind() {
-	case reflect.Struct, reflect.Ptr:
-		var testObj map[string]any
-		structErr := json.Unmarshal(dataBytes, &testObj)
-		if structErr != nil {
-			cb.Text(fmt.Sprintf("%v", cb.jsonData))
-			return true
-		}
+func (cb *defaultCallBuilder) isJSONData(dataBytes []byte) bool {
+	if err := json.Unmarshal(dataBytes, new(map[string]any)); err == nil {
+		// Yes, if dataBytes yield a map of `any` type
+		return true
+	}
+	if err := json.Unmarshal(dataBytes, new([]any)); err == nil {
+		// Yes, if dataBytes yield an array of `any` type
+		return true
 	}
 	return false
 }
