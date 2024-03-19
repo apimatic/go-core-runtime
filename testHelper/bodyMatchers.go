@@ -30,7 +30,7 @@ func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObje
 	responseError := json.Unmarshal(responseBytes, &response)
 
 	if expectedError != nil || responseError != nil {
-		test.Error("Error while Unmarshalling")
+		test.Error("error while unmarshalling for comparison")
 	}
 
 	if !reflect.DeepEqual(response, expected) {
@@ -42,15 +42,11 @@ func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObje
 // The responseObject and expectedBody should have the same keys.
 func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	var response, expected map[string]any
-	responseErr := json.Unmarshal(responseBytes, &response)
-	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
-
-	if responseErr != nil || expectedErr != nil {
-		test.Error("Error while Unmarshalling")
+	actual, expected, ok := extractAsMaps(responseBytes, []byte(expectedBody))
+	if !ok {
+		test.Error("error while unmarshalling for comparison")
 	}
-
-	if !matchKeysAndValues(response, expected, checkArrayCount, checkArrayOrder, false) {
+	if !matchKeysAndValues(actual, expected, checkArrayCount, checkArrayOrder, false) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
@@ -59,17 +55,41 @@ func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject
 // The responseObject and expectedBody should have the same keys and their corresponding values should be equal.
 func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	var response, expected map[string]any
-	responseErr := json.Unmarshal(responseBytes, &response)
-	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
-
-	if responseErr != nil || expectedErr != nil {
-		test.Error("Error while Unmarshalling")
+	actual, expected, ok := extractAsMaps(responseBytes, []byte(expectedBody))
+	if !ok {
+		test.Error("error while unmarshalling for comparison")
 	}
-
-	if !matchKeysAndValues(response, expected, checkArrayCount, checkArrayOrder, true) {
+	if !matchKeysAndValues(actual, expected, checkArrayCount, checkArrayOrder, true) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
+}
+
+func extractAsMaps(actualBytes []byte, expectedBytes []byte) (map[string]any, map[string]any, bool) {
+	var actual, expected = make(map[string]any), make(map[string]any)
+	var actualErr, expectedErr error
+
+	if len(expectedBytes) > 0 && expectedBytes[0] == '[' {
+		var actualArray, expectedArray []any
+		actualErr = json.Unmarshal(actualBytes, &actualArray)
+		expectedErr = json.Unmarshal(expectedBytes, &expectedArray)
+		if actualErr != nil || expectedErr != nil {
+			return nil, nil, false
+		}
+		for i, v := range actualArray {
+			actual[fmt.Sprint(i)] = v
+		}
+		for i, v := range expectedArray {
+			expected[fmt.Sprint(i)] = v
+		}
+	} else {
+		actualErr = json.Unmarshal(actualBytes, &actual)
+		expectedErr = json.Unmarshal(expectedBytes, &expected)
+	}
+
+	if actualErr != nil || expectedErr != nil {
+		return nil, nil, false
+	}
+	return actual, expected, true
 }
 
 // matchKeysAndValues is a helper function used by KeysBodyMatcher and KeysAndValuesBodyMatcher

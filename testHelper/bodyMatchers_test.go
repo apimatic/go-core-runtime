@@ -111,6 +111,17 @@ func TestKeysAndValuesBodyMatcherEmpty(t *testing.T) {
 	KeysAndValuesBodyMatcher[any](t, expected, nil, false, false)
 }
 
+func TestKeysAndValuesBodyMatcherEmptyArray(t *testing.T) {
+	expected := `[]`
+	KeysAndValuesBodyMatcher[any](t, expected, nil, false, false)
+}
+
+func TestKeysAndValuesBodyMatcherArray(t *testing.T) {
+	expected := `["some string", 123]`
+	result := []any{"some string", 123}
+	KeysAndValuesBodyMatcher(t, expected, result, false, false)
+}
+
 func TestKeysAndValuesBodyMatcherObject(t *testing.T) {
 	expected := `{"id": "5a9fcb01caacc310dc6bab51"}`
 	result := Attributes{
@@ -209,6 +220,17 @@ func TestKeysAndValuesBodyMatcherUnmarshallingError(t *testing.T) {
 func TestKeysBodyMatcherEmpty(t *testing.T) {
 	expected := `{}`
 	KeysBodyMatcher[any](t, expected, nil, false, false)
+}
+
+func TestKeysBodyMatcherEmptyArray(t *testing.T) {
+	expected := `[]`
+	KeysBodyMatcher[any](t, expected, nil, false, false)
+}
+
+func TestKeysBodyMatcherArray(t *testing.T) {
+	expected := `["some string", 123]`
+	result := []any{"123", 765}
+	KeysBodyMatcher(t, expected, result, false, false)
 }
 
 func TestKeysBodyMatcherObject(t *testing.T) {
