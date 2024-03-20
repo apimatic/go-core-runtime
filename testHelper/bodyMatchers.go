@@ -74,18 +74,25 @@ func matchKeysAndValuesAsMap(actual, expected map[string]any, checkArrayCount, c
 	if checkArrayCount && len(expected) != len(actual) {
 		return false
 	}
-	for key, value := range expected {
-		responseValue := actual[key]
-		if reflect.ValueOf(responseValue).Kind() == reflect.Map {
-			if reflect.ValueOf(value).Kind() != reflect.Map {
+	for key, expectedValue := range expected {
+		actualValue := actual[key]
+		actualValueKind := reflect.ValueOf(actualValue).Kind()
+		if actualValueKind == reflect.Map || actualValueKind == reflect.Array || actualValueKind == reflect.Slice {
+			if actualValueKind != reflect.ValueOf(expectedValue).Kind() {
 				return false
 			}
-			responseSubMap := responseValue.(map[string]any)
-			expectedSubMap := value.(map[string]any)
-			if !matchKeysAndValuesAsMap(responseSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
+			actualSubMap, expectedSubMap := make(map[string]any), make(map[string]any)
+			if actualValueKind != reflect.Map {
+				convertToMap(actualValue.([]any), &actualSubMap)
+				convertToMap(expectedValue.([]any), &expectedSubMap)
+			} else {
+				actualSubMap = actualValue.(map[string]any)
+				expectedSubMap = expectedValue.(map[string]any)
+			}
+			if !matchKeysAndValuesAsMap(actualSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
 				return false
 			}
-		} else if checkValues && !reflect.DeepEqual(responseValue, value) {
+		} else if checkValues && !reflect.DeepEqual(actualValue, expectedValue) {
 			return false
 		}
 	}
@@ -102,15 +109,8 @@ func extractAsMaps(actualBytes, expectedBytes []byte) (map[string]any, map[strin
 		var actualArray, expectedArray []any
 		actualErr = json.Unmarshal(actualBytes, &actualArray)
 		expectedErr = json.Unmarshal(expectedBytes, &expectedArray)
-		if actualErr != nil || expectedErr != nil {
-			return nil, nil, false
-		}
-		for i, v := range actualArray {
-			actual[fmt.Sprint(i)] = v
-		}
-		for i, v := range expectedArray {
-			expected[fmt.Sprint(i)] = v
-		}
+		convertToMap(actualArray, &actual)
+		convertToMap(expectedArray, &expected)
 	} else {
 		actualErr = json.Unmarshal(actualBytes, &actual)
 		expectedErr = json.Unmarshal(expectedBytes, &expected)
@@ -120,6 +120,15 @@ func extractAsMaps(actualBytes, expectedBytes []byte) (map[string]any, map[strin
 		return nil, nil, false
 	}
 	return actual, expected, true
+}
+
+func convertToMap(array []any, mapRef *map[string]any) {
+	if array == nil {
+		return
+	}
+	for i, v := range array {
+		(*mapRef)[fmt.Sprint(i)] = v
+	}
 }
 
 // IsSameAsFile checks if the responseFileBytes is the same as the content of the file fetched from the expectedFileURL.

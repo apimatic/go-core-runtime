@@ -98,9 +98,10 @@ func TestSliceToCommaSeparatedString(t *testing.T) {
 
 // Keys And Values Body Matcher Tests
 type Response struct {
-	IsMap      bool       `json:"isMap"`
-	Attributes Attributes `json:"attributes"`
-	Id         string     `json:"id"`
+	IsMap           bool         `json:"isMap"`
+	Attributes      Attributes   `json:"attributes"`
+	AttributesArray []Attributes `json:"attributesArray"`
+	Id              string       `json:"id"`
 }
 type Attributes struct {
 	Id string `json:"id"`
@@ -142,6 +143,26 @@ func TestKeysAndValuesBodyMatcherNestedObject(t *testing.T) {
 		IsMap: false,
 		Attributes: Attributes{
 			Id: "5a9fcb01caacc310dc6bab51",
+		},
+		Id: "5a9fcb01caacc310dc6bab50",
+	}
+	KeysAndValuesBodyMatcher(t, expected, result, false, false)
+}
+
+func TestKeysAndValuesBodyMatcherNestedArray(t *testing.T) {
+	expected := `{
+        "isMap": false,
+        "attributesArray": [
+			{
+          		"id": "5a9fcb01caacc310dc6bab51"
+			}
+		],
+        "id": "5a9fcb01caacc310dc6bab50"
+    }`
+	result := Response{
+		IsMap: false,
+		AttributesArray: []Attributes{
+			{Id: "5a9fcb01caacc310dc6bab51"},
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
@@ -237,6 +258,26 @@ func TestKeysBodyMatcherObject(t *testing.T) {
 	expected := `{"id": "5a9fcb01caacc310dc6bab51"}`
 	result := Attributes{
 		Id: "5a9fcb01caacc310dc6bab51",
+	}
+	KeysBodyMatcher(t, expected, result, false, false)
+}
+
+func TestKeysBodyMatcherNestedArray(t *testing.T) {
+	expected := `{
+        "isMap": false,
+        "attributesArray": [
+			{
+          		"id": "5a9fcb01caacc310dc6bab51"
+			}
+		],
+        "id": "5a9fcb01caacc310dc6bab50"
+    }`
+	result := Response{
+		IsMap: false,
+		AttributesArray: []Attributes{
+			{Id: "5a9fcb01caacc310dc6bab51"},
+		},
+		Id: "5a9fcb01caacc310dc6bab50",
 	}
 	KeysBodyMatcher(t, expected, result, false, false)
 }
