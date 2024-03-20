@@ -61,47 +61,16 @@ func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, respo
 // matchKeysAndValues is a helper function used by KeysBodyMatcher and KeysAndValuesBodyMatcher
 // to compare the bytes for keys and values.
 func matchKeysAndValues(actualBytes, expectedBytes []byte, checkArrayCount, checkArrayOrder, checkValues bool) bool {
-	actual, expected, ok := extractAsMaps(actualBytes, expectedBytes)
+	actual, expected, ok := extractBytesAsMaps(actualBytes, expectedBytes)
 	if !ok {
 		return false
 	}
 	return matchKeysAndValuesAsMap(actual, expected, checkArrayCount, checkArrayOrder, checkValues)
 }
 
-// matchKeysAndValuesAsMap is a helper function used by matchKeysAndValues
-// to compare the JSON keys and values recursively.
-func matchKeysAndValuesAsMap(actual, expected map[string]any, checkArrayCount, checkArrayOrder, checkValues bool) bool {
-	if checkArrayCount && len(expected) != len(actual) {
-		return false
-	}
-	for key, expectedValue := range expected {
-		actualValue := actual[key]
-		actualValueKind := reflect.ValueOf(actualValue).Kind()
-		if actualValueKind == reflect.Map || actualValueKind == reflect.Array || actualValueKind == reflect.Slice {
-			if actualValueKind != reflect.ValueOf(expectedValue).Kind() {
-				return false
-			}
-			actualSubMap, expectedSubMap := make(map[string]any), make(map[string]any)
-			if actualValueKind != reflect.Map {
-				convertToMap(actualValue.([]any), &actualSubMap)
-				convertToMap(expectedValue.([]any), &expectedSubMap)
-			} else {
-				actualSubMap = actualValue.(map[string]any)
-				expectedSubMap = expectedValue.(map[string]any)
-			}
-			if !matchKeysAndValuesAsMap(actualSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
-				return false
-			}
-		} else if checkValues && !reflect.DeepEqual(actualValue, expectedValue) {
-			return false
-		}
-	}
-	return true
-}
-
-// extractAsMaps converts the bytes into maps, if the bytes yield as array,
+// extractBytesAsMaps converts the bytes into maps, if the bytes yield as array,
 // then the array indexes will be used as map keys.
-func extractAsMaps(actualBytes, expectedBytes []byte) (map[string]any, map[string]any, bool) {
+func extractBytesAsMaps(actualBytes, expectedBytes []byte) (map[string]any, map[string]any, bool) {
 	var actual, expected = make(map[string]any), make(map[string]any)
 	var actualErr, expectedErr error
 
@@ -122,6 +91,46 @@ func extractAsMaps(actualBytes, expectedBytes []byte) (map[string]any, map[strin
 	return actual, expected, true
 }
 
+// matchKeysAndValuesAsMap is a helper function used by matchKeysAndValues
+// to compare the JSON keys and values recursively.
+func matchKeysAndValuesAsMap(actual, expected map[string]any, checkArrayCount, checkArrayOrder, checkValues bool) bool {
+	if checkArrayCount && len(expected) != len(actual) {
+		return false
+	}
+	for key, expectedValue := range expected {
+		actualValue := actual[key]
+		actualValueKind := reflect.ValueOf(actualValue).Kind()
+		if actualValueKind == reflect.Map || actualValueKind == reflect.Array || actualValueKind == reflect.Slice {
+			if actualValueKind != reflect.ValueOf(expectedValue).Kind() {
+				return false
+			}
+			actualSubMap, expectedSubMap := extractAnyAsMaps(actualValueKind, actualValue, expectedValue)
+			if !matchKeysAndValuesAsMap(actualSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
+				return false
+			}
+		} else if checkValues && !reflect.DeepEqual(actualValue, expectedValue) {
+			return false
+		}
+	}
+	return true
+}
+
+// extractAnyAsMaps converts the "any" type values to "map" type values.
+// It works only if both types are same and convertible to array or map types
+func extractAnyAsMaps(actualValueKind reflect.Kind, actualValue any, expectedValue any) (map[string]any, map[string]any) {
+	actualSubMap, expectedSubMap := make(map[string]any), make(map[string]any)
+	if actualValueKind != reflect.Map {
+		convertToMap(actualValue.([]any), &actualSubMap)
+		convertToMap(expectedValue.([]any), &expectedSubMap)
+	} else {
+		actualSubMap = actualValue.(map[string]any)
+		expectedSubMap = expectedValue.(map[string]any)
+	}
+	return actualSubMap, expectedSubMap
+}
+
+// convertToMap add the elements from provided array into the provided map,
+// the array indexes will be used as map keys
 func convertToMap(array []any, mapRef *map[string]any) {
 	if array == nil {
 		return
