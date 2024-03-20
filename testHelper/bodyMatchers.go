@@ -30,7 +30,7 @@ func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObje
 	responseError := json.Unmarshal(responseBytes, &response)
 
 	if expectedError != nil || responseError != nil {
-		test.Error("Error while Unmarshalling")
+		test.Error("error while unmarshalling for comparison")
 	}
 
 	if !reflect.DeepEqual(response, expected) {
@@ -42,15 +42,8 @@ func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObje
 // The responseObject and expectedBody should have the same keys.
 func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	var response, expected map[string]any
-	responseErr := json.Unmarshal(responseBytes, &response)
-	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
-	if responseErr != nil || expectedErr != nil {
-		test.Error("Error while Unmarshalling")
-	}
-
-	if !matchKeysAndValues(response, expected, checkArrayCount, checkArrayOrder, false) {
+	if !matchKeysAndValues(responseBytes, []byte(expectedBody), checkArrayCount, checkArrayOrder, false) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
@@ -59,41 +52,92 @@ func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject
 // The responseObject and expectedBody should have the same keys and their corresponding values should be equal.
 func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
-	var response, expected map[string]any
-	responseErr := json.Unmarshal(responseBytes, &response)
-	expectedErr := json.Unmarshal([]byte(expectedBody), &expected)
 
-	if responseErr != nil || expectedErr != nil {
-		test.Error("Error while Unmarshalling")
-	}
-
-	if !matchKeysAndValues(response, expected, checkArrayCount, checkArrayOrder, true) {
+	if !matchKeysAndValues(responseBytes, []byte(expectedBody), checkArrayCount, checkArrayOrder, true) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
 
 // matchKeysAndValues is a helper function used by KeysBodyMatcher and KeysAndValuesBodyMatcher
-// to compare the JSON keys and values.
-func matchKeysAndValues(response, expected map[string]any, checkArrayCount, checkArrayOrder, checkValues bool) bool {
-	if checkArrayCount && len(expected) != len(response) {
+// to compare the bytes for keys and values.
+func matchKeysAndValues(actualBytes, expectedBytes []byte, checkArrayCount, checkArrayOrder, checkValues bool) bool {
+	actual, expected, ok := extractBytesAsMaps(actualBytes, expectedBytes)
+	if !ok {
 		return false
 	}
-	for key, value := range expected {
-		responseValue := response[key]
-		if reflect.ValueOf(responseValue).Kind() == reflect.Map {
-			if reflect.ValueOf(value).Kind() != reflect.Map {
+	return matchKeysAndValuesAsMap(actual, expected, checkArrayCount, checkArrayOrder, checkValues)
+}
+
+// extractBytesAsMaps converts the bytes into maps, if the bytes yield as array,
+// then the array indexes will be used as map keys.
+func extractBytesAsMaps(actualBytes, expectedBytes []byte) (map[string]any, map[string]any, bool) {
+	var actual, expected = make(map[string]any), make(map[string]any)
+	var actualErr, expectedErr error
+
+	if len(expectedBytes) > 0 && expectedBytes[0] == '[' {
+		var actualArray, expectedArray []any
+		actualErr = json.Unmarshal(actualBytes, &actualArray)
+		expectedErr = json.Unmarshal(expectedBytes, &expectedArray)
+		convertToMap(actualArray, &actual)
+		convertToMap(expectedArray, &expected)
+	} else {
+		actualErr = json.Unmarshal(actualBytes, &actual)
+		expectedErr = json.Unmarshal(expectedBytes, &expected)
+	}
+
+	if actualErr != nil || expectedErr != nil {
+		return nil, nil, false
+	}
+	return actual, expected, true
+}
+
+// matchKeysAndValuesAsMap is a helper function used by matchKeysAndValues
+// to compare the JSON keys and values recursively.
+func matchKeysAndValuesAsMap(actual, expected map[string]any, checkArrayCount, checkArrayOrder, checkValues bool) bool {
+	if checkArrayCount && len(expected) != len(actual) {
+		return false
+	}
+	for key, expectedValue := range expected {
+		actualValue := actual[key]
+		actualValueKind := reflect.ValueOf(actualValue).Kind()
+		if actualValueKind == reflect.Map || actualValueKind == reflect.Array || actualValueKind == reflect.Slice {
+			if actualValueKind != reflect.ValueOf(expectedValue).Kind() {
 				return false
 			}
-			responseSubMap := responseValue.(map[string]any)
-			expectedSubMap := value.(map[string]any)
-			if !matchKeysAndValues(responseSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
+			actualSubMap, expectedSubMap := extractAnyAsMaps(actualValueKind, actualValue, expectedValue)
+			if !matchKeysAndValuesAsMap(actualSubMap, expectedSubMap, checkArrayCount, checkArrayOrder, checkValues) {
 				return false
 			}
-		} else if checkValues && !reflect.DeepEqual(responseValue, value) {
+		} else if checkValues && !reflect.DeepEqual(actualValue, expectedValue) {
 			return false
 		}
 	}
 	return true
+}
+
+// extractAnyAsMaps converts the "any" type values to "map" type values.
+// It works only if both types are same and convertible to array or map types
+func extractAnyAsMaps(actualValueKind reflect.Kind, actualValue any, expectedValue any) (map[string]any, map[string]any) {
+	actualSubMap, expectedSubMap := make(map[string]any), make(map[string]any)
+	if actualValueKind != reflect.Map {
+		convertToMap(actualValue.([]any), &actualSubMap)
+		convertToMap(expectedValue.([]any), &expectedSubMap)
+	} else {
+		actualSubMap = actualValue.(map[string]any)
+		expectedSubMap = expectedValue.(map[string]any)
+	}
+	return actualSubMap, expectedSubMap
+}
+
+// convertToMap add the elements from provided array into the provided map,
+// the array indexes will be used as map keys
+func convertToMap(array []any, mapRef *map[string]any) {
+	if array == nil {
+		return
+	}
+	for i, v := range array {
+		(*mapRef)[fmt.Sprint(i)] = v
+	}
 }
 
 // IsSameAsFile checks if the responseFileBytes is the same as the content of the file fetched from the expectedFileURL.
