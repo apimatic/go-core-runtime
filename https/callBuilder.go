@@ -13,8 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/apimatic/go-core-runtime/utilities"
 )
 
 // Constants for commonly used HTTP headers and content types.
@@ -48,11 +46,14 @@ type CallBuilder interface {
 	Header(name string, value any)
 	CombineHeaders(headersToMerge map[string]string)
 	QueryParam(name string, value any)
-	QueryParamWithArraySerializationOption(name string, value any, option ArraySerializationOption)
-	validateQueryParams() error
 	QueryParams(parameters map[string]any)
+	QueryParamWithArraySerializationOption(name string, value any, option ArraySerializationOption)
+	QueryParamsWithArraySerializationOption(parameters map[string]any, option ArraySerializationOption)
+	validateQueryParams() error
 	FormParam(name string, value any)
+	FormParams(parameters map[string]any)
 	FormParamWithArraySerializationOption(name string, value any, opt ArraySerializationOption)
+	FormParamsWithArraySerializationOption(parameters map[string]any, opt ArraySerializationOption)
 	validateFormParams() error
 	FormData(fields FormParams)
 	validateFormData() error
@@ -274,17 +275,36 @@ func (cb *defaultCallBuilder) QueryParam(
 	name string,
 	value any,
 ) {
-	cb.queryParams.add(formParam{name, value, nil, cb.arraySerializationOption})
+	cb.QueryParamWithArraySerializationOption(name, value, cb.arraySerializationOption)
+}
+
+// QueryParams adds multiple query parameters to the API call.
+// It takes the map as query parameter as arguments.
+func (cb *defaultCallBuilder) QueryParams(
+	parameters map[string]any,
+) {
+	cb.QueryParamsWithArraySerializationOption(parameters, cb.arraySerializationOption)
 }
 
 // QueryParamWithArraySerializationOption adds a query parameter to the API call.
-// It takes the name and value of the query parameter as arguments.
+// It takes the name, value and array serialialization of the query parameter as arguments.
 func (cb *defaultCallBuilder) QueryParamWithArraySerializationOption(
 	name string,
 	value any,
 	option ArraySerializationOption,
 ) {
 	cb.queryParams.add(formParam{name, value, nil, option})
+}
+
+// QueryParamWithArraySerializationOption adds a query parameter to the API call.
+// It takes the map and array serialialization of the query parameter as arguments.
+func (cb *defaultCallBuilder) QueryParamsWithArraySerializationOption(
+	parameters map[string]any,
+	option ArraySerializationOption,
+) {
+	for key, value := range parameters {
+		cb.QueryParamWithArraySerializationOption(key, value, option)
+	}
 }
 
 // validateQueryParams validates the query parameters in the CallBuilder.
@@ -301,29 +321,42 @@ func (cb *defaultCallBuilder) validateQueryParams() error {
 	return nil
 }
 
-// QueryParams sets multiple query parameters for the API call.
-// It takes a map of string keys and any values representing the query parameters.
-func (cb *defaultCallBuilder) QueryParams(parameters map[string]any) {
-	cb.query = utilities.PrepareQueryParams(cb.query, parameters)
-}
-
 // FormParam adds a form parameter to the API call.
 // It takes the name and value of the form parameter as arguments.
 func (cb *defaultCallBuilder) FormParam(
 	name string,
 	value any,
 ) {
-	cb.formParams.add(formParam{name, value, nil, cb.arraySerializationOption})
+	cb.FormParamWithArraySerializationOption(name, value, cb.arraySerializationOption)
 }
 
-// FormParamWithArraySerializationOption adds a form parameter to the API call.
-// It takes the name and value of the form parameter as arguments.
+// FormParam adds multiple form parameters to the API call.
+// It takes map as form parameters as argument.
+func (cb *defaultCallBuilder) FormParams(
+	parameters map[string]any,
+) {
+	cb.FormParamsWithArraySerializationOption(parameters, cb.arraySerializationOption)
+}
+
+// FormParamWithArraySerializationOption adds a form parameter with customized serialization to the API call.
+// It takes the name, value and array serialization option of the form parameter as arguments.
 func (cb *defaultCallBuilder) FormParamWithArraySerializationOption(
 	name string,
 	value any,
 	option ArraySerializationOption,
 ) {
 	cb.formParams.add(formParam{name, value, nil, option})
+}
+
+// FormParamsWithArraySerializationOption adds form parameters to the API call.
+// It takes map and array serialization option of the form parameters as arguments.
+func (cb *defaultCallBuilder) FormParamsWithArraySerializationOption(
+	parameters map[string]any,
+	option ArraySerializationOption,
+) {
+	for key, value := range parameters {
+		cb.FormParamWithArraySerializationOption(key, value, option)
+	}
 }
 
 // validateFormParams validates the form parameters in the CallBuilder.
