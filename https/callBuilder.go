@@ -287,7 +287,7 @@ func (cb *defaultCallBuilder) QueryParams(
 }
 
 // QueryParamWithArraySerializationOption adds a query parameter to the API call.
-// It takes the name, value and array serialialization of the query parameter as arguments.
+// It takes the name, value and array serialization of the query parameter as arguments.
 func (cb *defaultCallBuilder) QueryParamWithArraySerializationOption(
 	name string,
 	value any,
@@ -296,12 +296,15 @@ func (cb *defaultCallBuilder) QueryParamWithArraySerializationOption(
 	cb.queryParams.add(formParam{name, value, nil, option})
 }
 
-// QueryParamWithArraySerializationOption adds a query parameter to the API call.
-// It takes the map and array serialialization of the query parameter as arguments.
+// QueryParamsWithArraySerializationOption adds a query parameter to the API call.
+// It takes the map and array serialization of the query parameter as arguments.
 func (cb *defaultCallBuilder) QueryParamsWithArraySerializationOption(
 	parameters map[string]any,
 	option ArraySerializationOption,
 ) {
+	if parameters == nil {
+		return
+	}
 	for key, value := range parameters {
 		cb.QueryParamWithArraySerializationOption(key, value, option)
 	}
@@ -330,7 +333,7 @@ func (cb *defaultCallBuilder) FormParam(
 	cb.FormParamWithArraySerializationOption(name, value, cb.arraySerializationOption)
 }
 
-// FormParam adds multiple form parameters to the API call.
+// FormParams adds multiple form parameters to the API call.
 // It takes map as form parameters as argument.
 func (cb *defaultCallBuilder) FormParams(
 	parameters map[string]any,
@@ -354,6 +357,9 @@ func (cb *defaultCallBuilder) FormParamsWithArraySerializationOption(
 	parameters map[string]any,
 	option ArraySerializationOption,
 ) {
+	if parameters == nil {
+		return
+	}
 	for key, value := range parameters {
 		cb.FormParamWithArraySerializationOption(key, value, option)
 	}
