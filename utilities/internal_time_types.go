@@ -59,43 +59,6 @@ func NewRFC1123Time(t time.Time) RFC1123Time {
 	return RFC1123Time{Time: t}
 }
 
-type TimeTypes interface {
-	RFC1123Time | RFC3339Time | UnixDateTime | DefaultTime
-	Value() time.Time
-}
-
-func ObjMapToTimeMap[T TimeTypes](objMap map[string]T) map[string]time.Time {
-	finalMap := map[string]time.Time{}
-	for k, v := range objMap {
-		finalMap[k] = v.Value()
-	}
-	return finalMap
-}
-
-func ObjSliceToTimeSlice[T TimeTypes](objSlice []T) []time.Time {
-	finalSlice := []time.Time{}
-	for k, v := range objSlice {
-		finalSlice[k] = v.Value()
-	}
-	return finalSlice
-}
-
-func TimeMapToObjMap[T TimeTypes](timeMap map[string]time.Time) map[string]T {
-	finalMap := map[string]T{}
-	for k, v := range timeMap {
-		finalMap[k] = T{v}
-	}
-	return finalMap
-}
-
-func TimeSliceToObjSlice[T TimeTypes](timeSlice []time.Time) []T {
-	finalSlice := []T{}
-	for k, v := range timeSlice {
-		finalSlice[k] = T{v}
-	}
-	return finalSlice
-}
-
 func (t RFC1123Time) Value() time.Time { return t.Time }
 
 // String returns RFC1123Time as a string following the RFC1123 standard.
@@ -151,4 +114,41 @@ func (u *UnixDateTime) UnmarshalJSON(input []byte) error {
 	}
 	u.Time = time.Unix(temp, 0)
 	return nil
+}
+
+type TimeTypes interface {
+	RFC1123Time | RFC3339Time | UnixDateTime | DefaultTime
+	Value() time.Time
+}
+
+func ObjMapToTimeMap[T TimeTypes](objMap map[string]T) map[string]time.Time {
+	finalMap := map[string]time.Time{}
+	for k, v := range objMap {
+		finalMap[k] = v.Value()
+	}
+	return finalMap
+}
+
+func ObjSliceToTimeSlice[T TimeTypes](objSlice []T) []time.Time {
+	finalSlice := make([]time.Time, len(objSlice))
+	for k, v := range objSlice {
+		finalSlice[k] = v.Value()
+	}
+	return finalSlice
+}
+
+func TimeMapToObjMap[T TimeTypes](timeMap map[string]time.Time) map[string]T {
+	finalMap := map[string]T{}
+	for k, v := range timeMap {
+		finalMap[k] = T{v}
+	}
+	return finalMap
+}
+
+func TimeSliceToObjSlice[T TimeTypes](timeSlice []time.Time) []T {
+	finalSlice := make([]T, len(timeSlice))
+	for k, v := range timeSlice {
+		finalSlice[k] = T{v}
+	}
+	return finalSlice
 }
