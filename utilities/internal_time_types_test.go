@@ -26,7 +26,8 @@ func TestUnixDateTime(t *testing.T) {
 
 func TestUnixDateTimeError(t *testing.T) {
 	var newUnixDateTime UnixDateTime
-	json.Unmarshal([]byte(`"Sun, 06 Nov 1994 08:49:37 GMT"`), &newUnixDateTime)
+	err := json.Unmarshal([]byte(`"Sun, 06 Nov 1994 08:49:37 GMT"`), &newUnixDateTime)
+	AssertError(t, err)
 }
 
 func TestDefaultTimeString(t *testing.T) {
@@ -51,12 +52,14 @@ func TestDefaultTime(t *testing.T) {
 
 func TestDefaultTimeError1(t *testing.T) {
 	var newDefaultTime DefaultTime
-	json.Unmarshal([]byte(`1484719381`), &newDefaultTime)
+	err := json.Unmarshal([]byte(`1484719381`), &newDefaultTime)
+	AssertError(t, err)
 }
 
 func TestDefaultTimeError2(t *testing.T) {
 	var newDefaultTime DefaultTime
-	json.Unmarshal([]byte(`"Sun, 06 Nov 1994 08:49:37 GMT"`), &newDefaultTime)
+	err := json.Unmarshal([]byte(`"Sun, 06 Nov 1994 08:49:37 GMT"`), &newDefaultTime)
+	AssertError(t, err)
 }
 
 func TestRFC3339TimeString(t *testing.T) {
