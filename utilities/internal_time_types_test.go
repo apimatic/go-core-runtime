@@ -29,7 +29,7 @@ func TestUnixDateTime(t *testing.T) {
 func TestUnixDateTimeError(t *testing.T) {
 	var newUnixDateTime UnixDateTime
 	err := json.Unmarshal([]byte(`"Sun, 06 Nov 1994 08:49:37 GMT"`), &newUnixDateTime)
-	assert.Error(t, err)
+	assert.EqualError(t, err, "json: cannot unmarshal string into Go value of type int64")
 }
 
 func TestDefaultTimeString(t *testing.T) {
@@ -55,13 +55,13 @@ func TestDefaultTime(t *testing.T) {
 func TestDefaultTimeError1(t *testing.T) {
 	var newDefaultTime DefaultTime
 	err := json.Unmarshal([]byte(`1484719381`), &newDefaultTime)
-	assert.Error(t, err)
+	assert.EqualError(t, err, "json: cannot unmarshal number into Go value of type string")
 }
 
 func TestDefaultTimeError2(t *testing.T) {
 	var newDefaultTime DefaultTime
 	err := json.Unmarshal([]byte(`"Sun, 06 Nov 1994 08:49:37 GMT"`), &newDefaultTime)
-	assert.Error(t, err)
+	assert.EqualError(t, err, "parsing time \"Sun, 06 Nov 1994 08:49:37 GMT\" as \"2006-01-02\": cannot parse \"Sun, 06 Nov 1994 08:49:37 GMT\" as \"2006\"")
 }
 
 func TestRFC3339TimeString(t *testing.T) {

@@ -99,12 +99,7 @@ func TestErrorWhenUndefinedAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	assert.Error(t, err)
-
-	expected := AuthenticationError("authThatDoesntExist is undefined!")
-	actual := err.Error()
-
-	assert.Equal(t, expected, actual)
+	assert.EqualError(t, err, AuthenticationError("authThatDoesntExist is undefined!"))
 }
 
 func TestSuccessfulCallWhenHeaderAuth(t *testing.T) {
@@ -254,12 +249,7 @@ func TestErrorWhenHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	assert.Error(t, err)
-
-	expected := AuthenticationError(API_KEY_MISSING_ERROR)
-	actual := err.Error()
-
-	assert.Equal(t, expected, actual)
+	assert.EqualError(t, err, AuthenticationError(API_KEY_MISSING_ERROR))
 }
 
 func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
@@ -273,12 +263,7 @@ func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	assert.Error(t, err)
-
-	expected := AuthenticationError(API_TOKEN_MISSING_ERROR)
-	actual := err.Error()
-
-	assert.Equal(t, expected, actual)
+	assert.EqualError(t, err, AuthenticationError(API_TOKEN_MISSING_ERROR))
 }
 
 func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
@@ -292,12 +277,7 @@ func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	assert.Error(t, err)
-
-	expected := AuthenticationError("missingQuery is undefined!")
-	actual := err.Error()
-
-	assert.Equal(t, expected, actual)
+	assert.EqualError(t, err, AuthenticationError("missingQuery is undefined!"))
 }
 
 func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
@@ -311,12 +291,7 @@ func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	assert.Error(t, err)
-
-	expected := AuthenticationError("missingHeader is undefined!")
-	actual := err.Error()
-
-	assert.Equal(t, expected, actual)
+	assert.EqualError(t, err, AuthenticationError("missingHeader is undefined!"))
 }
 
 func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
@@ -330,12 +305,7 @@ func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
 
 	_, err := request.Call()
 
-	assert.Error(t, err)
-
-	expected := AuthenticationError("headerMissing is undefined!", "queryMissing is undefined!")
-	actual := err.Error()
-
-	assert.Equal(t, expected, actual)
+	assert.EqualError(t, err, AuthenticationError("headerMissing is undefined!", "queryMissing is undefined!"))
 }
 
 func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
@@ -349,10 +319,5 @@ func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
 
 	_, err := request.Call()
 
-	assert.Error(t, err)
-
-	expected := AuthenticationError(API_KEY_MISSING_ERROR, API_TOKEN_MISSING_ERROR)
-	actual := err.Error()
-
-	assert.Equal(t, expected, actual)
+	assert.EqualError(t, err, AuthenticationError(API_KEY_MISSING_ERROR, API_TOKEN_MISSING_ERROR))
 }

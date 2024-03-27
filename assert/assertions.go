@@ -55,15 +55,8 @@ func NoError(t *testing.T, err error) bool {
 	return true
 }
 
-func Error(t *testing.T, err error) bool {
-	if err == nil {
-		return fail(t, "An error is expected but got nil.")
-	}
-	return true
-}
-
 func EqualError(t *testing.T, theError error, errString string) bool {
-	if !Error(t, theError) {
+	if !isError(t, theError) {
 		return false
 	}
 	expected := errString
@@ -78,7 +71,7 @@ func EqualError(t *testing.T, theError error, errString string) bool {
 }
 
 func ErrorContains(t *testing.T, theError error, contains string) bool {
-	if !Error(t, theError) {
+	if !isError(t, theError) {
 		return false
 	}
 
@@ -108,6 +101,13 @@ func objectsAreEqual(expected, actual interface{}) bool {
 		return exp == nil && act == nil
 	}
 	return bytes.Equal(exp, act)
+}
+
+func isError(t *testing.T, err error) bool {
+	if err == nil {
+		return fail(t, "An error is expected but got nil.")
+	}
+	return true
 }
 
 func isNil(object interface{}) bool {
