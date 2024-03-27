@@ -3,23 +3,14 @@ package assert
 import (
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"reflect"
 	"runtime"
 	"strings"
-	"time"
+	"testing"
 	"unicode"
 	"unicode/utf8"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/pmezard/go-difflib/difflib"
 )
-
-// TestingT is an interface wrapper around *testing.T
-type TestingT interface {
-	Errorf(format string, args ...interface{})
-}
 
 func ObjectsAreEqual(expected, actual interface{}) bool {
 	if expected == nil || actual == nil {
@@ -143,27 +134,11 @@ func indentMessageLines(message string, longestLabelLen int) string {
 	return outBuf.String()
 }
 
-func Fail(t TestingT, failureMessage string, msgAndArgs ...interface{}) bool {
-	if h, ok := t.(tHelper); ok {
-		h.Helper()
-	}
+func fail(t *testing.T, failureMessage string) bool {
 	content := []labeledContent{
 		{"Error Trace", strings.Join(CallerInfo(), "\n\t\t\t")},
 		{"Error", failureMessage},
 	}
-
-	// Add test name if the Go version supports it
-	if n, ok := t.(interface {
-		Name() string
-	}); ok {
-		content = append(content, labeledContent{"Test", n.Name()})
-	}
-
-	message := messageFromMsgAndArgs(msgAndArgs...)
-	if len(message) > 0 {
-		content = append(content, labeledContent{"Messages", message})
-	}
-
 	t.Errorf("\n%s", ""+labeledOutput(content...))
 
 	return false
@@ -188,68 +163,21 @@ func labeledOutput(content ...labeledContent) string {
 	return output
 }
 
-func IsType(t TestingT, expectedType interface{}, object interface{}, msgAndArgs ...interface{}) bool {
-	if h, ok := t.(tHelper); ok {
-		h.Helper()
-	}
-
+func IsType(t *testing.T, expectedType interface{}, object interface{}) bool {
 	if !ObjectsAreEqual(reflect.TypeOf(object), reflect.TypeOf(expectedType)) {
-		return Fail(t, fmt.Sprintf("Object expected to be of type %v, but was %v", reflect.TypeOf(expectedType), reflect.TypeOf(object)), msgAndArgs...)
+		return fail(t, fmt.Sprintf("Object expected to be of type %v, but was %v", reflect.TypeOf(expectedType), reflect.TypeOf(object)))
 	}
 
 	return true
 }
 
-func Equal(t TestingT, expected, actual interface{}, msgAndArgs ...interface{}) bool {
-	if h, ok := t.(tHelper); ok {
-		h.Helper()
+func Equal(t *testing.T, expected, actual interface{}) bool {
+	if expected == actual {
+		return true
 	}
-	if err := validateEqualArgs(expected, actual); err != nil {
-		return Fail(t, fmt.Sprintf("Invalid operation: %#v == %#v (%s)",
-			expected, actual, err), msgAndArgs...)
-	}
-
-	if !ObjectsAreEqual(expected, actual) {
-		diff := diff(expected, actual)
-		expected, actual = formatUnequalValues(expected, actual)
-		return Fail(t, fmt.Sprintf("Not equal: \n"+
-			"expected: %s\n"+
-			"actual  : %s%s", expected, actual, diff), msgAndArgs...)
-	}
+	t.Errorf("\n----------EXPECTED----------\n%v\n------------GOT------------\n%v", expected, actual)
 
 	return true
-}
-
-func validateEqualArgs(expected, actual interface{}) error {
-	if expected == nil && actual == nil {
-		return nil
-	}
-
-	if isFunction(expected) || isFunction(actual) {
-		return errors.New("cannot take func type as argument")
-	}
-	return nil
-}
-
-func formatUnequalValues(expected, actual interface{}) (e string, a string) {
-	if reflect.TypeOf(expected) != reflect.TypeOf(actual) {
-		return fmt.Sprintf("%T(%s)", expected, truncatingFormat(expected)),
-			fmt.Sprintf("%T(%s)", actual, truncatingFormat(actual))
-	}
-	switch expected.(type) {
-	case time.Duration:
-		return fmt.Sprintf("%v", expected), fmt.Sprintf("%v", actual)
-	}
-	return truncatingFormat(expected), truncatingFormat(actual)
-}
-
-func truncatingFormat(data interface{}) string {
-	value := fmt.Sprintf("%#v", data)
-	max := bufio.MaxScanTokenSize - 100 // Give us some space the type info too if needed.
-	if len(value) > max {
-		value = value[0:max] + "<... truncated>"
-	}
-	return value
 }
 
 func isNil(object interface{}) bool {
@@ -270,194 +198,71 @@ func isNil(object interface{}) bool {
 	return false
 }
 
-func Nil(t TestingT, object interface{}, msgAndArgs ...interface{}) bool {
+func Nil(t *testing.T, object interface{}) bool {
 	if isNil(object) {
 		return true
 	}
-	if h, ok := t.(tHelper); ok {
-		h.Helper()
-	}
-	return Fail(t, fmt.Sprintf("Expected nil, but got: %#v", object), msgAndArgs...)
+	return fail(t, fmt.Sprintf("Expected nil, but got: %#v", object))
 }
 
-func True(t TestingT, value bool, msgAndArgs ...interface{}) bool {
+func True(t *testing.T, value bool) bool {
 	if !value {
-		if h, ok := t.(tHelper); ok {
-			h.Helper()
-		}
-		return Fail(t, "Should be true", msgAndArgs...)
+		return fail(t, "Should be true")
 	}
 
 	return true
 
 }
 
-func False(t TestingT, value bool, msgAndArgs ...interface{}) bool {
+func False(t *testing.T, value bool) bool {
 	if value {
-		if h, ok := t.(tHelper); ok {
-			h.Helper()
-		}
-		return Fail(t, "Should be false", msgAndArgs...)
+		return fail(t, "Should be false")
 	}
 
 	return true
 
 }
 
-func NoError(t TestingT, err error, msgAndArgs ...interface{}) bool {
+func NoError(t *testing.T, err error) bool {
 	if err != nil {
-		if h, ok := t.(tHelper); ok {
-			h.Helper()
-		}
-		return Fail(t, fmt.Sprintf("Received unexpected error:\n%+v", err), msgAndArgs...)
+		return fail(t, fmt.Sprintf("Received unexpected error:\n%+v", err))
 	}
 
 	return true
 }
 
-func Error(t TestingT, err error, msgAndArgs ...interface{}) bool {
+func Error(t *testing.T, err error) bool {
 	if err == nil {
-		if h, ok := t.(tHelper); ok {
-			h.Helper()
-		}
-		return Fail(t, "An error is expected but got nil.", msgAndArgs...)
+		return fail(t, "An error is expected but got nil.")
 	}
 
 	return true
 }
 
-func EqualError(t TestingT, theError error, errString string, msgAndArgs ...interface{}) bool {
-	if h, ok := t.(tHelper); ok {
-		h.Helper()
-	}
-	if !Error(t, theError, msgAndArgs...) {
+func EqualError(t *testing.T, theError error, errString string) bool {
+	if !Error(t, theError) {
 		return false
 	}
 	expected := errString
 	actual := theError.Error()
 	// don't need to use deep equals here, we know they are both strings
 	if expected != actual {
-		return Fail(t, fmt.Sprintf("Error message not equal:\n"+
+		return fail(t, fmt.Sprintf("Error message not equal:\n"+
 			"expected: %q\n"+
-			"actual  : %q", expected, actual), msgAndArgs...)
+			"actual  : %q", expected, actual))
 	}
 	return true
 }
 
-func ErrorContains(t TestingT, theError error, contains string, msgAndArgs ...interface{}) bool {
-	if h, ok := t.(tHelper); ok {
-		h.Helper()
-	}
-	if !Error(t, theError, msgAndArgs...) {
+func ErrorContains(t *testing.T, theError error, contains string) bool {
+	if !Error(t, theError) {
 		return false
 	}
 
 	actual := theError.Error()
 	if !strings.Contains(actual, contains) {
-		return Fail(t, fmt.Sprintf("Error %#v does not contain %#v", actual, contains), msgAndArgs...)
+		return fail(t, fmt.Sprintf("Error %#v does not contain %#v", actual, contains))
 	}
 
 	return true
-}
-
-func typeAndKind(v interface{}) (reflect.Type, reflect.Kind) {
-	t := reflect.TypeOf(v)
-	k := t.Kind()
-
-	if k == reflect.Ptr {
-		t = t.Elem()
-		k = t.Kind()
-	}
-	return t, k
-}
-
-func diff(expected interface{}, actual interface{}) string {
-	if expected == nil || actual == nil {
-		return ""
-	}
-
-	et, ek := typeAndKind(expected)
-	at, _ := typeAndKind(actual)
-
-	if et != at {
-		return ""
-	}
-
-	if ek != reflect.Struct && ek != reflect.Map && ek != reflect.Slice && ek != reflect.Array && ek != reflect.String {
-		return ""
-	}
-
-	var e, a string
-
-	switch et {
-	case reflect.TypeOf(""):
-		e = reflect.ValueOf(expected).String()
-		a = reflect.ValueOf(actual).String()
-	case reflect.TypeOf(time.Time{}):
-		e = spewConfigStringerEnabled.Sdump(expected)
-		a = spewConfigStringerEnabled.Sdump(actual)
-	default:
-		e = spewConfig.Sdump(expected)
-		a = spewConfig.Sdump(actual)
-	}
-
-	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-		A:        difflib.SplitLines(e),
-		B:        difflib.SplitLines(a),
-		FromFile: "Expected",
-		FromDate: "",
-		ToFile:   "Actual",
-		ToDate:   "",
-		Context:  1,
-	})
-
-	return "\n\nDiff:\n" + diff
-}
-
-func isFunction(arg interface{}) bool {
-	if arg == nil {
-		return false
-	}
-	return reflect.TypeOf(arg).Kind() == reflect.Func
-}
-
-var spewConfig = spew.ConfigState{
-	Indent:                  " ",
-	DisablePointerAddresses: true,
-	DisableCapacities:       true,
-	SortKeys:                true,
-	DisableMethods:          true,
-	MaxDepth:                10,
-}
-
-var spewConfigStringerEnabled = spew.ConfigState{
-	Indent:                  " ",
-	DisablePointerAddresses: true,
-	DisableCapacities:       true,
-	SortKeys:                true,
-	MaxDepth:                10,
-}
-
-type tHelper interface {
-	Helper()
-}
-
-type CollectT struct {
-	errors []error
-}
-
-func (c *CollectT) Errorf(format string, args ...interface{}) {
-	c.errors = append(c.errors, fmt.Errorf(format, args...))
-}
-
-func (*CollectT) FailNow() {
-	panic("Assertion failed")
-}
-
-func (*CollectT) Reset() {
-	panic("Reset() is deprecated")
-}
-
-func (*CollectT) Copy(TestingT) {
-	panic("Copy() is deprecated")
 }
