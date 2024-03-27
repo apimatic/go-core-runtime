@@ -12,7 +12,85 @@ import (
 	"unicode/utf8"
 )
 
-func ObjectsAreEqual(expected, actual interface{}) bool {
+func IsType(t *testing.T, expectedType interface{}, object interface{}) bool {
+	if !objectsAreEqual(reflect.TypeOf(object), reflect.TypeOf(expectedType)) {
+		return fail(t, fmt.Sprintf("Object expected to be of type %v, but was %v", reflect.TypeOf(expectedType), reflect.TypeOf(object)))
+	}
+
+	return true
+}
+
+func Equal(t *testing.T, expected, actual interface{}) bool {
+	if objectsAreEqual(expected, actual) {
+		return true
+	}
+	return fail(t, fmt.Sprintf("Expected:\n%v\nBut Got:\n%v", expected, actual))
+}
+
+func Nil(t *testing.T, object interface{}) bool {
+	if isNil(object) {
+		return true
+	}
+	return fail(t, fmt.Sprintf("Expected nil, but got: %#v", object))
+}
+
+func True(t *testing.T, value bool) bool {
+	if !value {
+		return fail(t, "Should be true")
+	}
+	return true
+}
+
+func False(t *testing.T, value bool) bool {
+	if value {
+		return fail(t, "Should be false")
+	}
+	return true
+}
+
+func NoError(t *testing.T, err error) bool {
+	if err != nil {
+		return fail(t, fmt.Sprintf("Received unexpected error:\n%+v", err))
+	}
+	return true
+}
+
+func Error(t *testing.T, err error) bool {
+	if err == nil {
+		return fail(t, "An error is expected but got nil.")
+	}
+	return true
+}
+
+func EqualError(t *testing.T, theError error, errString string) bool {
+	if !Error(t, theError) {
+		return false
+	}
+	expected := errString
+	actual := theError.Error()
+	// don't need to use deep equals here, we know they are both strings
+	if expected != actual {
+		return fail(t, fmt.Sprintf("Error message not equal:\n"+
+			"expected: %q\n"+
+			"actual  : %q", expected, actual))
+	}
+	return true
+}
+
+func ErrorContains(t *testing.T, theError error, contains string) bool {
+	if !Error(t, theError) {
+		return false
+	}
+
+	actual := theError.Error()
+	if !strings.Contains(actual, contains) {
+		return fail(t, fmt.Sprintf("Error %#v does not contain %#v", actual, contains))
+	}
+
+	return true
+}
+
+func objectsAreEqual(expected, actual interface{}) bool {
 	if expected == nil || actual == nil {
 		return expected == actual
 	}
@@ -32,7 +110,35 @@ func ObjectsAreEqual(expected, actual interface{}) bool {
 	return bytes.Equal(exp, act)
 }
 
-func CallerInfo() []string {
+func isNil(object interface{}) bool {
+	if object == nil {
+		return true
+	}
+
+	value := reflect.ValueOf(object)
+	switch value.Kind() {
+	case
+		reflect.Chan, reflect.Func,
+		reflect.Interface, reflect.Map,
+		reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
+
+		return value.IsNil()
+	}
+
+	return false
+}
+
+func fail(t *testing.T, failureMessage string) bool {
+	content := []labeledContent{
+		{"Error Trace", strings.Join(callerInfo(), "\n\t\t\t")},
+		{"Error", failureMessage},
+	}
+	t.Errorf("\n%s", ""+labeledOutput(content...))
+
+	return false
+}
+
+func callerInfo() []string {
 
 	var pc uintptr
 	var ok bool
@@ -102,48 +208,6 @@ func isTest(name, prefix string) bool {
 	return !unicode.IsLower(r)
 }
 
-func messageFromMsgAndArgs(msgAndArgs ...interface{}) string {
-	if len(msgAndArgs) == 0 || msgAndArgs == nil {
-		return ""
-	}
-	if len(msgAndArgs) == 1 {
-		msg := msgAndArgs[0]
-		if msgAsStr, ok := msg.(string); ok {
-			return msgAsStr
-		}
-		return fmt.Sprintf("%+v", msg)
-	}
-	if len(msgAndArgs) > 1 {
-		return fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...)
-	}
-	return ""
-}
-
-func indentMessageLines(message string, longestLabelLen int) string {
-	outBuf := new(bytes.Buffer)
-
-	for i, scanner := 0, bufio.NewScanner(strings.NewReader(message)); scanner.Scan(); i++ {
-		// no need to align first line because it starts at the correct location (after the label)
-		if i != 0 {
-			// append alignLen+1 spaces to align with "{{longestLabel}}:" before adding tab
-			outBuf.WriteString("\n\t" + strings.Repeat(" ", longestLabelLen+1) + "\t")
-		}
-		outBuf.WriteString(scanner.Text())
-	}
-
-	return outBuf.String()
-}
-
-func fail(t *testing.T, failureMessage string) bool {
-	content := []labeledContent{
-		{"Error Trace", strings.Join(CallerInfo(), "\n\t\t\t")},
-		{"Error", failureMessage},
-	}
-	t.Errorf("\n%s", ""+labeledOutput(content...))
-
-	return false
-}
-
 type labeledContent struct {
 	label   string
 	content string
@@ -163,106 +227,17 @@ func labeledOutput(content ...labeledContent) string {
 	return output
 }
 
-func IsType(t *testing.T, expectedType interface{}, object interface{}) bool {
-	if !ObjectsAreEqual(reflect.TypeOf(object), reflect.TypeOf(expectedType)) {
-		return fail(t, fmt.Sprintf("Object expected to be of type %v, but was %v", reflect.TypeOf(expectedType), reflect.TypeOf(object)))
+func indentMessageLines(message string, longestLabelLen int) string {
+	outBuf := new(bytes.Buffer)
+
+	for i, scanner := 0, bufio.NewScanner(strings.NewReader(message)); scanner.Scan(); i++ {
+		// no need to align first line because it starts at the correct location (after the label)
+		if i != 0 {
+			// append alignLen+1 spaces to align with "{{longestLabel}}:" before adding tab
+			outBuf.WriteString("\n\t" + strings.Repeat(" ", longestLabelLen+1) + "\t")
+		}
+		outBuf.WriteString(scanner.Text())
 	}
 
-	return true
-}
-
-func Equal(t *testing.T, expected, actual interface{}) bool {
-	if expected == actual {
-		return true
-	}
-	t.Errorf("\n----------EXPECTED----------\n%v\n------------GOT------------\n%v", expected, actual)
-
-	return true
-}
-
-func isNil(object interface{}) bool {
-	if object == nil {
-		return true
-	}
-
-	value := reflect.ValueOf(object)
-	switch value.Kind() {
-	case
-		reflect.Chan, reflect.Func,
-		reflect.Interface, reflect.Map,
-		reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
-
-		return value.IsNil()
-	}
-
-	return false
-}
-
-func Nil(t *testing.T, object interface{}) bool {
-	if isNil(object) {
-		return true
-	}
-	return fail(t, fmt.Sprintf("Expected nil, but got: %#v", object))
-}
-
-func True(t *testing.T, value bool) bool {
-	if !value {
-		return fail(t, "Should be true")
-	}
-
-	return true
-
-}
-
-func False(t *testing.T, value bool) bool {
-	if value {
-		return fail(t, "Should be false")
-	}
-
-	return true
-
-}
-
-func NoError(t *testing.T, err error) bool {
-	if err != nil {
-		return fail(t, fmt.Sprintf("Received unexpected error:\n%+v", err))
-	}
-
-	return true
-}
-
-func Error(t *testing.T, err error) bool {
-	if err == nil {
-		return fail(t, "An error is expected but got nil.")
-	}
-
-	return true
-}
-
-func EqualError(t *testing.T, theError error, errString string) bool {
-	if !Error(t, theError) {
-		return false
-	}
-	expected := errString
-	actual := theError.Error()
-	// don't need to use deep equals here, we know they are both strings
-	if expected != actual {
-		return fail(t, fmt.Sprintf("Error message not equal:\n"+
-			"expected: %q\n"+
-			"actual  : %q", expected, actual))
-	}
-	return true
-}
-
-func ErrorContains(t *testing.T, theError error, contains string) bool {
-	if !Error(t, theError) {
-		return false
-	}
-
-	actual := theError.Error()
-	if !strings.Contains(actual, contains) {
-		return fail(t, fmt.Sprintf("Error %#v does not contain %#v", actual, contains))
-	}
-
-	return true
+	return outBuf.String()
 }
