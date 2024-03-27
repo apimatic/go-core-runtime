@@ -123,9 +123,9 @@ func isNil(object interface{}) bool {
 		reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
 
 		return value.IsNil()
+	default:
+		return false
 	}
-
-	return false
 }
 
 func fail(t *testing.T, failureMessage string) bool {
@@ -146,7 +146,7 @@ func callerInfo() []string {
 	var line int
 	var name string
 
-	callers := []string{}
+	var callers []string
 	for i := 0; ; i++ {
 		pc, file, line, ok = runtime.Caller(i)
 		if !ok {
