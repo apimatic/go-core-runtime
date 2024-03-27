@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/apimatic/go-core-runtime/utilities"
+	"github.com/apimatic/go-core-runtime/assert"
 )
 
 const API_KEY = "api-key"
@@ -99,12 +99,12 @@ func TestErrorWhenUndefinedAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	utilities.AssertError(t, err)
+	assert.Error(t, err)
 
 	expected := AuthenticationError("authThatDoesntExist is undefined!")
 	actual := err.Error()
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
 
 func TestSuccessfulCallWhenHeaderAuth(t *testing.T) {
@@ -113,14 +113,14 @@ func TestSuccessfulCallWhenHeaderAuth(t *testing.T) {
 
 	httpContext, err := request.Call()
 
-	utilities.AssertNoError(t, err)
+	assert.NoError(t, err)
 
 	header := httpContext.Request.Header
 
 	expected := MockHeaderToken
 	actual := header.Get("api-key")
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
 
 func TestSuccessfulCallWhenQueryAuth(t *testing.T) {
@@ -129,14 +129,14 @@ func TestSuccessfulCallWhenQueryAuth(t *testing.T) {
 
 	httpContext, err := request.Call()
 
-	utilities.AssertNoError(t, err)
+	assert.NoError(t, err)
 
 	query := httpContext.Request.URL.Query()
 
 	expected := MockQueryToken
 	actual := query.Get("api-token")
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
 
 func TestSuccessfulCallWhenHeaderAndQueryAuth(t *testing.T) {
@@ -150,13 +150,13 @@ func TestSuccessfulCallWhenHeaderAndQueryAuth(t *testing.T) {
 
 	httpContext, err := request.Call()
 
-	utilities.AssertNoError(t, err)
+	assert.NoError(t, err)
 
 	headerToken := httpContext.Request.Header.Get(API_KEY)
-	utilities.AssertEquals(t, MockHeaderToken, headerToken)
+	assert.Equal(t, MockHeaderToken, headerToken)
 
 	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
-	utilities.AssertEquals(t, MockQueryToken, queryToken)
+	assert.Equal(t, MockQueryToken, queryToken)
 }
 
 func TestSuccessfulCallWhenHeaderOrQueryAuth(t *testing.T) {
@@ -170,7 +170,7 @@ func TestSuccessfulCallWhenHeaderOrQueryAuth(t *testing.T) {
 
 	httpContext, err := request.Call()
 
-	utilities.AssertNoError(t, err)
+	assert.NoError(t, err)
 
 	headerToken := httpContext.Request.Header.Get(API_KEY)
 	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
@@ -193,13 +193,13 @@ func TestSuccessfulCallWhenEmptyHeaderOrQueryAuth(t *testing.T) {
 
 	httpContext, err := request.Call()
 
-	utilities.AssertNoError(t, err)
+	assert.NoError(t, err)
 
 	headerToken := httpContext.Request.Header.Get(API_KEY)
 	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
 
-	utilities.AssertEquals(t, "", headerToken)
-	utilities.AssertEquals(t, MockQueryToken, queryToken)
+	assert.Equal(t, "", headerToken)
+	assert.Equal(t, MockQueryToken, queryToken)
 }
 
 func TestSuccessfulCallWhenHeaderOrMissingQueryAuth(t *testing.T) {
@@ -213,14 +213,14 @@ func TestSuccessfulCallWhenHeaderOrMissingQueryAuth(t *testing.T) {
 
 	httpContext, err := request.Call()
 
-	utilities.AssertNoError(t, err)
+	assert.NoError(t, err)
 
 	headerToken := httpContext.Request.Header.Get(API_KEY)
 	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
 
-	utilities.AssertEquals(t, "", queryToken)
+	assert.Equal(t, "", queryToken)
 
-	utilities.AssertEquals(t, MockHeaderToken, headerToken)
+	assert.Equal(t, MockHeaderToken, headerToken)
 }
 
 func TestSuccessfulCallWhenMissingHeaderOrQueryAuth(t *testing.T) {
@@ -234,13 +234,13 @@ func TestSuccessfulCallWhenMissingHeaderOrQueryAuth(t *testing.T) {
 
 	httpContext, err := request.Call()
 
-	utilities.AssertNoError(t, err)
+	assert.NoError(t, err)
 
 	headerToken := httpContext.Request.Header.Get(API_KEY)
 	queryToken := httpContext.Request.URL.Query().Get(API_TOKEN)
 
-	utilities.AssertEquals(t, "", headerToken)
-	utilities.AssertEquals(t, MockQueryToken, queryToken)
+	assert.Equal(t, "", headerToken)
+	assert.Equal(t, MockQueryToken, queryToken)
 }
 
 func TestErrorWhenHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
@@ -254,12 +254,12 @@ func TestErrorWhenHeaderWithEmptyValueAndQueryAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	utilities.AssertError(t, err)
+	assert.Error(t, err)
 
 	expected := AuthenticationError(API_KEY_MISSING_ERROR)
 	actual := err.Error()
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
 
 func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
@@ -273,12 +273,12 @@ func TestErrorWhenHeaderAndQueryWithEmptyValueAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	utilities.AssertError(t, err)
+	assert.Error(t, err)
 
 	expected := AuthenticationError(API_TOKEN_MISSING_ERROR)
 	actual := err.Error()
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
 
 func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
@@ -292,12 +292,12 @@ func TestErrorWhenHeaderAndMissingQueryAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	utilities.AssertError(t, err)
+	assert.Error(t, err)
 
 	expected := AuthenticationError("missingQuery is undefined!")
 	actual := err.Error()
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
 
 func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
@@ -311,12 +311,12 @@ func TestErrorWhenMissingHeaderAndQueryAuth(t *testing.T) {
 
 	_, err := request.Call()
 
-	utilities.AssertError(t, err)
+	assert.Error(t, err)
 
 	expected := AuthenticationError("missingHeader is undefined!")
 	actual := err.Error()
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
 
 func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
@@ -330,12 +330,12 @@ func TestErrorWhenHeaderOrQueryAuthBothAreMissing(t *testing.T) {
 
 	_, err := request.Call()
 
-	utilities.AssertError(t, err)
+	assert.Error(t, err)
 
 	expected := AuthenticationError("headerMissing is undefined!", "queryMissing is undefined!")
 	actual := err.Error()
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
 
 func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
@@ -349,10 +349,10 @@ func TestErrorWhenHeaderOrQueryAuthBothAreEmpty(t *testing.T) {
 
 	_, err := request.Call()
 
-	utilities.AssertError(t, err)
+	assert.Error(t, err)
 
 	expected := AuthenticationError(API_KEY_MISSING_ERROR, API_TOKEN_MISSING_ERROR)
 	actual := err.Error()
 
-	utilities.AssertEquals(t, expected, actual)
+	assert.Equal(t, expected, actual)
 }
