@@ -2,15 +2,11 @@
 package https
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 	"regexp"
 	"strings"
-
-	"github.com/go-openapi/jsonpointer"
 )
 
 // ApiError is the base struct for all error responses from the server.
@@ -111,33 +107,4 @@ func renderPlaceholder(placeholder string, res http.Response) any {
 	}
 
 	return placeholder
-}
-
-func getValueFromJSON(rawJSON []byte, jsonPtr string) any {
-	var jsonBody any
-	if err := json.Unmarshal(rawJSON, &jsonBody); err != nil {
-		return ""
-	}
-
-	p, err := jsonpointer.New(jsonPtr)
-	if err != nil {
-		return ""
-	}
-
-	val, kind, err := p.Get(jsonBody)
-	if err != nil {
-		return ""
-	}
-
-	switch kind {
-	case reflect.Map:
-		obj, err := json.Marshal(val)
-		if err != nil {
-			return ""
-		}
-
-		return string(obj)
-	}
-
-	return val
 }
