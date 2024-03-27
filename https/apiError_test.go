@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/apimatic/go-core-runtime/assert"
 )
 
 const mockJSONResponseBody = `{

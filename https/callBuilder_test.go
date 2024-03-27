@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/apimatic/go-core-runtime/assert"
 )
 
 var ctx = context.Background()
