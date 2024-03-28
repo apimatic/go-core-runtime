@@ -11,27 +11,22 @@ import (
 
 func getValueFromJSON(rawJSON []byte, jsonPtr string) any {
 	var jsonBody any
-	if err := json.Unmarshal(rawJSON, &jsonBody); err != nil {
-		return ""
-	}
-	refTokens, err := parseJsonPtr(jsonPtr)
-	if err != nil {
-		return ""
-	}
-	val, kind, err := getValueFromJSONPtr(refTokens, jsonBody)
-	if err != nil {
-		return ""
-	}
-	switch kind {
-	case reflect.Map:
-		obj, err := json.Marshal(val)
-		if err != nil {
-			return ""
+	var result any = ""
+	if err := json.Unmarshal(rawJSON, &jsonBody); err == nil {
+		val, kind, err := getValueFromJSONPtr(jsonPtr, jsonBody)
+		if err == nil {
+			switch kind {
+			case reflect.Map:
+				obj, err := json.Marshal(val)
+				if err == nil {
+					result = string(obj)
+				}
+				return result
+			}
+			result = val
 		}
-
-		return string(obj)
 	}
-	return val
+	return result
 }
 
 func parseJsonPtr(jsonPtrStr string) ([]string, error) {
@@ -50,9 +45,15 @@ func parseJsonPtr(jsonPtrStr string) ([]string, error) {
 	return referenceTokens, err
 }
 
-func getValueFromJSONPtr(referenceTokens []string, node any) (any, reflect.Kind, error) {
+func getValueFromJSONPtr(jsonPtr string, node any) (any, reflect.Kind, error) {
 
 	kind := reflect.Invalid
+
+	referenceTokens, err := parseJsonPtr(jsonPtr)
+	if err != nil {
+		return node, kind, err
+	}
+
 	for _, token := range referenceTokens {
 		decodedToken := Unescape(token)
 		r, knd, err := getSingleImpl(node, decodedToken)
@@ -85,8 +86,10 @@ func isNil(input any) bool {
 func getSingleImpl(node any, decodedToken string) (any, reflect.Kind, error) {
 	rValue := reflect.Indirect(reflect.ValueOf(node))
 	kind := rValue.Kind()
+	var result any = nil
+	var resultErr error = nil
 	if isNil(node) {
-		return nil, kind, fmt.Errorf("nil value has not field %q", decodedToken)
+		return result, kind, fmt.Errorf("nil value has not field %q", decodedToken)
 	}
 
 	switch typed := node.(type) {
@@ -100,25 +103,24 @@ func getSingleImpl(node any, decodedToken string) (any, reflect.Kind, error) {
 		mv := rValue.MapIndex(kv)
 
 		if mv.IsValid() {
-			return mv.Interface(), kind, nil
+			result = mv.Interface()
+		} else {
+			resultErr = fmt.Errorf("object has no key %q", decodedToken)
 		}
-		return nil, kind, fmt.Errorf("object has no key %q", decodedToken)
-
 	case reflect.Slice:
-		tokenIndex, err := strconv.Atoi(decodedToken)
-		if err != nil {
-			return nil, kind, err
+		var tokenIndex int
+		tokenIndex, resultErr = strconv.Atoi(decodedToken)
+		if resultErr == nil {
+			sLength := rValue.Len()
+			if tokenIndex < 0 || tokenIndex >= sLength {
+				resultErr = fmt.Errorf("index out of bounds array[0,%d] index '%d'", sLength-1, tokenIndex)
+			} else {
+				elem := rValue.Index(tokenIndex)
+				result = elem.Interface()
+			}
 		}
-		sLength := rValue.Len()
-		if tokenIndex < 0 || tokenIndex >= sLength {
-			return nil, kind, fmt.Errorf("index out of bounds array[0,%d] index '%d'", sLength-1, tokenIndex)
-		}
-
-		elem := rValue.Index(tokenIndex)
-		return elem.Interface(), kind, nil
-
 	default:
-		return nil, kind, fmt.Errorf("invalid token reference %q", decodedToken)
+		resultErr = fmt.Errorf("invalid token reference %q", decodedToken)
 	}
-
+	return result, kind, resultErr
 }
