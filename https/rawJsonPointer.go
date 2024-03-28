@@ -1,28 +1,3 @@
-// Copyright 2013 sigu-399 ( https://github.com/sigu-399 )
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// author       sigu-399
-// author-github  https://github.com/sigu-399
-// author-mail    sigu.399@gmail.com
-//
-// repository-name  jsonpointer
-// repository-desc  An implementation of JSON Pointer - Go language
-//
-// description    Main and unique file.
-//
-// created        25-02-2013
-
 package https
 
 import (
@@ -60,16 +35,13 @@ func getValueFromJSON(rawJSON []byte, jsonPtr string) any {
 }
 
 func parseJsonPtr(jsonPtrStr string) ([]string, error) {
-
-	emptyPtr := ``
 	ptrSeparator := `/`
-	invalidStart := `JSON pointer must be empty or start with a "` + ptrSeparator
-
 	var err error
 	var referenceTokens []string
-	if jsonPtrStr != emptyPtr {
+
+	if jsonPtrStr != `` {
 		if !strings.HasPrefix(jsonPtrStr, ptrSeparator) {
-			err = errors.New(invalidStart)
+			err = errors.New(`JSON pointer must be empty or start with a "` + ptrSeparator)
 		} else {
 			refTokens := strings.Split(jsonPtrStr, ptrSeparator)
 			referenceTokens = append(referenceTokens, refTokens[1:]...)
@@ -81,12 +53,6 @@ func parseJsonPtr(jsonPtrStr string) ([]string, error) {
 func getValueFromJSONPtr(referenceTokens []string, node any) (any, reflect.Kind, error) {
 
 	kind := reflect.Invalid
-
-	// return full node when tokens are empty
-	if len(referenceTokens) == 0 {
-		return node, kind, nil
-	}
-
 	for _, token := range referenceTokens {
 		decodedToken := Unescape(token)
 		r, knd, err := getSingleImpl(node, decodedToken)
@@ -95,10 +61,8 @@ func getValueFromJSONPtr(referenceTokens []string, node any) (any, reflect.Kind,
 		}
 		node = r
 	}
-
 	rValue := reflect.ValueOf(node)
 	kind = rValue.Kind()
-
 	return node, kind, nil
 }
 
@@ -110,9 +74,6 @@ func Unescape(token string) string {
 }
 
 func isNil(input any) bool {
-	if input == nil {
-		return true
-	}
 	switch reflect.TypeOf(input).Kind() {
 	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Chan:
 		return reflect.ValueOf(input).IsNil()
@@ -133,16 +94,7 @@ func getSingleImpl(node any, decodedToken string) (any, reflect.Kind, error) {
 		return getSingleImpl(*typed, decodedToken)
 	}
 
-	switch kind { //nolint:exhaustive
-	case reflect.Struct:
-		structAny, err := structToAny(node)
-		if err != nil {
-			return nil, kind, fmt.Errorf("object has no field %q", decodedToken)
-		}
-
-		val, _, err := getSingleImpl(structAny, decodedToken)
-		return val, kind, err
-
+	switch kind {
 	case reflect.Map:
 		kv := reflect.ValueOf(decodedToken)
 		mv := rValue.MapIndex(kv)
