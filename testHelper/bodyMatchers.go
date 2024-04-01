@@ -51,10 +51,21 @@ func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject
 // KeysAndValuesBodyMatcher compares the JSON response body with the expected JSON body using keys and values.
 // The responseObject and expectedBody should have the same keys and their corresponding values should be equal.
 func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
-	return
-	responseBytes, _ := json.Marshal(&responseObject)
+	responseBytes, responseErr := json.Marshal(&responseObject)
+	if responseErr != nil {
+		test.Errorf("Invalid response data: %v", responseErr)
+	}
+	var expectedData T
+	expectedErr := json.Unmarshal([]byte(expectedBody), &expectedData)
+	if expectedErr != nil {
+		test.Errorf("Invalid expected data: %v", expectedErr)
+	}
+	expectedBytes, expectedErr := json.Marshal(&expectedData)
+	if expectedErr != nil {
+		test.Errorf("Invalid expected data: %v", expectedErr)
+	}
 
-	if !matchKeysAndValues(responseBytes, []byte(expectedBody), checkArrayCount, checkArrayOrder, true) {
+	if !matchKeysAndValues(responseBytes, expectedBytes, checkArrayCount, checkArrayOrder, true) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
