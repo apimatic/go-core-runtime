@@ -5,6 +5,7 @@ package testHelper
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
@@ -12,7 +13,7 @@ import (
 	"github.com/apimatic/go-core-runtime/https"
 )
 
-// RawBodyMatcher checks if the expectedBody is contained within the JSON response body.
+// RawBodyMatcher compares the response body with the expected body via simple string checking. In case of Binary response, byte-by-byte comparison is performed. The expected body takes a URI path to a remote file to compare with the Binary response, which must be valid URI path.
 func RawBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
 	responseBytes, _ := json.Marshal(&responseObject)
 	responseBody := string(responseBytes)
@@ -22,24 +23,54 @@ func RawBodyMatcher[T any](test *testing.T, expectedBody string, responseObject 
 	}
 }
 
-// NativeBodyMatcher compares the JSON response body with the expected JSON body.
-func NativeBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
-	responseBytes, _ := json.Marshal(&responseObject)
-	var expected, response any
-	expectedError := json.Unmarshal([]byte(expectedBody), &expected)
-	responseError := json.Unmarshal(responseBytes, &response)
-
-	if expectedError != nil || responseError != nil {
-		test.Error("error while unmarshalling for comparison")
+// NativeBodyMatcher compares the response body as a primitive type(int, int64, float64, bool & time.Time) using a simple equality test.
+// Response must match exactly except in case of arrays where array ordering and strictness can be controlled via other options.
+func NativeBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCloser, isArray, checkArrayCount bool) {
+	
+	responseBytes, responseReadErr := io.ReadAll(responseBody)
+	if responseReadErr != nil {
+		test.Errorf("Invalid response data: %v", responseReadErr)
 	}
-
-	if !reflect.DeepEqual(response, expected) {
-		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
+	expectedBytes := []byte(expectedBody)
+	
+	if (!isArray){
+		if !reflect.DeepEqual(responseBytes, expectedBytes) {
+			test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), string(expectedBytes))
+		}
+	} else {
+		var expected, response []any
+		expectedErr := json.Unmarshal(expectedBytes, &expected)
+		responseErr := json.Unmarshal(responseBytes, &response)
+		if expectedErr != nil || responseErr != nil {
+			test.Error("error while unmarshalling for comparison")
+		}
+		if (checkArrayCount){
+			if !reflect.DeepEqual(response, expected) {
+				test.Errorf("got \n%v \nbut expected \n%v", response, expected)
+			}
+		} else {
+			containsFunc := func(slice []any, val any) bool {
+				for _, v := range slice {
+					if reflect.DeepEqual(v, val) {
+						return true
+					}
+				}
+				return false
+			}
+			for _, v := range response {
+				if !containsFunc(expected, v) {
+					test.Errorf("got \n%v \nbut expected \n%v", response, expected)
+					break
+				}
+			}
+		}
+		
 	}
 }
 
-// KeysBodyMatcher compares the JSON response body with the expected JSON body using keys only.
-// The responseObject and expectedBody should have the same keys.
+// KeysBodyMatcher Checks whether the response body contains the same keys as those specified in the expected body.
+// The keys provided can be a subset of the response being received. If any key is absent in the response body, the test fails.
+// The test generated will perform deep checking which means if the response object contains nested objects, their keys will also be tested.
 func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, _ := json.Marshal(&responseObject)
 
@@ -48,22 +79,17 @@ func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject
 	}
 }
 
-// KeysAndValuesBodyMatcher compares the JSON response body with the expected JSON body using keys and values.
-// The responseObject and expectedBody should have the same keys and their corresponding values should be equal.
-func KeysAndValuesBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
-	responseBytes, responseErr := json.Marshal(&responseObject)
+// KeysAndValuesBodyMatcher Checks whether the response body contains the same keys and values as those specified in the expected body.
+// The keys and values provided can be a subset of the response being received. If any key or value is absent in the response body, the test fails.
+// The test generated will perform deep checking which means if the response object contains nested objects, their keys and values will also be tested.
+// In case of nested arrays, their ordering and strictness depends on the provided options.
+func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCloser, checkArrayCount, checkArrayOrder bool) {
+	
+	responseBytes, responseErr := io.ReadAll(responseBody)
 	if responseErr != nil {
 		test.Errorf("Invalid response data: %v", responseErr)
 	}
-	var expectedData T
-	expectedErr := json.Unmarshal([]byte(expectedBody), &expectedData)
-	if expectedErr != nil {
-		test.Errorf("Invalid expected data: %v", expectedErr)
-	}
-	expectedBytes, expectedErr := json.Marshal(&expectedData)
-	if expectedErr != nil {
-		test.Errorf("Invalid expected data: %v", expectedErr)
-	}
+	expectedBytes := []byte(expectedBody)
 
 	if !matchKeysAndValues(responseBytes, expectedBytes, checkArrayCount, checkArrayOrder, true) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
