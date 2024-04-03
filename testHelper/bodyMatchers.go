@@ -13,13 +13,16 @@ import (
 	"github.com/apimatic/go-core-runtime/https"
 )
 
+func setTestingError(test *testing.T, responseArg any, expectedArg any){
+	test.Errorf("got \n%v \nbut expected %v", responseArg, expectedArg)
+}
 // RawBodyMatcher compares the response body with the expected body via simple string checking. In case of Binary response, byte-by-byte comparison is performed. The expected body takes a URI path to a remote file to compare with the Binary response, which must be valid URI path.
 func RawBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
 	responseBytes, _ := json.Marshal(&responseObject)
 	responseBody := string(responseBytes)
 
 	if !strings.Contains(responseBody, expectedBody) {
-		test.Errorf("got \n%v \nbut expected %v", responseBody, expectedBody)
+		setTestingError(test, responseBody, expectedBody)
 	}
 }
 
@@ -33,38 +36,45 @@ func NativeBodyMatcher(test *testing.T, expectedBody string, responseBody io.Rea
 	}
 	expectedBytes := []byte(expectedBody)
 	
-	if (!isArray){
-		if !reflect.DeepEqual(responseBytes, expectedBytes) {
-			test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), string(expectedBytes))
-		}
-	} else {
-		var expected, response []any
-		expectedErr := json.Unmarshal(expectedBytes, &expected)
-		responseErr := json.Unmarshal(responseBytes, &response)
-		if expectedErr != nil || responseErr != nil {
-			test.Error("error while unmarshalling for comparison")
-		}
-		if (checkArrayCount){
-			if !reflect.DeepEqual(response, expected) {
-				test.Errorf("got \n%v \nbut expected \n%v", response, expected)
+	if (isArray){
+		matchNativeArray(test, expectedBytes, responseBytes, checkArrayCount)
+		return
+	}
+	if !reflect.DeepEqual(responseBytes, expectedBytes) {
+		setTestingError(test, string(responseBytes), string(expectedBytes))
+	}
+}
+
+func matchNativeArray(test *testing.T, expectedBytes, responseBytes []byte, checkArrayCount bool) {
+	var expected, response []any
+	expectedErr := json.Unmarshal(expectedBytes, &expected)
+	responseErr := json.Unmarshal(responseBytes, &response)
+	if expectedErr != nil || responseErr != nil {
+		test.Error("error while unmarshalling for comparison")
+	}
+	if (!checkArrayCount){
+		matchNativeArrayCount(test, response, expected)
+		return
+	}
+	if !reflect.DeepEqual(response, expected) {
+		setTestingError(test, response, expected)
+	}	
+}
+
+func matchNativeArrayCount(test *testing.T, response, expected []any) {
+	containsFunc := func(slice []any, val any) bool {
+		for _, v := range slice {
+			if reflect.DeepEqual(v, val) {
+				return true
 			}
-		} else {
-			containsFunc := func(slice []any, val any) bool {
-				for _, v := range slice {
-					if reflect.DeepEqual(v, val) {
-						return true
-					}
-				}
-				return false
-			}
-			for _, v := range response {
-				if !containsFunc(expected, v) {
-					test.Errorf("got \n%v \nbut expected \n%v", response, expected)
-					break
-				}
-			}
 		}
-		
+		return false
+	}
+	for _, v := range response {
+		if !containsFunc(expected, v) {
+			setTestingError(test, response, expected)
+			break
+		}
 	}
 }
 

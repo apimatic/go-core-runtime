@@ -67,7 +67,7 @@ func TestRawBodyMatcherIntSlice(t *testing.T) {
 	var result []int = []int{
 		1, 2, 3, 4, 5,
 	}
-	NativeBodyMatcher(t, expected, getValueReader(result), true, false)
+	RawBodyMatcher(t, expected, result)
 }
 
 func TestRawBodyMatcherBooleanError(t *testing.T) {
@@ -117,12 +117,12 @@ type Attributes struct {
 
 func TestKeysAndValuesBodyMatcherEmpty(t *testing.T) {
 	expected := `{}`
-	KeysAndValuesBodyMatcher(t, expected, nil, false, false)
+	KeysAndValuesBodyMatcher(t, expected, getValueReader(nil), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherEmptyArray(t *testing.T) {
 	expected := `[]`
-	KeysAndValuesBodyMatcher(t, expected, nil, false, false)
+	KeysAndValuesBodyMatcher(t, expected, getValueReader(nil), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherArray(t *testing.T) {
