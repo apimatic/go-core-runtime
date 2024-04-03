@@ -40,8 +40,8 @@ func TestStructToMapMarshallingError(t *testing.T) {
 }
 
 func TestToMapNilMap(t *testing.T) {
-	param := FormParam{"param", "value", nil}
-	result, _ := toMap(param.Key, param.Value, Indexed)
+	param := formParam{"param", "value", nil, Indexed}
+	result, _ := param.toMap()
 
 	expected := map[string][]string{
 		"param": {"value"},
@@ -53,8 +53,8 @@ func TestToMapNilMap(t *testing.T) {
 }
 
 func TestFormEncodeMapNilValue(t *testing.T) {
-	param := FormParam{"param", nil, nil}
-	result, _ := toMap(param.Key, param.Value, Indexed)
+	param := formParam{"param", nil, nil, Indexed}
+	result, _ := param.toMap()
 
 	expected := make(map[string][]string)
 
@@ -64,8 +64,8 @@ func TestFormEncodeMapNilValue(t *testing.T) {
 }
 
 func TestFormEncodeMapStructType(t *testing.T) {
-	param := FormParam{"param2", GetStruct(), nil}
-	result, _ := toMap(param.Key, param.Value, Indexed)
+	param := formParam{"param2", GetStruct(), nil, Indexed}
+	result, _ := param.toMap()
 
 	expected := FormParams{
 		{"param2[Name]", "Bisma", nil},
