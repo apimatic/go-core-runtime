@@ -27,6 +27,15 @@ type formParam struct {
 	arraySerializationOption ArraySerializationOption
 }
 
+func (fp *formParam) clone(key string, value any) formParam {
+	return formParam{
+		key: key,
+		value: value,
+		headers: fp.headers,
+		arraySerializationOption: fp.arraySerializationOption,
+	}
+}
+
 type formParams []formParam
 
 // FormParams represents a collection of FormParam objects.
@@ -53,7 +62,7 @@ func (fp *formParams) prepareFormFields(form url.Values) error {
 		form = url.Values{}
 	}
 	for _, param := range *fp {
-		paramsMap, err := toMap(param.key, param.value, param.arraySerializationOption)
+		paramsMap, err := param.toMap()
 		if err != nil {
 			return err
 		}
@@ -80,7 +89,7 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 			}
 			formParamWriter(writer, field.headers, mediaParam, fieldValue.File)
 		default:
-			paramsMap, err := toMap(field.key, field.value, field.arraySerializationOption)
+			paramsMap, err := field.toMap()
 			if err != nil {
 				return *body, writer.FormDataContentType(), err
 			}
@@ -119,49 +128,64 @@ func formParamWriter(
 	return nil
 }
 
-func toMap(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
-	if param == nil {
+func (fp *formParam) IsMultipart() bool {
+	contentType := fp.headers.Get(CONTENT_TYPE_HEADER)
+	if contentType != "" {
+		return contentType != FORM_URLENCODED_CONTENT_TYPE
+	}
+	return false
+}
+
+func (fp *formParam) toMap() (map[string][]string, error) {
+	if fp.value == nil {
 		return map[string][]string{}, nil
 	}
 
-	switch reflect.TypeOf(param).Kind() {
+	if (fp.IsMultipart()){
+		return fp.processDefault()
+	}
+	
+	switch reflect.TypeOf(fp.value).Kind() {
 	case reflect.Ptr:
-		return processStructAndPtr(keyPrefix, param, option)
+		return fp.processStructAndPtr()
 	case reflect.Struct:
-		return processStructAndPtr(keyPrefix, toStructPtr(param), option)
+		innerfp := fp.clone(fp.key, toStructPtr(fp.value))
+		return innerfp.processStructAndPtr()
 	case reflect.Map:
-		return processMap(keyPrefix, param, option)
+		return fp.processMap()
 	case reflect.Slice:
-		return processSlice(keyPrefix, param, option)
+		return fp.processSlice()
 	default:
-		return processDefault(keyPrefix, param)
+		return fp.processDefault()
 	}
 }
 
-func processStructAndPtr(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
-	innerData, err := structToAny(param)
+func (fp *formParam) processStructAndPtr() (map[string][]string, error) {
+	innerData, err := structToAny(fp.value)
 	if err != nil { return nil, err }
 
-	return toMap(keyPrefix, innerData, option)
+	innerfp := fp.clone(fp.key, innerData)
+	return innerfp.toMap()
 }
 
-func processMap(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
-	iter := reflect.ValueOf(param).MapRange()
+func (fp *formParam) processMap() (map[string][]string, error) {
+	iter := reflect.ValueOf(fp.value).MapRange()
 	result := make(map[string][]string)
 	for iter.Next() {
-		innerKey := option.joinKey(keyPrefix, iter.Key().Interface())
+		innerKey := fp.arraySerializationOption.joinKey(fp.key, iter.Key().Interface())
 		innerValue := iter.Value().Interface()
-		innerFlatMap, err := toMap(innerKey, innerValue, option)
+		innerfp := fp.clone(innerKey, innerValue)
+		innerFlatMap, err := innerfp.toMap()
 		if err != nil {
 			return nil, err
 		}
-		option.appendMap(result, innerFlatMap)
+		fp.arraySerializationOption.appendMap(result, innerFlatMap)
 	}
 	return result, nil
 }
 
-func processSlice(keyPrefix string, param any, option ArraySerializationOption) (map[string][]string, error) {
-	reflectValue := reflect.ValueOf(param)
+func (fp *formParam) processSlice() (map[string][]string, error) {
+	reflectValue := reflect.ValueOf(fp.value)
 	result := make(map[string][]string)
 	for i := 0; i < reflectValue.Len(); i++ {
 		innerStruct := reflectValue.Index(i).Interface()
@@ -172,30 +196,31 @@ func processSlice(keyPrefix string, param any, option ArraySerializationOption) 
 		default:
 			indexStr = fmt.Sprintf("%v", i)
 		}
-		innerKey := option.joinKey(keyPrefix, indexStr)
-		innerFlatMap, err := toMap(innerKey, innerStruct, option)
+		innerKey := fp.arraySerializationOption.joinKey(fp.key, indexStr)
+		innerfp := fp.clone(innerKey, innerStruct)
+		innerFlatMap, err := innerfp.toMap()
 		if err != nil {
 			return result, err
 		}
-		option.appendMap(result, innerFlatMap)
+		fp.arraySerializationOption.appendMap(result, innerFlatMap)
 	}
 	return result, nil
 }
 
-func processDefault(keyPrefix string, param any) (map[string][]string, error) {
+func (fp *formParam) processDefault() (map[string][]string, error) {
 	var defaultValue string
-	switch reflect.TypeOf(param).Kind() {
+	switch reflect.TypeOf(fp.value).Kind() {
 	case reflect.String:
-		defaultValue = fmt.Sprintf("%v", param)
+		defaultValue = fmt.Sprintf("%v", fp.value)
 	default:
-		dataBytes, err := json.Marshal(param)
+		dataBytes, err := json.Marshal(fp.value)
 		if err == nil {
 			defaultValue = string(dataBytes)
 		} else {
-			defaultValue = fmt.Sprintf("%v", param)
+			defaultValue = fmt.Sprintf("%v", fp.value)
 		}
 	}
-	return map[string][]string{keyPrefix: {defaultValue}}, nil
+	return map[string][]string{fp.key: {defaultValue}}, nil
 }
 
 // structToAny converts a given data structure into an any type.

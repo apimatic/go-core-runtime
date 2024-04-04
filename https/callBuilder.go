@@ -662,10 +662,11 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 
 	if result.Response != nil {
 		if result.Response.Body == http.NoBody {
-			err = fmt.Errorf("response body empty")
+			return nil, result.Response, fmt.Errorf("response body empty")
 		}
-
-		return json.NewDecoder(result.Response.Body), result.Response, err
+		bodyBytes, err := io.ReadAll(result.Response.Body)
+		result.Response.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		return json.NewDecoder(io.NopCloser(bytes.NewBuffer(bodyBytes))), result.Response, err
 	}
 	return nil, result.Response, err
 }
@@ -683,12 +684,12 @@ func (cb *defaultCallBuilder) CallAsText() (string, *http.Response, error) {
 			return "", result.Response, fmt.Errorf("response body empty")
 		}
 
-		body, err := io.ReadAll(result.Response.Body)
+		bodyBytes, err := io.ReadAll(result.Response.Body)
 		if err != nil {
 			return "", result.Response, fmt.Errorf("error reading Response body: %v", err.Error())
 		}
-
-		return string(body), result.Response, err
+		result.Response.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		return string(bodyBytes), result.Response, err
 	}
 	return "", result.Response, err
 }
