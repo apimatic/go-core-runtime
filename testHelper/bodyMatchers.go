@@ -16,11 +16,16 @@ import (
 func setTestingError(test *testing.T, responseArg any, expectedArg any){
 	test.Errorf("got \n%v \nbut expected %v", responseArg, expectedArg)
 }
+
+func setTestResponseError(test *testing.T, responseErr error){
+	test.Errorf("Invalid response data: %v", responseErr)
+}
+
 // RawBodyMatcher compares the response body with the expected body via simple string checking. In case of Binary response, byte-by-byte comparison is performed.
 func RawBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCloser) {
 	responseBytes, responseReadErr := io.ReadAll(responseBody)
 	if responseReadErr != nil {
-		test.Errorf("Invalid response data: %v", responseReadErr)
+		setTestResponseError(test, responseReadErr)
 	}
 	response := string(responseBytes)
 
@@ -35,7 +40,7 @@ func NativeBodyMatcher(test *testing.T, expectedBody string, responseBody io.Rea
 	
 	responseBytes, responseReadErr := io.ReadAll(responseBody)
 	if responseReadErr != nil {
-		test.Errorf("Invalid response data: %v", responseReadErr)
+		setTestResponseError(test, responseReadErr)
 	}
 	expectedBytes := []byte(expectedBody)
 	
@@ -87,7 +92,7 @@ func matchNativeArrayValues(test *testing.T, response, expected []any) {
 func KeysBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCloser, checkArrayCount, checkArrayOrder bool) {
 	responseBytes, responseErr := io.ReadAll(responseBody)
 	if responseErr != nil {
-		test.Errorf("Invalid response data: %v", responseErr)
+		setTestResponseError(test, responseErr)
 	}
 	expectedBytes := []byte(expectedBody)
 
@@ -104,7 +109,7 @@ func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseBody
 	
 	responseBytes, responseErr := io.ReadAll(responseBody)
 	if responseErr != nil {
-		test.Errorf("Invalid response data: %v", responseErr)
+		setTestResponseError(test, responseErr)
 	}
 	expectedBytes := []byte(expectedBody)
 
