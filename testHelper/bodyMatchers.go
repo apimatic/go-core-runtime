@@ -17,11 +17,14 @@ func setTestingError(test *testing.T, responseArg any, expectedArg any){
 	test.Errorf("got \n%v \nbut expected %v", responseArg, expectedArg)
 }
 // RawBodyMatcher compares the response body with the expected body via simple string checking. In case of Binary response, byte-by-byte comparison is performed.
-func RawBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
-	responseBytes, _ := json.Marshal(&responseObject)
-	responseBody := string(responseBytes)
+func RawBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCloser) {
+	responseBytes, responseReadErr := io.ReadAll(responseBody)
+	if responseReadErr != nil {
+		test.Errorf("Invalid response data: %v", responseReadErr)
+	}
+	response := string(responseBytes)
 
-	if !strings.Contains(responseBody, expectedBody) {
+	if !strings.Contains(response, expectedBody) {
 		setTestingError(test, responseBody, expectedBody)
 	}
 }
@@ -81,10 +84,14 @@ func matchNativeArrayValues(test *testing.T, response, expected []any) {
 // KeysBodyMatcher Checks whether the response body contains the same keys as those specified in the expected body.
 // The keys provided can be a subset of the response being received. If any key is absent in the response body, the test fails.
 // The test generated will perform deep checking which means if the response object contains nested objects, their keys will also be tested.
-func KeysBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T, checkArrayCount, checkArrayOrder bool) {
-	responseBytes, _ := json.Marshal(&responseObject)
+func KeysBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCloser, checkArrayCount, checkArrayOrder bool) {
+	responseBytes, responseErr := io.ReadAll(responseBody)
+	if responseErr != nil {
+		test.Errorf("Invalid response data: %v", responseErr)
+	}
+	expectedBytes := []byte(expectedBody)
 
-	if !matchKeysAndValues(responseBytes, []byte(expectedBody), checkArrayCount, checkArrayOrder, false) {
+	if !matchKeysAndValues(responseBytes, expectedBytes, checkArrayCount, checkArrayOrder, false) {
 		test.Errorf("got \n%v \nbut expected \n%v", string(responseBytes), expectedBody)
 	}
 }
