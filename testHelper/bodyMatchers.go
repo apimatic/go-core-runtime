@@ -16,7 +16,7 @@ import (
 func setTestingError(test *testing.T, responseArg any, expectedArg any){
 	test.Errorf("got \n%v \nbut expected %v", responseArg, expectedArg)
 }
-// RawBodyMatcher compares the response body with the expected body via simple string checking. In case of Binary response, byte-by-byte comparison is performed. The expected body takes a URI path to a remote file to compare with the Binary response, which must be valid URI path.
+// RawBodyMatcher compares the response body with the expected body via simple string checking. In case of Binary response, byte-by-byte comparison is performed.
 func RawBodyMatcher[T any](test *testing.T, expectedBody string, responseObject T) {
 	responseBytes, _ := json.Marshal(&responseObject)
 	responseBody := string(responseBytes)
@@ -53,7 +53,7 @@ func matchNativeArray(test *testing.T, expectedBytes, responseBytes []byte, chec
 		test.Error("error while unmarshalling for comparison")
 	}
 	if (!checkArrayCount){
-		matchNativeArrayCount(test, response, expected)
+		matchNativeArrayValues(test, response, expected)
 		return
 	}
 	if !reflect.DeepEqual(response, expected) {
@@ -61,7 +61,7 @@ func matchNativeArray(test *testing.T, expectedBytes, responseBytes []byte, chec
 	}	
 }
 
-func matchNativeArrayCount(test *testing.T, response, expected []any) {
+func matchNativeArrayValues(test *testing.T, response, expected []any) {
 	containsFunc := func(slice []any, val any) bool {
 		for _, v := range slice {
 			if reflect.DeepEqual(v, val) {
