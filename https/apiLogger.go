@@ -15,30 +15,30 @@ type ApiLoggerInterface interface {
 
 // ApiLogger represents implementation for ApiLoggerInterface, providing methods to log HTTP requests and responses.
 type ApiLogger struct {
-	_loggingOptions LoggingOptions
-	_logger         LoggerInterface
+	loggingOptions LoggingOptions
+	logger         LoggerInterface
 }
 
 // NewApiLogger Constructs a new instance of ApiLogger.
-func NewApiLogger(loggingOpt LoggingOptions) ApiLogger {
-	return ApiLogger{
-		_loggingOptions: loggingOpt,
-		_logger:         loggingOpt.logger,
+func NewApiLogger(loggingOpt LoggingOptions) *ApiLogger {
+	return &ApiLogger{
+		loggingOptions: loggingOpt,
+		logger:         loggingOpt.logger,
 	}
 }
 
 // logRequest Logs an HTTP request.
 func (a *ApiLogger) LogRequest(request *http.Request) {
-	var logLevel = a._loggingOptions.logLevel
+	var logLevel = a.loggingOptions.logLevel
 	var contentTypeHeader = a._getContentType(request.Header)
 	var url string
-	if a._loggingOptions.logRequest.includeQueryInPath {
+	if a.loggingOptions.logRequest.includeQueryInPath {
 		url = request.RequestURI
 	} else {
 		url = a._removeQueryParams(request.RequestURI)
 	}
 
-	a._logger.log(logLevel, "Request ${method} ${url} ${contentType}", map[string]any{
+	a.logger.log(logLevel, "Request ${method} ${url} ${contentType}", map[string]any{
 		"method":      request.Method,
 		"url":         url,
 		"contentType": contentTypeHeader,
@@ -47,16 +47,13 @@ func (a *ApiLogger) LogRequest(request *http.Request) {
 	a._applyLogRequestOptions(logLevel, request)
 }
 
-/**
- * Logs an HTTP response.
- * @param response The HTTP response to log.
- */
+// Logs an HTTP response.
 func (a *ApiLogger) LogResponse(response *http.Response) {
-	var logLevel = a._loggingOptions.logLevel
+	var logLevel = a.loggingOptions.logLevel
 	var contentTypeHeader = a._getContentType(response.Header)
 	var contentLengthHeader = a._getContentLength(response.Header)
 
-	a._logger.log(
+	a.logger.log(
 		logLevel,
 		"Response ${statusCode} ${contentLength} ${contentType}",
 		map[string]any{
@@ -73,10 +70,10 @@ func (a *ApiLogger) _applyLogRequestOptions(level LogLevel, request *http.Reques
 	a._applyLogRequestHeaders(
 		level,
 		request,
-		a._loggingOptions.logRequest,
+		a.loggingOptions.logRequest,
 	)
 
-	a._applyLogRequestBody(level, request, a._loggingOptions.logRequest)
+	a._applyLogRequestBody(level, request, a.loggingOptions.logRequest)
 }
 
 func (a *ApiLogger) _applyLogRequestHeaders(
@@ -97,7 +94,7 @@ func (a *ApiLogger) _applyLogRequestHeaders(
 			request.Header,
 		)
 
-		a._logger.log(level, "Request headers ${headers}",
+		a.logger.log(level, "Request headers ${headers}",
 			map[string]any{"headers": headersToLog},
 		)
 	}
@@ -109,7 +106,7 @@ func (a *ApiLogger) _applyLogRequestBody(
 	logRequest HttpRequestLoggingOptions) {
 
 	if logRequest.logBody {
-		a._logger.log(level, "Request body ${body}",
+		a.logger.log(level, "Request body ${body}",
 			map[string]any{"body": request.Body},
 		)
 	}
@@ -119,13 +116,13 @@ func (a *ApiLogger) _applyLogResponseOptions(level LogLevel, response *http.Resp
 	a._applyLogResponseHeaders(
 		level,
 		response,
-		a._loggingOptions.logResponse,
+		a.loggingOptions.logResponse,
 	)
 
 	a._applyLogResponseBody(
 		level,
 		response,
-		a._loggingOptions.logResponse,
+		a.loggingOptions.logResponse,
 	)
 }
 
@@ -147,7 +144,7 @@ func (a *ApiLogger) _applyLogResponseHeaders(
 			response.Header,
 		)
 
-		a._logger.log(level, "Response headers ${headers}",
+		a.logger.log(level, "Response headers ${headers}",
 			map[string]any{"headers": headersToLog},
 		)
 	}
@@ -159,7 +156,7 @@ func (a *ApiLogger) _applyLogResponseBody(
 	logResponse HttpMessageLoggingOptions) {
 
 	if logResponse.logBody {
-		a._logger.log(level, "Response body ${body}",
+		a.logger.log(level, "Response body ${body}",
 			map[string]any{"body": response.Body},
 		)
 	}
@@ -257,7 +254,7 @@ func (a *ApiLogger) _maskSenstiveHeaders(
 	headers http.Header,
 	headersToWhitelist []string) http.Header {
 
-	if a._loggingOptions.maskSensitiveHeaders {
+	if a.loggingOptions.maskSensitiveHeaders {
 		for key, _ := range headers {
 			val := headers.Get(key)
 			headers.Set(key, a._maskIfSenstiveHeader(key, val, headersToWhitelist))
