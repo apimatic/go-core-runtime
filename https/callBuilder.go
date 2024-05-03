@@ -71,6 +71,7 @@ type CallBuilder interface {
 	Authenticate(authGroup AuthGroup)
 	RequestRetryOption(option RequestRetryOption)
 	ArraySerializationOption(option ArraySerializationOption)
+	ApiLogger(apiLogger ApiLoggerInterface)
 }
 
 // defaultCallBuilder is a struct that implements the CallBuilder interface for making API calls.
@@ -113,7 +114,6 @@ func newDefaultCallBuilder(
 	authProvider map[string]AuthInterface,
 	retryConfig RetryConfiguration,
 	option ArraySerializationOption,
-	apiLogger ApiLoggerInterface,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
 		httpClient:               httpClient,
@@ -126,7 +126,6 @@ func newDefaultCallBuilder(
 		retryConfig:              retryConfig,
 		ctx:                      ctx,
 		arraySerializationOption: option,
-		apiLogger:                apiLogger,
 	}
 	cb.addRetryInterceptor()
 	cb.addApiLoggerInterceptors()
@@ -163,6 +162,12 @@ func (cb *defaultCallBuilder) RequestRetryOption(option RequestRetryOption) {
 func (cb *defaultCallBuilder) ArraySerializationOption(option ArraySerializationOption) {
 	cb.arraySerializationOption = option
 }
+
+// ApiLogger sets the api Logger interface instance for the API call.
+func (cb *defaultCallBuilder) ApiLogger(apiLogger ApiLoggerInterface) {
+	cb.apiLogger = apiLogger
+}
+
 
 // AppendPath appends the provided path to the existing path in the CallBuilder.
 func (cb *defaultCallBuilder) AppendPath(path string) {
@@ -814,7 +819,6 @@ func CreateCallBuilderFactory(
 	httpClient HttpClient,
 	retryConfig RetryConfiguration,
 	option ArraySerializationOption,
-	apiLogger ApiLoggerInterface,
 ) CallBuilderFactory {
 	return func(
 		ctx context.Context,
@@ -831,7 +835,6 @@ func CreateCallBuilderFactory(
 			auth,
 			retryConfig,
 			option,
-			apiLogger,
 		)
 	}
 }
