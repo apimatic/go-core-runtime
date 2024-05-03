@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/apimatic/go-core-runtime/logger"
 	"io"
 	"net/http"
 	"net/url"
@@ -100,6 +101,7 @@ type defaultCallBuilder struct {
 	queryParams              formParams
 	errors                   map[string]ErrorBuilder[error]
 	arraySerializationOption ArraySerializationOption
+	apiLogger                logger.ApiLoggerInterface
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -112,6 +114,7 @@ func newDefaultCallBuilder(
 	authProvider map[string]AuthInterface,
 	retryConfig RetryConfiguration,
 	option ArraySerializationOption,
+	apiLogger logger.ApiLoggerInterface,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
 		httpClient:               httpClient,
@@ -124,8 +127,10 @@ func newDefaultCallBuilder(
 		retryConfig:              retryConfig,
 		ctx:                      ctx,
 		arraySerializationOption: option,
+		apiLogger:                apiLogger,
 	}
 	cb.addRetryInterceptor()
+	cb.addApiLoggerInterceptors()
 	return &cb
 }
 
@@ -763,6 +768,19 @@ func (cb *defaultCallBuilder) addRetryInterceptor() {
 		})
 }
 
+func (cb *defaultCallBuilder) addApiLoggerInterceptors() {
+	if cb.apiLogger != nil {
+		apiLogger := cb.apiLogger
+		cb.intercept(
+			func(request *http.Request, next HttpCallExecutor) HttpContext {
+				apiLogger.LogRequest(request)
+				context := next(request)
+				apiLogger.LogResponse(context.Response)
+				return context
+			})
+	}
+}
+
 // mergePath combines two URL paths to create a valid URL path.
 func mergePath(left, right string) string {
 	if right == "" {
@@ -797,6 +815,7 @@ func CreateCallBuilderFactory(
 	httpClient HttpClient,
 	retryConfig RetryConfiguration,
 	option ArraySerializationOption,
+	apiLogger logger.ApiLoggerInterface,
 ) CallBuilderFactory {
 	return func(
 		ctx context.Context,
@@ -813,6 +832,7 @@ func CreateCallBuilderFactory(
 			auth,
 			retryConfig,
 			option,
+			apiLogger,
 		)
 	}
 }
