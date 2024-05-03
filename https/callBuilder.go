@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/apimatic/go-core-runtime/logger"
 	"io"
 	"net/http"
 	"net/url"
@@ -101,7 +100,7 @@ type defaultCallBuilder struct {
 	queryParams              formParams
 	errors                   map[string]ErrorBuilder[error]
 	arraySerializationOption ArraySerializationOption
-	apiLogger                logger.ApiLoggerInterface
+	apiLogger                ApiLoggerInterface
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -114,7 +113,7 @@ func newDefaultCallBuilder(
 	authProvider map[string]AuthInterface,
 	retryConfig RetryConfiguration,
 	option ArraySerializationOption,
-	apiLogger logger.ApiLoggerInterface,
+	apiLogger ApiLoggerInterface,
 ) *defaultCallBuilder {
 	cb := defaultCallBuilder{
 		httpClient:               httpClient,
@@ -815,7 +814,7 @@ func CreateCallBuilderFactory(
 	httpClient HttpClient,
 	retryConfig RetryConfiguration,
 	option ArraySerializationOption,
-	apiLogger logger.ApiLoggerInterface,
+	apiLogger ApiLoggerInterface,
 ) CallBuilderFactory {
 	return func(
 		ctx context.Context,

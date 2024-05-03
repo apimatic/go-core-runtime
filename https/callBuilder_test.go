@@ -24,6 +24,7 @@ func GetCallBuilder(ctx context.Context, method, path string, auth map[string]Au
 		client,
 		NewRetryConfiguration(),
 		Indexed,
+		&ApiLogger{},
 	)
 
 	return callBuilder(ctx, method, path)

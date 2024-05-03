@@ -1,4 +1,4 @@
-package logger
+package https
 
 import (
 	"net/http"
@@ -164,9 +164,6 @@ func (a *ApiLogger) _applyLogResponseBody(
 		)
 	}
 }
-
-const CONTENT_TYPE_HEADER = "content-type"
-const CONTENT_LENGTH_HEADER = "content-length"
 
 func (a *ApiLogger) _getContentType(headers http.Header) string {
 	var contentType string = ""
