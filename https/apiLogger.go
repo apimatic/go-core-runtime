@@ -1,6 +1,7 @@
 package https
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -38,7 +39,10 @@ func (a *ApiLogger) LogRequest(request *http.Request) {
 		url = a._removeQueryParams(request.RequestURI)
 	}
 
-	a.logger.log(logLevel, "Request ${method} ${url} ${contentType}", map[string]any{
+	a.logger.log(
+		logLevel,
+		fmt.Sprintf("Request %v %v %v", request.Method, url, contentTypeHeader),
+		map[string]any{
 		"method":      request.Method,
 		"url":         url,
 		"contentType": contentTypeHeader,
@@ -55,7 +59,7 @@ func (a *ApiLogger) LogResponse(response *http.Response) {
 
 	a.logger.log(
 		logLevel,
-		"Response ${statusCode} ${contentLength} ${contentType}",
+		fmt.Sprintf("Response %v %v %v", response.StatusCode, contentLengthHeader, contentTypeHeader),
 		map[string]any{
 			"statusCode":    response.StatusCode,
 			"contentLength": contentLengthHeader,
@@ -94,7 +98,9 @@ func (a *ApiLogger) _applyLogRequestHeaders(
 			request.Header,
 		)
 
-		a.logger.log(level, "Request headers ${headers}",
+		a.logger.log(
+			level,
+			fmt.Sprintf("Request headers %v",headersToLog),
 			map[string]any{"headers": headersToLog},
 		)
 	}
@@ -106,7 +112,7 @@ func (a *ApiLogger) _applyLogRequestBody(
 	logRequest HttpRequestLoggingOptions) {
 
 	if logRequest.logBody {
-		a.logger.log(level, "Request body ${body}",
+		a.logger.log(level, fmt.Sprintf("Request body %v", request.Body),
 			map[string]any{"body": request.Body},
 		)
 	}
@@ -144,7 +150,7 @@ func (a *ApiLogger) _applyLogResponseHeaders(
 			response.Header,
 		)
 
-		a.logger.log(level, "Response headers ${headers}",
+		a.logger.log(level, fmt.Sprintf("Response headers %v", headersToLog),
 			map[string]any{"headers": headersToLog},
 		)
 	}
@@ -156,7 +162,7 @@ func (a *ApiLogger) _applyLogResponseBody(
 	logResponse HttpMessageLoggingOptions) {
 
 	if logResponse.logBody {
-		a.logger.log(level, "Response body ${body}",
+		a.logger.log(level, fmt.Sprintf("Response body %v", response.Body),
 			map[string]any{"body": response.Body},
 		)
 	}

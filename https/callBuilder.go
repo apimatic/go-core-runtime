@@ -128,7 +128,6 @@ func newDefaultCallBuilder(
 		arraySerializationOption: option,
 	}
 	cb.addRetryInterceptor()
-	cb.addApiLoggerInterceptors()
 	return &cb
 }
 
@@ -166,6 +165,7 @@ func (cb *defaultCallBuilder) ArraySerializationOption(option ArraySerialization
 // ApiLogger sets the api Logger interface instance for the API call.
 func (cb *defaultCallBuilder) ApiLogger(apiLogger ApiLoggerInterface) {
 	cb.apiLogger = apiLogger
+	cb.addApiLoggerInterceptors()
 }
 
 
