@@ -14,11 +14,8 @@ type HttpMessageLoggerConfiguration struct {
 	headersToWhitelist []string
 }
 
-// HttpMessageLoggerOptions represents a function type that can be used to apply configuration to the HttpMessageLoggerOptions struct.
-type HttpMessageLoggerOptions func(*HttpMessageLoggerConfiguration)
-
-// Default logger configuration
-func defaultHttpMessageLoggerConfiguration() HttpMessageLoggerConfiguration {
+// NewHttpMessageLoggerConfiguration creates default HttpMessageLoggerConfiguration with the provided options.
+func NewHttpMessageLoggerConfiguration() HttpMessageLoggerConfiguration {
 	return HttpMessageLoggerConfiguration{
 		logBody:            false,
 		logHeaders:         false,
@@ -28,47 +25,32 @@ func defaultHttpMessageLoggerConfiguration() HttpMessageLoggerConfiguration {
 	}
 }
 
-// NewHttpMessageLoggerConfiguration creates default HttpMessageLoggerConfiguration with the provided options.
-func NewHttpMessageLoggerConfiguration(options ...HttpMessageLoggerOptions) HttpMessageLoggerConfiguration {
-	config := defaultHttpMessageLoggerConfiguration()
-
-	for _, option := range options {
-		option(&config)
-	}
-	return config
-}
-
 // WithLogBody is an option that sets that enable to log body in the LoggingOptions.
-func WithLogBody() HttpMessageLoggerOptions {
-	return func(l *HttpMessageLoggerConfiguration) {
-		l.logBody = true
-	}
+func (h *HttpMessageLoggerConfiguration) WithLogBody(logBody bool) *HttpMessageLoggerConfiguration {
+	h.logBody = logBody
+	return h
 }
 
 // WithLogHeaders is an option that sets that enable to log headers in the LoggingOptions.
-func WithLogHeaders() HttpMessageLoggerOptions {
-	return func(l *HttpMessageLoggerConfiguration) {
-		l.logHeaders = true
-	}
+func (h *HttpMessageLoggerConfiguration) WithLogHeaders(logHeaders bool) *HttpMessageLoggerConfiguration {
+	h.logHeaders = logHeaders
+	return h
 }
 
 // WithHeadersToExclude is an option that sets the Headers To Exclude in the LoggingOptions.
-func WithHeadersToExclude(headersToExclude ...string) HttpMessageLoggerOptions {
-	return func(l *HttpMessageLoggerConfiguration) {
-		l.headersToExclude = headersToExclude
-	}
+func (h *HttpMessageLoggerConfiguration) WithHeadersToExclude(headersToExclude ...string) *HttpMessageLoggerConfiguration {
+	h.headersToExclude = headersToExclude
+	return h
 }
 
 // WithHeadersToInclude is an option that sets the Headers To Include in the LoggingOptions.
-func WithHeadersToInclude(headersToInclude ...string) HttpMessageLoggerOptions {
-	return func(l *HttpMessageLoggerConfiguration) {
-		l.headersToInclude = headersToInclude
-	}
+func (h *HttpMessageLoggerConfiguration) WithHeadersToInclude(headersToInclude ...string) *HttpMessageLoggerConfiguration {
+	h.headersToInclude = headersToInclude
+	return h
 }
 
 // WithHeadersToWhitelist is an option that sets the Headers To Whitelist in the LoggingOptions.
-func WithHeadersToWhitelist(headersToWhitelist ...string) HttpMessageLoggerOptions {
-	return func(l *HttpMessageLoggerConfiguration) {
-		l.headersToWhitelist = headersToWhitelist
-	}
+func (h *HttpMessageLoggerConfiguration) WithHeadersToWhitelist(headersToWhitelist ...string) *HttpMessageLoggerConfiguration {
+	h.headersToWhitelist = headersToWhitelist
+	return h
 }
