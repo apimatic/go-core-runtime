@@ -1,53 +1,53 @@
 package logger
 
-// HttpRequestLoggerConfiguration represents options for logging HTTP request details.
-type HttpRequestLoggerConfiguration struct {
-	HttpMessageLoggerConfiguration
+// LoggerRequestConfiguration represents options for logging HTTP request details.
+type LoggerRequestConfiguration struct {
+	LoggerResponseConfiguration
 	// Indicates whether the request query parameters should be included in the logged URL.
 	includeQueryInPath bool
 }
 
-// NewHttpRequestLoggerConfiguration creates default HttpRequestLoggerConfiguration with the provided options.
-func NewHttpRequestLoggerConfiguration() HttpRequestLoggerConfiguration {
-	return HttpRequestLoggerConfiguration{
+// NewLoggerRequestConfiguration creates default HttpRequestLoggerConfiguration with the provided options.
+func NewLoggerRequestConfiguration() *LoggerRequestConfiguration {
+	return &LoggerRequestConfiguration{
 		includeQueryInPath:             false,
-		HttpMessageLoggerConfiguration: NewHttpMessageLoggerConfiguration(),
+		LoggerResponseConfiguration: *NewLoggerResponseConfiguration(),
 	}
 }
 
 // WithIncludeQueryInPath is an option that enable include Query InPath in the LoggingOptions.
-func (h *HttpRequestLoggerConfiguration) WithIncludeQueryInPath(includeQueryInPath bool) *HttpRequestLoggerConfiguration {
+func (h *LoggerRequestConfiguration) WithIncludeQueryInPath(includeQueryInPath bool) *LoggerRequestConfiguration {
 	h.includeQueryInPath = includeQueryInPath
 	return h
 }
 
 
 // WithLogBody is an option that sets that enable to log body in the LoggingOptions.
-func (h *HttpRequestLoggerConfiguration) WithLogBody(logBody bool) *HttpRequestLoggerConfiguration {
+func (h *LoggerRequestConfiguration) WithLogBody(logBody bool) *LoggerRequestConfiguration {
 	h.logBody = logBody
 	return h
 }
 
 // WithLogHeaders is an option that sets that enable to log headers in the LoggingOptions.
-func (h *HttpRequestLoggerConfiguration) WithLogHeaders(logHeaders bool) *HttpRequestLoggerConfiguration {
+func (h *LoggerRequestConfiguration) WithLogHeaders(logHeaders bool) *LoggerRequestConfiguration {
 	h.logHeaders = logHeaders
 	return h
 }
 
 // WithHeadersToExclude is an option that sets the Headers To Exclude in the LoggingOptions.
-func (h *HttpRequestLoggerConfiguration) WithHeadersToExclude(headersToExclude ...string) *HttpRequestLoggerConfiguration {
+func (h *LoggerRequestConfiguration) WithHeadersToExclude(headersToExclude ...string) *LoggerRequestConfiguration {
 	h.headersToExclude = headersToExclude
 	return h
 }
 
 // WithHeadersToInclude is an option that sets the Headers To Include in the LoggingOptions.
-func (h *HttpRequestLoggerConfiguration) WithHeadersToInclude(headersToInclude ...string) *HttpRequestLoggerConfiguration {
+func (h *LoggerRequestConfiguration) WithHeadersToInclude(headersToInclude ...string) *LoggerRequestConfiguration {
 	h.headersToInclude = headersToInclude
 	return h
 }
 
 // WithHeadersToWhitelist is an option that sets the Headers To Whitelist in the LoggingOptions.
-func (h *HttpRequestLoggerConfiguration) WithHeadersToWhitelist(headersToWhitelist ...string) *HttpRequestLoggerConfiguration {
+func (h *LoggerRequestConfiguration) WithHeadersToWhitelist(headersToWhitelist ...string) *LoggerRequestConfiguration {
 	h.headersToWhitelist = headersToWhitelist
 	return h
 }

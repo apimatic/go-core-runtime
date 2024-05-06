@@ -7,20 +7,20 @@ type LoggerConfiguration struct {
 	// The log level to determine which messages should be logged.
 	logLevel LogLevel
 	// Options for logging HTTP requests.
-	logRequest HttpRequestLoggerConfiguration
+	logRequest LoggerRequestConfiguration
 	// Options for logging HTTP responses.
-	logResponse HttpMessageLoggerConfiguration
+	logResponse LoggerResponseConfiguration
 	// Indicates whether sensitive headers should be masked in logged messages.
 	maskSensitiveHeaders bool
 }
 
 // NewLoggerConfiguration creates default LoggingOptions with the provided options.
-func NewLoggerConfiguration() LoggerConfiguration {
-	return LoggerConfiguration{
+func NewLoggerConfiguration() *LoggerConfiguration {
+	return &LoggerConfiguration{
 		logger:               NullLogger{},
 		logLevel:             LogLevel_INFO,
-		logRequest:           NewHttpRequestLoggerConfiguration(),
-		logResponse:          NewHttpMessageLoggerConfiguration(),
+		logRequest:           *NewLoggerRequestConfiguration(),
+		logResponse:          *NewLoggerResponseConfiguration(),
 		maskSensitiveHeaders: true,
 	}
 }
@@ -44,13 +44,13 @@ func (l *LoggerConfiguration)  WithMaskSensitiveHeaders(maskSensitiveHeaders boo
 }
 
 // WithRequestConfiguration is an option that sets that enable to log Request in the LoggingOptions.
-func (l *LoggerConfiguration)  WithRequestConfiguration() *LoggerConfiguration {
-	l.logRequest = NewHttpRequestLoggerConfiguration()
+func (l *LoggerConfiguration)  WithRequestConfiguration(requestConfig *LoggerRequestConfiguration) *LoggerConfiguration {
+	l.logRequest = *requestConfig
 	return l
 }
 
 // WithResponseConfiguration is an option that sets that enable to log Response in the LoggingOptions.
-func (l *LoggerConfiguration)  WithResponseConfiguration() *LoggerConfiguration {
-	l.logResponse = NewHttpMessageLoggerConfiguration()
+func (l *LoggerConfiguration)  WithResponseConfiguration(responseConfig *LoggerResponseConfiguration) *LoggerConfiguration {
+	l.logResponse = *responseConfig
 	return l
 }

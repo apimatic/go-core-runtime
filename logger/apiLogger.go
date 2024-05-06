@@ -85,7 +85,7 @@ func (a *ApiLogger) _applyLogRequestOptions(level LogLevel, request *http.Reques
 func (a *ApiLogger) _applyLogRequestHeaders(
 	level LogLevel,
 	request *http.Request,
-	logRequest HttpRequestLoggerConfiguration) {
+	logRequest LoggerRequestConfiguration) {
 
 	logHeaders := logRequest.logHeaders
 	headersToInclude := logRequest.headersToInclude
@@ -111,7 +111,7 @@ func (a *ApiLogger) _applyLogRequestHeaders(
 func (a *ApiLogger) _applyLogRequestBody(
 	level LogLevel,
 	request *http.Request,
-	logRequest HttpRequestLoggerConfiguration) {
+	logRequest LoggerRequestConfiguration) {
 
 	if logRequest.logBody {
 		a.logger.Log(level, fmt.Sprintf("Request body %v", request.Body),
@@ -137,7 +137,7 @@ func (a *ApiLogger) _applyLogResponseOptions(level LogLevel, response *http.Resp
 func (a *ApiLogger) _applyLogResponseHeaders(
 	level LogLevel,
 	response *http.Response,
-	logResponse HttpMessageLoggerConfiguration) {
+	logResponse LoggerResponseConfiguration) {
 
 	logHeaders := logResponse.logHeaders
 	headersToInclude := logResponse.headersToInclude
@@ -161,7 +161,7 @@ func (a *ApiLogger) _applyLogResponseHeaders(
 func (a *ApiLogger) _applyLogResponseBody(
 	level LogLevel,
 	response *http.Response,
-	logResponse HttpMessageLoggerConfiguration) {
+	logResponse LoggerResponseConfiguration) {
 
 	if logResponse.logBody {
 		a.logger.Log(level, fmt.Sprintf("Response body %v", response.Body),
