@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apimatic/go-core-runtime/logger"
 )
 
 // Constants for commonly used HTTP headers and content types.
@@ -71,7 +73,7 @@ type CallBuilder interface {
 	Authenticate(authGroup AuthGroup)
 	RequestRetryOption(option RequestRetryOption)
 	ArraySerializationOption(option ArraySerializationOption)
-	ApiLogger(apiLogger ApiLoggerInterface)
+	ApiLogger(apiLogger logger.ApiLoggerInterface)
 }
 
 // defaultCallBuilder is a struct that implements the CallBuilder interface for making API calls.
@@ -101,7 +103,7 @@ type defaultCallBuilder struct {
 	queryParams              formParams
 	errors                   map[string]ErrorBuilder[error]
 	arraySerializationOption ArraySerializationOption
-	apiLogger                ApiLoggerInterface
+	apiLogger                logger.ApiLoggerInterface
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -162,12 +164,11 @@ func (cb *defaultCallBuilder) ArraySerializationOption(option ArraySerialization
 	cb.arraySerializationOption = option
 }
 
-// ApiLogger sets the api Logger interface instance for the API call.
-func (cb *defaultCallBuilder) ApiLogger(apiLogger ApiLoggerInterface) {
+// ApiLogger sets the api logger interface instance for the API call.
+func (cb *defaultCallBuilder) ApiLogger(apiLogger logger.ApiLoggerInterface) {
 	cb.apiLogger = apiLogger
 	cb.addApiLoggerInterceptors()
 }
-
 
 // AppendPath appends the provided path to the existing path in the CallBuilder.
 func (cb *defaultCallBuilder) AppendPath(path string) {

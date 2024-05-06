@@ -1,4 +1,4 @@
-package https
+package logger
 
 import (
 	"fmt"
@@ -16,12 +16,12 @@ type ApiLoggerInterface interface {
 
 // ApiLogger represents implementation for ApiLoggerInterface, providing methods to log HTTP requests and responses.
 type ApiLogger struct {
-	loggingOptions LoggingOptions
+	loggingOptions LoggerConfiguration
 	logger         LoggerInterface
 }
 
 // NewApiLogger Constructs a new instance of ApiLogger.
-func NewApiLogger(loggingOpt LoggingOptions) *ApiLogger {
+func NewApiLogger(loggingOpt LoggerConfiguration) *ApiLogger {
 	return &ApiLogger{
 		loggingOptions: loggingOpt,
 		logger:         loggingOpt.logger,
@@ -39,14 +39,16 @@ func (a *ApiLogger) LogRequest(request *http.Request) {
 		url = a._removeQueryParams(request.RequestURI)
 	}
 
-	a.logger.log(
+
+	
+	a.logger.Log(
 		logLevel,
 		fmt.Sprintf("Request %v %v %v", request.Method, url, contentTypeHeader),
 		map[string]any{
-		"method":      request.Method,
-		"url":         url,
-		"contentType": contentTypeHeader,
-	})
+			"method":      request.Method,
+			"url":         url,
+			"contentType": contentTypeHeader,
+		})
 
 	a._applyLogRequestOptions(logLevel, request)
 }
@@ -57,7 +59,7 @@ func (a *ApiLogger) LogResponse(response *http.Response) {
 	var contentTypeHeader = a._getContentType(response.Header)
 	var contentLengthHeader = a._getContentLength(response.Header)
 
-	a.logger.log(
+	a.logger.Log(
 		logLevel,
 		fmt.Sprintf("Response %v %v %v", response.StatusCode, contentLengthHeader, contentTypeHeader),
 		map[string]any{
@@ -83,7 +85,7 @@ func (a *ApiLogger) _applyLogRequestOptions(level LogLevel, request *http.Reques
 func (a *ApiLogger) _applyLogRequestHeaders(
 	level LogLevel,
 	request *http.Request,
-	logRequest HttpRequestLoggingOptions) {
+	logRequest HttpRequestLoggerConfiguration) {
 
 	logHeaders := logRequest.logHeaders
 	headersToInclude := logRequest.headersToInclude
@@ -98,9 +100,9 @@ func (a *ApiLogger) _applyLogRequestHeaders(
 			request.Header,
 		)
 
-		a.logger.log(
+		a.logger.Log(
 			level,
-			fmt.Sprintf("Request headers %v",headersToLog),
+			fmt.Sprintf("Request headers %v", headersToLog),
 			map[string]any{"headers": headersToLog},
 		)
 	}
@@ -109,10 +111,10 @@ func (a *ApiLogger) _applyLogRequestHeaders(
 func (a *ApiLogger) _applyLogRequestBody(
 	level LogLevel,
 	request *http.Request,
-	logRequest HttpRequestLoggingOptions) {
+	logRequest HttpRequestLoggerConfiguration) {
 
 	if logRequest.logBody {
-		a.logger.log(level, fmt.Sprintf("Request body %v", request.Body),
+		a.logger.Log(level, fmt.Sprintf("Request body %v", request.Body),
 			map[string]any{"body": request.Body},
 		)
 	}
@@ -135,7 +137,7 @@ func (a *ApiLogger) _applyLogResponseOptions(level LogLevel, response *http.Resp
 func (a *ApiLogger) _applyLogResponseHeaders(
 	level LogLevel,
 	response *http.Response,
-	logResponse HttpMessageLoggingOptions) {
+	logResponse HttpMessageLoggerConfiguration) {
 
 	logHeaders := logResponse.logHeaders
 	headersToInclude := logResponse.headersToInclude
@@ -150,7 +152,7 @@ func (a *ApiLogger) _applyLogResponseHeaders(
 			response.Header,
 		)
 
-		a.logger.log(level, fmt.Sprintf("Response headers %v", headersToLog),
+		a.logger.Log(level, fmt.Sprintf("Response headers %v", headersToLog),
 			map[string]any{"headers": headersToLog},
 		)
 	}
@@ -159,14 +161,17 @@ func (a *ApiLogger) _applyLogResponseHeaders(
 func (a *ApiLogger) _applyLogResponseBody(
 	level LogLevel,
 	response *http.Response,
-	logResponse HttpMessageLoggingOptions) {
+	logResponse HttpMessageLoggerConfiguration) {
 
 	if logResponse.logBody {
-		a.logger.log(level, fmt.Sprintf("Response body %v", response.Body),
+		a.logger.Log(level, fmt.Sprintf("Response body %v", response.Body),
 			map[string]any{"body": response.Body},
 		)
 	}
 }
+
+const CONTENT_TYPE_HEADER = "content-type"
+const CONTENT_LENGTH_HEADER = "content-length"
 
 func (a *ApiLogger) _getContentType(headers http.Header) string {
 	var contentType string = ""
