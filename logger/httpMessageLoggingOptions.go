@@ -1,56 +1,74 @@
 package logger
 
-// LoggerResponseConfiguration represents options for logging HTTP message details.
-type LoggerResponseConfiguration struct {
+// MessageLoggerConfiguration represents options for logging HTTP message details.
+type MessageLoggerConfiguration struct {
 	// Indicates whether the message body should be logged.
-	logBody bool
+	body bool
 	// Indicates whether the message headers should be logged.
-	logHeaders bool
+	headers bool
 	// Array of headers not to be displayed in logging.
-	headersToExclude []string
+	excludeHeaders []string
 	// Array of headers to be displayed in logging.
-	headersToInclude []string
+	includeHeaders []string
 	// Array of headers which values are non-sensitive to display in logging.
-	headersToWhitelist []string
+	whitelistHeaders []string
 }
 
-// NewLoggerResponseConfiguration creates default HttpMessageLoggerConfiguration with the provided options.
-func NewLoggerResponseConfiguration() *LoggerResponseConfiguration {
-	return &LoggerResponseConfiguration{
-		logBody:            false,
-		logHeaders:         false,
-		headersToExclude:   []string{},
-		headersToInclude:   []string{},
-		headersToWhitelist: []string{},
+// MessageLoggerOptions represents a function type that can be used to apply configuration to the MessageLoggerOptions struct.
+type MessageLoggerOptions func(*MessageLoggerConfiguration)
+
+// Default logger configuration
+func defaultMessageLoggerConfiguration() MessageLoggerConfiguration {
+	return MessageLoggerConfiguration{
+		body:             false,
+		headers:          false,
+		excludeHeaders:   []string{},
+		includeHeaders:   []string{},
+		whitelistHeaders: []string{},
 	}
 }
 
-// WithLogBody is an option that sets that enable to log body in the LoggingOptions.
-func (h *LoggerResponseConfiguration) WithLogBody(logBody bool) *LoggerResponseConfiguration {
-	h.logBody = logBody
-	return h
+// NewResponseLoggerConfiguration creates default MessageLoggerConfiguration with the provided options.
+func NewResponseLoggerConfiguration(options ...MessageLoggerOptions) MessageLoggerConfiguration {
+	config := defaultMessageLoggerConfiguration()
+
+	for _, option := range options {
+		option(&config)
+	}
+	return config
 }
 
-// WithLogHeaders is an option that sets that enable to log headers in the LoggingOptions.
-func (h *LoggerResponseConfiguration) WithLogHeaders(logHeaders bool) *LoggerResponseConfiguration {
-	h.logHeaders = logHeaders
-	return h
+// WithResponseBody is an option that sets that enable to log body in the LoggingOptions.
+func WithResponseBody(logBody bool) MessageLoggerOptions {
+	return func(l *MessageLoggerConfiguration) {
+		l.body = logBody
+	}
 }
 
-// WithHeadersToExclude is an option that sets the Headers To Exclude in the LoggingOptions.
-func (h *LoggerResponseConfiguration) WithHeadersToExclude(headersToExclude ...string) *LoggerResponseConfiguration {
-	h.headersToExclude = headersToExclude
-	return h
+// WithResponseHeaders is an option that sets that enable to log headers in the LoggingOptions.
+func WithResponseHeaders(logHeaders bool) MessageLoggerOptions {
+	return func(l *MessageLoggerConfiguration) {
+		l.headers = logHeaders
+	}
 }
 
-// WithHeadersToInclude is an option that sets the Headers To Include in the LoggingOptions.
-func (h *LoggerResponseConfiguration) WithHeadersToInclude(headersToInclude ...string) *LoggerResponseConfiguration {
-	h.headersToInclude = headersToInclude
-	return h
+// WithExcludeResponseHeaders is an option that sets the Headers To Exclude in the LoggingOptions.
+func WithExcludeResponseHeaders(excludeHeaders ...string) MessageLoggerOptions {
+	return func(l *MessageLoggerConfiguration) {
+		l.excludeHeaders = excludeHeaders
+	}
 }
 
-// WithHeadersToWhitelist is an option that sets the Headers To Whitelist in the LoggingOptions.
-func (h *LoggerResponseConfiguration) WithHeadersToWhitelist(headersToWhitelist ...string) *LoggerResponseConfiguration {
-	h.headersToWhitelist = headersToWhitelist
-	return h
+// WithIncludeResponseHeaders is an option that sets the Headers To Include in the LoggingOptions.
+func WithIncludeResponseHeaders(includeHeaders ...string) MessageLoggerOptions {
+	return func(l *MessageLoggerConfiguration) {
+		l.includeHeaders = includeHeaders
+	}
+}
+
+// WithWhitelistResponseHeaders is an option that sets the Headers To Whitelist in the LoggingOptions.
+func WithWhitelistResponseHeaders(whitelistHeaders ...string) MessageLoggerOptions {
+	return func(l *MessageLoggerConfiguration) {
+		l.whitelistHeaders = whitelistHeaders
+	}
 }

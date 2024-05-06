@@ -7,14 +7,14 @@ import (
 // LoggerInterface represents an interface for a generic logger.
 type LoggerInterface interface {
 	// Logs a message with a specified Log level and additional parameters.
-	Log(level LogLevel, message string, params map[string]any)
+	Log(level Level, message string, params map[string]any)
 }
 
 // ConsoleLogger represents a logger implementation that logs messages to the console.
 type ConsoleLogger struct{}
 
 // Logs a message to the console with the specified log level.
-func (c ConsoleLogger) Log(level LogLevel, message string, params map[string]any) {
+func (c ConsoleLogger) Log(level Level, message string, params map[string]any) {
 	fmt.Println(level, ": ", message)
 }
 
@@ -23,7 +23,7 @@ func (c ConsoleLogger) Log(level LogLevel, message string, params map[string]any
 type NullLogger struct{}
 
 // Logs a message. Since this is a null logger, the log method does nothing.
-func (n NullLogger) Log(level LogLevel, _message string, _params map[string]any) {
+func (n NullLogger) Log(level Level, _message string, _params map[string]any) {
 	// This is a null logger, so it does not perform any logging.
 	// All parameters are ignored.
 	return

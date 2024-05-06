@@ -73,7 +73,7 @@ type CallBuilder interface {
 	Authenticate(authGroup AuthGroup)
 	RequestRetryOption(option RequestRetryOption)
 	ArraySerializationOption(option ArraySerializationOption)
-	ApiLogger(apiLogger logger.ApiLoggerInterface)
+	Logger(sdkLogger logger.SdkLoggerInterface)
 }
 
 // defaultCallBuilder is a struct that implements the CallBuilder interface for making API calls.
@@ -103,7 +103,7 @@ type defaultCallBuilder struct {
 	queryParams              formParams
 	errors                   map[string]ErrorBuilder[error]
 	arraySerializationOption ArraySerializationOption
-	apiLogger                logger.ApiLoggerInterface
+	sdkLogger                logger.SdkLoggerInterface
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -164,10 +164,9 @@ func (cb *defaultCallBuilder) ArraySerializationOption(option ArraySerialization
 	cb.arraySerializationOption = option
 }
 
-// ApiLogger sets the api logger interface instance for the API call.
-func (cb *defaultCallBuilder) ApiLogger(apiLogger logger.ApiLoggerInterface) {
-	cb.apiLogger = apiLogger
-	cb.addApiLoggerInterceptors()
+// Logger sets the api logger interface instance for the API call.
+func (cb *defaultCallBuilder) Logger(sdkLoggerInterface logger.SdkLoggerInterface) {
+	cb.sdkLogger = sdkLoggerInterface
 }
 
 // AppendPath appends the provided path to the existing path in the CallBuilder.
@@ -618,7 +617,9 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	if err != nil {
 		return nil, err
 	}
+	cb.sdkLogger.LogRequest(request)
 	context := pipeline(request)
+	cb.sdkLogger.LogResponse(context.Response)
 
 	if cb.clientError != nil {
 		err = cb.clientError
@@ -771,19 +772,6 @@ func (cb *defaultCallBuilder) addRetryInterceptor() {
 			}
 			return context
 		})
-}
-
-func (cb *defaultCallBuilder) addApiLoggerInterceptors() {
-	if cb.apiLogger != nil {
-		apiLogger := cb.apiLogger
-		cb.intercept(
-			func(request *http.Request, next HttpCallExecutor) HttpContext {
-				apiLogger.LogRequest(request)
-				context := next(request)
-				apiLogger.LogResponse(context.Response)
-				return context
-			})
-	}
 }
 
 // mergePath combines two URL paths to create a valid URL path.

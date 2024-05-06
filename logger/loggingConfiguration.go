@@ -5,52 +5,70 @@ type LoggerConfiguration struct {
 	// The logger to use for logging messages.
 	logger LoggerInterface
 	// The log level to determine which messages should be logged.
-	logLevel LogLevel
+	level Level
 	// Options for logging HTTP requests.
-	logRequest LoggerRequestConfiguration
+	request RequestLoggerConfiguration
 	// Options for logging HTTP responses.
-	logResponse LoggerResponseConfiguration
+	response MessageLoggerConfiguration
 	// Indicates whether sensitive headers should be masked in logged messages.
 	maskSensitiveHeaders bool
 }
 
-// NewLoggerConfiguration creates default LoggingOptions with the provided options.
-func NewLoggerConfiguration() *LoggerConfiguration {
-	return &LoggerConfiguration{
+// LoggerOptions represents a function type that can be used to apply configuration to the LoggerOptions struct.
+type LoggerOptions func(*LoggerConfiguration)
+
+// Default logger configuration
+func defaultLoggerConfiguration() LoggerConfiguration {
+	return LoggerConfiguration{
 		logger:               NullLogger{},
-		logLevel:             LogLevel_INFO,
-		logRequest:           *NewLoggerRequestConfiguration(),
-		logResponse:          *NewLoggerResponseConfiguration(),
+		level:                LogLevel_INFO,
+		request:              NewHttpRequestLoggerConfiguration(),
+		response:             NewResponseLoggerConfiguration(),
 		maskSensitiveHeaders: true,
 	}
 }
 
-// WithLogger is an option that sets the LoggerInterface in the LoggingOptions.
-func (l *LoggerConfiguration) WithLogger(logger LoggerInterface) *LoggerConfiguration {
-		l.logger = logger
-		return l
+// NewLoggerConfiguration creates default LoggingOptions with the provided options.
+func NewLoggerConfiguration(options ...LoggerOptions) LoggerConfiguration {
+	config := defaultLoggerConfiguration()
+
+	for _, option := range options {
+		option(&config)
+	}
+	return config
 }
 
-// WithLogLevel is an option that sets the LogLevel in the LoggingOptions.
-func (l *LoggerConfiguration)  WithLogLevel(level LogLevel) *LoggerConfiguration {
-	l.logLevel = level
-	return l
+// WithLogger is an option that sets the LoggerInterface in the LoggingOptions.
+func WithLogger(logger LoggerInterface) LoggerOptions {
+	return func(l *LoggerConfiguration) {
+		l.logger = logger
+	}
+}
+
+// WithLevel is an option that sets the LogLevel in the LoggingOptions.
+func WithLevel(level Level) LoggerOptions {
+	return func(l *LoggerConfiguration) {
+		l.level = level
+	}
 }
 
 // WithMaskSensitiveHeaders is an option that enable to mask Sensitive Headers in the LoggingOptions.
-func (l *LoggerConfiguration)  WithMaskSensitiveHeaders(maskSensitiveHeaders bool) *LoggerConfiguration {
-	l.maskSensitiveHeaders = maskSensitiveHeaders
-	return l
+func WithMaskSensitiveHeaders() LoggerOptions {
+	return func(l *LoggerConfiguration) {
+		l.maskSensitiveHeaders = true
+	}
 }
 
 // WithRequestConfiguration is an option that sets that enable to log Request in the LoggingOptions.
-func (l *LoggerConfiguration)  WithRequestConfiguration(requestConfig *LoggerRequestConfiguration) *LoggerConfiguration {
-	l.logRequest = *requestConfig
-	return l
+func WithRequestConfiguration(options ...RequestLoggerOptions) LoggerOptions {
+	return func(l *LoggerConfiguration) {
+		l.request = NewHttpRequestLoggerConfiguration(options...)
+	}
 }
 
 // WithResponseConfiguration is an option that sets that enable to log Response in the LoggingOptions.
-func (l *LoggerConfiguration)  WithResponseConfiguration(responseConfig *LoggerResponseConfiguration) *LoggerConfiguration {
-	l.logResponse = *responseConfig
-	return l
+func WithResponseConfiguration(options ...MessageLoggerOptions) LoggerOptions {
+	return func(l *LoggerConfiguration) {
+		l.response = NewResponseLoggerConfiguration(options...)
+	}
 }

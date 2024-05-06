@@ -6,41 +6,39 @@ import (
 	"strings"
 )
 
-// ApiLoggerInterface Represents an interface for logging API requests and responses.
-type ApiLoggerInterface interface {
-	// Logs the details of an HTTP request.
+// SdkLoggerInterface Represents an interface for logging API requests and responses.
+type SdkLoggerInterface interface {
+	// LogRequest logs the details of an HTTP request.
 	LogRequest(request *http.Request)
-	// Logs the details of an HTTP response.
+	// LogResponse logs the details of an HTTP response.
 	LogResponse(response *http.Response)
 }
 
-// ApiLogger represents implementation for ApiLoggerInterface, providing methods to log HTTP requests and responses.
-type ApiLogger struct {
+// SdkLogger represents implementation for SdkLoggerInterface, providing methods to log HTTP requests and responses.
+type SdkLogger struct {
 	loggingOptions LoggerConfiguration
 	logger         LoggerInterface
 }
 
-// NewApiLogger Constructs a new instance of ApiLogger.
-func NewApiLogger(loggingOpt LoggerConfiguration) *ApiLogger {
-	return &ApiLogger{
+// NewSdkLogger Constructs a new instance of SdkLogger.
+func NewSdkLogger(loggingOpt LoggerConfiguration) *SdkLogger {
+	return &SdkLogger{
 		loggingOptions: loggingOpt,
 		logger:         loggingOpt.logger,
 	}
 }
 
-// logRequest Logs an HTTP request.
-func (a *ApiLogger) LogRequest(request *http.Request) {
-	var logLevel = a.loggingOptions.logLevel
+// LogRequest request Logs an HTTP request.
+func (a *SdkLogger) LogRequest(request *http.Request) {
+	var logLevel = a.loggingOptions.level
 	var contentTypeHeader = a._getContentType(request.Header)
 	var url string
-	if a.loggingOptions.logRequest.includeQueryInPath {
+	if a.loggingOptions.request.includeQueryInPath {
 		url = request.RequestURI
 	} else {
 		url = a._removeQueryParams(request.RequestURI)
 	}
 
-
-	
 	a.logger.Log(
 		logLevel,
 		fmt.Sprintf("Request %v %v %v", request.Method, url, contentTypeHeader),
@@ -53,9 +51,9 @@ func (a *ApiLogger) LogRequest(request *http.Request) {
 	a._applyLogRequestOptions(logLevel, request)
 }
 
-// Logs an HTTP response.
-func (a *ApiLogger) LogResponse(response *http.Response) {
-	var logLevel = a.loggingOptions.logLevel
+// LogResponse Logs an HTTP response.
+func (a *SdkLogger) LogResponse(response *http.Response) {
+	var logLevel = a.loggingOptions.level
 	var contentTypeHeader = a._getContentType(response.Header)
 	var contentLengthHeader = a._getContentLength(response.Header)
 
@@ -72,25 +70,25 @@ func (a *ApiLogger) LogResponse(response *http.Response) {
 	a._applyLogResponseOptions(logLevel, response)
 }
 
-func (a *ApiLogger) _applyLogRequestOptions(level LogLevel, request *http.Request) {
+func (a *SdkLogger) _applyLogRequestOptions(level Level, request *http.Request) {
 	a._applyLogRequestHeaders(
 		level,
 		request,
-		a.loggingOptions.logRequest,
+		a.loggingOptions.request,
 	)
 
-	a._applyLogRequestBody(level, request, a.loggingOptions.logRequest)
+	a._applyLogRequestBody(level, request, a.loggingOptions.request)
 }
 
-func (a *ApiLogger) _applyLogRequestHeaders(
-	level LogLevel,
+func (a *SdkLogger) _applyLogRequestHeaders(
+	level Level,
 	request *http.Request,
-	logRequest LoggerRequestConfiguration) {
+	logRequest RequestLoggerConfiguration) {
 
-	logHeaders := logRequest.logHeaders
-	headersToInclude := logRequest.headersToInclude
-	headersToExclude := logRequest.headersToExclude
-	headersToWhitelist := logRequest.headersToWhitelist
+	logHeaders := logRequest.headers
+	headersToInclude := logRequest.includeHeaders
+	headersToExclude := logRequest.excludeHeaders
+	headersToWhitelist := logRequest.whitelistHeaders
 
 	if logHeaders {
 		var headersToLog = a._extractHeadersToLog(
@@ -108,41 +106,41 @@ func (a *ApiLogger) _applyLogRequestHeaders(
 	}
 }
 
-func (a *ApiLogger) _applyLogRequestBody(
-	level LogLevel,
+func (a *SdkLogger) _applyLogRequestBody(
+	level Level,
 	request *http.Request,
-	logRequest LoggerRequestConfiguration) {
+	logRequest RequestLoggerConfiguration) {
 
-	if logRequest.logBody {
+	if logRequest.body {
 		a.logger.Log(level, fmt.Sprintf("Request body %v", request.Body),
 			map[string]any{"body": request.Body},
 		)
 	}
 }
 
-func (a *ApiLogger) _applyLogResponseOptions(level LogLevel, response *http.Response) {
+func (a *SdkLogger) _applyLogResponseOptions(level Level, response *http.Response) {
 	a._applyLogResponseHeaders(
 		level,
 		response,
-		a.loggingOptions.logResponse,
+		a.loggingOptions.response,
 	)
 
 	a._applyLogResponseBody(
 		level,
 		response,
-		a.loggingOptions.logResponse,
+		a.loggingOptions.response,
 	)
 }
 
-func (a *ApiLogger) _applyLogResponseHeaders(
-	level LogLevel,
+func (a *SdkLogger) _applyLogResponseHeaders(
+	level Level,
 	response *http.Response,
-	logResponse LoggerResponseConfiguration) {
+	logResponse MessageLoggerConfiguration) {
 
-	logHeaders := logResponse.logHeaders
-	headersToInclude := logResponse.headersToInclude
-	headersToExclude := logResponse.headersToExclude
-	headersToWhitelist := logResponse.headersToWhitelist
+	logHeaders := logResponse.headers
+	headersToInclude := logResponse.includeHeaders
+	headersToExclude := logResponse.excludeHeaders
+	headersToWhitelist := logResponse.whitelistHeaders
 
 	if logHeaders {
 		var headersToLog = a._extractHeadersToLog(
@@ -158,12 +156,12 @@ func (a *ApiLogger) _applyLogResponseHeaders(
 	}
 }
 
-func (a *ApiLogger) _applyLogResponseBody(
-	level LogLevel,
+func (a *SdkLogger) _applyLogResponseBody(
+	level Level,
 	response *http.Response,
-	logResponse LoggerResponseConfiguration) {
+	logResponse MessageLoggerConfiguration) {
 
-	if logResponse.logBody {
+	if logResponse.body {
 		a.logger.Log(level, fmt.Sprintf("Response body %v", response.Body),
 			map[string]any{"body": response.Body},
 		)
@@ -173,7 +171,7 @@ func (a *ApiLogger) _applyLogResponseBody(
 const CONTENT_TYPE_HEADER = "content-type"
 const CONTENT_LENGTH_HEADER = "content-length"
 
-func (a *ApiLogger) _getContentType(headers http.Header) string {
+func (a *SdkLogger) _getContentType(headers http.Header) string {
 	var contentType string = ""
 	if len(headers) > 0 {
 		contentType = headers.Get(CONTENT_TYPE_HEADER)
@@ -181,7 +179,7 @@ func (a *ApiLogger) _getContentType(headers http.Header) string {
 	return contentType
 }
 
-func (a *ApiLogger) _getContentLength(headers http.Header) string {
+func (a *SdkLogger) _getContentLength(headers http.Header) string {
 	var contentLength string = ""
 	if len(headers) > 0 {
 		contentLength = headers.Get(CONTENT_LENGTH_HEADER)
@@ -189,14 +187,14 @@ func (a *ApiLogger) _getContentLength(headers http.Header) string {
 	return contentLength
 }
 
-func (a *ApiLogger) _removeQueryParams(url string) string {
+func (a *SdkLogger) _removeQueryParams(url string) string {
 	if strIndex := strings.Index(url, "?"); strIndex != -1 {
 		return url[:strIndex]
 	}
 	return url
 }
 
-func (a *ApiLogger) _extractHeadersToLog(
+func (a *SdkLogger) _extractHeadersToLog(
 	headersToInclude []string,
 	headersToExclude []string,
 	headersToWhitelist []string,
@@ -225,10 +223,10 @@ func (a *ApiLogger) _extractHeadersToLog(
 	return a._maskSenstiveHeaders(filteredHeaders, headersToWhitelist)
 }
 
-func (a *ApiLogger) _includeHeadersToLog(
+func (a *SdkLogger) _includeHeadersToLog(
 	headers, filteredHeaders http.Header,
 	headersToInclude []string) http.Header {
-	// Filter headers based on the keys specified in headersToInclude
+	// Filter headers based on the keys specified in includeHeaders
 	for _, name := range headersToInclude {
 		val, ok := headers[name]
 		if len(val) > 0 && ok {
@@ -238,10 +236,10 @@ func (a *ApiLogger) _includeHeadersToLog(
 	return filteredHeaders
 }
 
-func (a *ApiLogger) _excludeHeadersToLog(
+func (a *SdkLogger) _excludeHeadersToLog(
 	headers, filteredHeaders http.Header,
 	headersToExclude []string) http.Header {
-	// Filter headers based on the keys specified in headersToExclude
+	// Filter headers based on the keys specified in excludeHeaders
 	for key, value := range headers {
 		if !_contains(key, headersToExclude) {
 			if value != nil {
@@ -261,7 +259,7 @@ func _contains(key string, slice []string) bool {
 	return false
 }
 
-func (a *ApiLogger) _maskSenstiveHeaders(
+func (a *SdkLogger) _maskSenstiveHeaders(
 	headers http.Header,
 	headersToWhitelist []string) http.Header {
 
@@ -274,7 +272,7 @@ func (a *ApiLogger) _maskSenstiveHeaders(
 	return headers
 }
 
-func (a *ApiLogger) _maskIfSenstiveHeader(
+func (a *SdkLogger) _maskIfSenstiveHeader(
 	name, value string,
 	headersToWhiteList []string) string {
 	var nonSensitiveHeaders []string = []string{

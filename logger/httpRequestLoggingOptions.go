@@ -1,53 +1,71 @@
 package logger
 
-// LoggerRequestConfiguration represents options for logging HTTP request details.
-type LoggerRequestConfiguration struct {
-	LoggerResponseConfiguration
+// RequestLoggerConfiguration represents options for logging HTTP request details.
+type RequestLoggerConfiguration struct {
+	MessageLoggerConfiguration
 	// Indicates whether the request query parameters should be included in the logged URL.
 	includeQueryInPath bool
 }
 
-// NewLoggerRequestConfiguration creates default HttpRequestLoggerConfiguration with the provided options.
-func NewLoggerRequestConfiguration() *LoggerRequestConfiguration {
-	return &LoggerRequestConfiguration{
-		includeQueryInPath:             false,
-		LoggerResponseConfiguration: *NewLoggerResponseConfiguration(),
+// RequestLoggerOptions represents a function type that can be used to apply configuration to the MessageLoggerOptions struct.
+type RequestLoggerOptions func(*RequestLoggerConfiguration)
+
+// Default logger configuration
+func defaultRequestLoggerConfiguration() RequestLoggerConfiguration {
+	return RequestLoggerConfiguration{
+		includeQueryInPath:         false,
+		MessageLoggerConfiguration: NewResponseLoggerConfiguration(),
 	}
 }
 
+// NewHttpRequestLoggerConfiguration creates default RequestLoggerConfiguration with the provided options.
+func NewHttpRequestLoggerConfiguration(options ...RequestLoggerOptions) RequestLoggerConfiguration {
+	config := defaultRequestLoggerConfiguration()
+
+	for _, option := range options {
+		option(&config)
+	}
+	return config
+}
+
 // WithIncludeQueryInPath is an option that enable include Query InPath in the LoggingOptions.
-func (h *LoggerRequestConfiguration) WithIncludeQueryInPath(includeQueryInPath bool) *LoggerRequestConfiguration {
-	h.includeQueryInPath = includeQueryInPath
-	return h
+func WithIncludeQueryInPath(includeQueryInPath bool) RequestLoggerOptions {
+	return func(l *RequestLoggerConfiguration) {
+		l.includeQueryInPath = includeQueryInPath
+	}
 }
 
-
-// WithLogBody is an option that sets that enable to log body in the LoggingOptions.
-func (h *LoggerRequestConfiguration) WithLogBody(logBody bool) *LoggerRequestConfiguration {
-	h.logBody = logBody
-	return h
+// WithRequestBody is an option that sets that enable to log body in the LoggingOptions.
+func WithRequestBody(logBody bool) RequestLoggerOptions {
+	return func(l *RequestLoggerConfiguration) {
+		l.body = logBody
+	}
 }
 
-// WithLogHeaders is an option that sets that enable to log headers in the LoggingOptions.
-func (h *LoggerRequestConfiguration) WithLogHeaders(logHeaders bool) *LoggerRequestConfiguration {
-	h.logHeaders = logHeaders
-	return h
+// WithRequestHeaders is an option that sets that enable to log headers in the LoggingOptions.
+func WithRequestHeaders(logHeaders bool) RequestLoggerOptions {
+	return func(l *RequestLoggerConfiguration) {
+		l.headers = logHeaders
+	}
 }
 
-// WithHeadersToExclude is an option that sets the Headers To Exclude in the LoggingOptions.
-func (h *LoggerRequestConfiguration) WithHeadersToExclude(headersToExclude ...string) *LoggerRequestConfiguration {
-	h.headersToExclude = headersToExclude
-	return h
+// WithExcludeRequestHeaders is an option that sets the Headers To Exclude in the LoggingOptions.
+func WithExcludeRequestHeaders(excludeHeaders ...string) RequestLoggerOptions {
+	return func(l *RequestLoggerConfiguration) {
+		l.excludeHeaders = excludeHeaders
+	}
 }
 
-// WithHeadersToInclude is an option that sets the Headers To Include in the LoggingOptions.
-func (h *LoggerRequestConfiguration) WithHeadersToInclude(headersToInclude ...string) *LoggerRequestConfiguration {
-	h.headersToInclude = headersToInclude
-	return h
+// WithIncludeRequestHeaders is an option that sets the Headers To Include in the LoggingOptions.
+func WithIncludeRequestHeaders(includeHeaders ...string) RequestLoggerOptions {
+	return func(l *RequestLoggerConfiguration) {
+		l.includeHeaders = includeHeaders
+	}
 }
 
-// WithHeadersToWhitelist is an option that sets the Headers To Whitelist in the LoggingOptions.
-func (h *LoggerRequestConfiguration) WithHeadersToWhitelist(headersToWhitelist ...string) *LoggerRequestConfiguration {
-	h.headersToWhitelist = headersToWhitelist
-	return h
+// WithWhitelistRequestHeaders is an option that sets the Headers To Whitelist in the LoggingOptions.
+func WithWhitelistRequestHeaders(whitelistHeaders ...string) RequestLoggerOptions {
+	return func(l *RequestLoggerConfiguration) {
+		l.whitelistHeaders = whitelistHeaders
+	}
 }
