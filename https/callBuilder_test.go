@@ -3,6 +3,7 @@ package https
 import (
 	"context"
 	"errors"
+	"github.com/apimatic/go-core-runtime/logger"
 	"io"
 	"net/http"
 	"reflect"

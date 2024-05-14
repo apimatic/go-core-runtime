@@ -24,7 +24,7 @@ func init() {
 	)
 
 	request = callBuilder(ctx, "GET", "//response/")
-	request.AppendPath("/integer")
+	request.AppendPath("/binary")
 }
 
 func _callRequestAsJson(t *testing.T) {
