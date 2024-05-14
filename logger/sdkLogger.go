@@ -264,7 +264,7 @@ func (a *SdkLogger) _maskSenstiveHeaders(
 	headersToWhitelist []string) http.Header {
 
 	if a.loggingOptions.maskSensitiveHeaders {
-		for key, _ := range headers {
+		for key := range headers {
 			val := headers.Get(key)
 			headers.Set(key, a._maskIfSenstiveHeader(key, val, headersToWhitelist))
 		}
