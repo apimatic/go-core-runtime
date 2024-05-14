@@ -39,20 +39,20 @@ func (e *Level) UnmarshalJSON(input []byte) error {
 // Checks whether the value is actually a member of Level.
 func (e Level) isValid() bool {
 	switch e {
-	case LogLevel_ERROR,
-		LogLevel_WARN,
-		LogLevel_INFO,
-		LogLevel_DEBUG,
-		LogLevel_TRACE:
+	case Level_ERROR,
+		Level_WARN,
+		Level_INFO,
+		Level_DEBUG,
+		Level_TRACE:
 		return true
 	}
 	return false
 }
 
 const (
-	LogLevel_ERROR Level = "error" // Error log level.
-	LogLevel_WARN  Level = "warn"  // Warning log level.
-	LogLevel_INFO  Level = "info"  // Information log level.
-	LogLevel_DEBUG Level = "debug" // Debug log level.
-	LogLevel_TRACE Level = "trace" // Trace log level.
+	Level_ERROR Level = "error" // Error log level.
+	Level_WARN  Level = "warn"  // Warning log level.
+	Level_INFO  Level = "info"  // Information log level.
+	Level_DEBUG Level = "debug" // Debug log level.
+	Level_TRACE Level = "trace" // Trace log level.
 )

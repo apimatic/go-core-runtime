@@ -40,7 +40,7 @@ func TestPassThroughInterceptorNilNext(t *testing.T) {
 func TestCallHttpInterceptors(t *testing.T) {
 	client := NewHttpClient(NewHttpConfiguration())
 	callBuilder := CreateCallBuilderFactory(
-		func(server string) string { return "https://apimatic-goo.free.beeceptor.com" }, nil, client, NewRetryConfiguration(), Indexed,)
+		func(server string) string { return "https://apimatic-goo.free.beeceptor.com" }, nil, client, NewRetryConfiguration(), Indexed)
 
 	req := callBuilder(context.Background(), "POST", "/interceptors")
 	interceptor1 := func(request *http.Request, next HttpCallExecutor) HttpContext {

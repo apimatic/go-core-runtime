@@ -20,8 +20,8 @@ type LoggerOptions func(*LoggerConfiguration)
 // Default logger configuration
 func defaultLoggerConfiguration() LoggerConfiguration {
 	return LoggerConfiguration{
-		logger:               NullLogger{},
-		level:                LogLevel_INFO,
+		logger:               ConsoleLogger{},
+		level:                Level_INFO,
 		request:              NewHttpRequestLoggerConfiguration(),
 		response:             NewResponseLoggerConfiguration(),
 		maskSensitiveHeaders: true,
