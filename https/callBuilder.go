@@ -128,6 +128,7 @@ func newDefaultCallBuilder(
 		retryConfig:              retryConfig,
 		ctx:                      ctx,
 		arraySerializationOption: option,
+		sdkLogger:                logger.NullSdkLogger{},
 	}
 	cb.addRetryInterceptor()
 	return &cb

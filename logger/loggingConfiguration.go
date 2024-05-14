@@ -53,9 +53,9 @@ func WithLevel(level Level) LoggerOptions {
 }
 
 // WithMaskSensitiveHeaders is an option that enable to mask Sensitive Headers in the LoggingOptions.
-func WithMaskSensitiveHeaders() LoggerOptions {
+func WithMaskSensitiveHeaders(maskSensitiveHeaders bool) LoggerOptions {
 	return func(l *LoggerConfiguration) {
-		l.maskSensitiveHeaders = true
+		l.maskSensitiveHeaders = maskSensitiveHeaders
 	}
 }
 

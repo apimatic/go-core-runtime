@@ -48,6 +48,24 @@ func TestAppendPath(t *testing.T) {
 	}
 }
 
+func TestLogger(t *testing.T) {
+	request := GetCallBuilder(ctx, "GET", "//response/", nil)
+	request.AppendPath("/integer")
+	request.Logger(logger.NullSdkLogger{})
+	request.ArraySerializationOption(Indexed)
+
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
+
+	expected := 200
+
+	if response.StatusCode != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+	}
+}
+
 func TestAppendMultiplePath(t *testing.T) {
 	samplePath := "/number/integer/base64"
 	request := GetCallBuilder(ctx, "GET", "//response/", nil)
