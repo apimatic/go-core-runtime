@@ -37,8 +37,8 @@ func (e *Level) UnmarshalJSON(input []byte) error {
 }
 
 // Checks whether the value is actually a member of Level.
-func (e Level) isValid() bool {
-	switch e {
+func (e *Level) isValid() bool {
+	switch *e {
 	case Level_ERROR,
 		Level_WARN,
 		Level_INFO,

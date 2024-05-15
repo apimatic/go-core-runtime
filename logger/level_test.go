@@ -50,3 +50,8 @@ func TestLevelEnumValueInvalid(t *testing.T) {
 	level := Level("Invalid")
 	validateLevelEnumValues(level, new(testing.T))
 }
+
+func TestLevelEnumValueInvalid2(t *testing.T) {
+	level := Level("nil")
+	validateLevelEnumValues(level, new(testing.T))
+}

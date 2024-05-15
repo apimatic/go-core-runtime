@@ -26,6 +26,8 @@ func init() {
 
 	request = callBuilder(ctx, "GET", "//response/")
 	request.AppendPath("/binary")
+	request.Header("Content-Type", "application/file")
+
 }
 
 func _callRequestAsJson(t *testing.T) {
