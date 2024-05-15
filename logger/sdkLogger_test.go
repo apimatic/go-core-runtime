@@ -9,29 +9,26 @@ import (
 	"testing"
 )
 
-var request https.CallBuilder
+var callBuilder https.CallBuilderFactory
+var ctx = context.Background()
+var serverUrl = https.GetTestingServer().URL
 
 func init() {
-	ctx := context.Background()
+
 	client := https.NewHttpClient(https.NewHttpConfiguration())
-	callBuilder := https.CreateCallBuilderFactory(
+	callBuilder = https.CreateCallBuilderFactory(
 		func(server string) string {
-			return https.GetTestingServer().URL
+			return serverUrl
 		},
 		nil,
 		client,
 		https.NewRetryConfiguration(),
 		https.Indexed,
 	)
-
-	request = callBuilder(ctx, "GET", "//response/")
-	request.Header("Authorization", "ahsfhafu3264basfcasbk__aksdk")
-	request.AppendPath("/binary")
-	request.Header("Content-Type", "application/file")
-
 }
 
-func _callRequestAsJson(t *testing.T) {
+func _callRequestAsJson(t *testing.T, request https.CallBuilder) {
+
 	_, response, err := request.CallAsJson()
 	if err != nil {
 		t.Errorf("Error in CallAsJson: %v", err)
@@ -58,16 +55,26 @@ func (c *fmtLogger) Log(level Level, message string, params map[string]any) {
 }
 
 func TestNullSDKLogger(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.AppendPath("/binary")
 	request.Logger(NullSdkLogger{})
-	_callRequestAsJson(t)
+	_callRequestAsJson(t, request)
 }
 
 func TestSDKLoggerWithDefaultConfig(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.AppendPath("/binary")
 	request.Logger(NewSdkLogger(NewLoggerConfiguration()))
-	_callRequestAsJson(t)
+	_callRequestAsJson(t, request)
 }
 
 func TestSDKLoggerWithCustomConfig(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.Header("Authorization", "ahsfhafu3264basfcasbk__aksdk")
+	request.AppendPath("/binary")
+	request.Header("Content-Type", "application/file")
+	request.QueryParam("env", "testing")
+
 	request.Logger(NewSdkLogger(NewLoggerConfiguration(
 		WithLevel("debug"),
 		WithMaskSensitiveHeaders(true),
@@ -83,24 +90,57 @@ func TestSDKLoggerWithCustomConfig(t *testing.T) {
 			WithExcludeResponseHeaders("X-Powered-By"),
 		),
 	)))
-	_callRequestAsJson(t)
+	_callRequestAsJson(t, request)
 }
 
 func TestSDKLoggerWithCustomLoggerDefaultConfig(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.AppendPath("/binary")
 	logger := &fmtLogger{}
 	request.Logger(NewSdkLogger(NewLoggerConfiguration(
 		WithLogger(logger),
+		WithRequestConfiguration(
+			WithRequestHeaders(true),
+		),
 	)))
-	_callRequestAsJson(t)
+	_callRequestAsJson(t, request)
 
 	expected := []string{
-		"info, Request %{method} %{url} %{contentType}, map[contentType:application/file method:GET url:]",
+		"info, Request %{method} %{url} %{contentType}, map[contentType: method:GET url:" + serverUrl + "/response/binary]",
+		"info, Request headers %{headers}, map[headers:map[]]",
+		"info, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",
+	}
+	logger.AssertLogEntries(t, expected...)
+}
+
+func TestSDKLoggerWithCustomLoggerDefaultConfigWithHeaders(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.AppendPath("/binary")
+	request.Header("Content-Type", "application/file")
+	logger := &fmtLogger{}
+	request.Logger(NewSdkLogger(NewLoggerConfiguration(
+		WithLogger(logger),
+		WithRequestConfiguration(
+			WithRequestHeaders(true),
+		),
+	)))
+	_callRequestAsJson(t, request)
+
+	expected := []string{
+		"info, Request %{method} %{url} %{contentType}, map[contentType:application/file method:GET url:" + serverUrl + "/response/binary]",
+		"info, Request headers %{headers}, map[headers:map[Content-Type:[application/file]]]",
 		"info, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",
 	}
 	logger.AssertLogEntries(t, expected...)
 }
 
 func TestSDKLoggerWithCustomLoggerCustomConfig(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.Header("Authorization", "ahsfhafu3264basfcasbk__aksdk")
+	request.AppendPath("/binary")
+	request.Header("Content-Type", "application/file")
+	request.QueryParam("env", "testing")
+
 	logger := &fmtLogger{}
 	request.Logger(NewSdkLogger(NewLoggerConfiguration(
 		WithLevel("debug"),
@@ -121,10 +161,10 @@ func TestSDKLoggerWithCustomLoggerCustomConfig(t *testing.T) {
 			WithWhitelistResponseHeaders("Authorization"),
 		),
 	)))
-	_callRequestAsJson(t)
+	_callRequestAsJson(t, request)
 
 	expected := []string{
-		"debug, Request %{method} %{url} %{contentType}, map[contentType:application/file method:GET url:]",
+		"debug, Request %{method} %{url} %{contentType}, map[contentType:application/file method:GET url:" + serverUrl + "/response/binary]",
 		"debug, Request headers %{headers}, map[headers:map[Authorization:[**Redacted**] Content-Type:[application/file]]]",
 		"debug, Request body %{body}, map[body:null]",
 		"debug, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",

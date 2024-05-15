@@ -9,7 +9,7 @@ type LoggerConfiguration struct {
 	// Options for logging HTTP requests.
 	request RequestLoggerConfiguration
 	// Options for logging HTTP responses.
-	response MessageLoggerConfiguration
+	response ResponseLoggerConfiguration
 	// Indicates whether sensitive headers should be masked in logged messages.
 	maskSensitiveHeaders bool
 }

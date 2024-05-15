@@ -39,25 +39,22 @@ func NewSdkLogger(loggingOpt LoggerConfiguration) *SdkLogger {
 
 // LogRequest request Logs an HTTP request.
 func (a *SdkLogger) LogRequest(request *http.Request) {
-	var logLevel = a.loggingOptions.level
-	var contentTypeHeader = a._getContentType(request.Header)
-	var url string
-	if a.loggingOptions.request.includeQueryInPath {
-		url = request.RequestURI
-	} else {
-		url = a._removeQueryParams(request.RequestURI)
+	level := a.loggingOptions.level
+	url := request.URL.String()
+	if !a.loggingOptions.request.includeQueryInPath {
+		url = a._removeQueryParams(url)
 	}
 
 	a.logger.Log(
-		logLevel,
+		level,
 		"Request %{method} %{url} %{contentType}",
 		map[string]any{
 			"method":      request.Method,
 			"url":         url,
-			"contentType": contentTypeHeader,
+			"contentType": a._getContentType(request.Header),
 		})
 
-	a._applyLogRequestOptions(logLevel, request)
+	a._applyLogRequestOptions(level, request)
 }
 
 // LogResponse Logs an HTTP response.

@@ -7,14 +7,14 @@ type RequestLoggerConfiguration struct {
 	includeQueryInPath bool
 }
 
-// RequestLoggerOptions represents a function type that can be used to apply configuration to the MessageLoggerOptions struct.
+// RequestLoggerOptions represents a function type that can be used to apply configuration to the RequestLoggerOptions struct.
 type RequestLoggerOptions func(*RequestLoggerConfiguration)
 
 // Default logger configuration
 func defaultRequestLoggerConfiguration() RequestLoggerConfiguration {
 	return RequestLoggerConfiguration{
 		includeQueryInPath:         false,
-		MessageLoggerConfiguration: NewResponseLoggerConfiguration(),
+		MessageLoggerConfiguration: defaultMessageLoggerConfiguration(),
 	}
 }
 
