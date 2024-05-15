@@ -73,8 +73,8 @@ func WithResponseConfiguration(options ...ResponseLoggerOptions) LoggerOptions {
 	}
 }
 
-// MessageLoggerConfiguration represents options for logging HTTP message details.
-type MessageLoggerConfiguration struct {
+// messageLoggerConfiguration represents options for logging HTTP message details.
+type messageLoggerConfiguration struct {
 	// Indicates whether the message body should be logged.
 	body bool
 	// Indicates whether the message headers should be logged.
@@ -87,8 +87,8 @@ type MessageLoggerConfiguration struct {
 	whitelistHeaders []string
 }
 
-func defaultMessageLoggerConfiguration() MessageLoggerConfiguration {
-	return MessageLoggerConfiguration{
+func defaultMessageLoggerConfiguration() messageLoggerConfiguration {
+	return messageLoggerConfiguration{
 		body:             false,
 		headers:          false,
 		excludeHeaders:   []string{},

@@ -2,7 +2,7 @@ package logger
 
 // RequestLoggerConfiguration represents options for logging HTTP request details.
 type RequestLoggerConfiguration struct {
-	MessageLoggerConfiguration
+	messageLoggerConfiguration
 	// Indicates whether the request query parameters should be included in the logged URL.
 	includeQueryInPath bool
 }
@@ -14,7 +14,7 @@ type RequestLoggerOptions func(*RequestLoggerConfiguration)
 func defaultRequestLoggerConfiguration() RequestLoggerConfiguration {
 	return RequestLoggerConfiguration{
 		includeQueryInPath:         false,
-		MessageLoggerConfiguration: defaultMessageLoggerConfiguration(),
+		messageLoggerConfiguration: defaultMessageLoggerConfiguration(),
 	}
 }
 

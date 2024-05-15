@@ -2,7 +2,7 @@ package logger
 
 // ResponseLoggerConfiguration represents options for logging HTTP message details.
 type ResponseLoggerConfiguration struct {
-	MessageLoggerConfiguration
+	messageLoggerConfiguration
 }
 
 // ResponseLoggerOptions represents a function type that can be used to apply configuration to the ResponseLoggerOptions struct.
@@ -11,7 +11,7 @@ type ResponseLoggerOptions func(*ResponseLoggerConfiguration)
 // Default logger configuration
 func defaultResponseLoggerConfiguration() ResponseLoggerConfiguration {
 	return ResponseLoggerConfiguration{
-		MessageLoggerConfiguration: defaultMessageLoggerConfiguration(),
+		messageLoggerConfiguration: defaultMessageLoggerConfiguration(),
 	}
 }
 
