@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -13,6 +12,15 @@ type SdkLoggerInterface interface {
 	// LogResponse logs the details of an HTTP response.
 	LogResponse(response *http.Response)
 }
+
+// NullSdkLogger represents implementation for SdkLoggerInterface, implementing methods to log HTTP requests and responses.
+type NullSdkLogger struct{}
+
+// LogRequest request Logs an HTTP request.
+func (a NullSdkLogger) LogRequest(_request *http.Request) {}
+
+// LogResponse Logs an HTTP response.
+func (a NullSdkLogger) LogResponse(_response *http.Response) {}
 
 // SdkLogger represents implementation for SdkLoggerInterface, providing methods to log HTTP requests and responses.
 type SdkLogger struct {
@@ -41,7 +49,7 @@ func (a *SdkLogger) LogRequest(request *http.Request) {
 
 	a.logger.Log(
 		logLevel,
-		fmt.Sprintf("Request %v %v %v", request.Method, url, contentTypeHeader),
+		"Request %{method} %{url} %{contentType}",
 		map[string]any{
 			"method":      request.Method,
 			"url":         url,
@@ -53,116 +61,58 @@ func (a *SdkLogger) LogRequest(request *http.Request) {
 
 // LogResponse Logs an HTTP response.
 func (a *SdkLogger) LogResponse(response *http.Response) {
-	var logLevel = a.loggingOptions.level
-	var contentTypeHeader = a._getContentType(response.Header)
-	var contentLengthHeader = a._getContentLength(response.Header)
 
+	level := a.loggingOptions.level
 	a.logger.Log(
-		logLevel,
-		fmt.Sprintf("Response %v %v %v", response.StatusCode, contentLengthHeader, contentTypeHeader),
+		level,
+		"Response %{statusCode} %{contentLength} %{contentType}",
 		map[string]any{
 			"statusCode":    response.StatusCode,
-			"contentLength": contentLengthHeader,
-			"contentType":   contentTypeHeader,
+			"contentLength": a._getContentLength(response.Header),
+			"contentType":   a._getContentType(response.Header),
 		},
 	)
 
-	a._applyLogResponseOptions(logLevel, response)
+	a._applyLogResponseOptions(level, response)
 }
 
 func (a *SdkLogger) _applyLogRequestOptions(level Level, request *http.Request) {
-	a._applyLogRequestHeaders(
-		level,
-		request,
-		a.loggingOptions.request,
-	)
 
-	a._applyLogRequestBody(level, request, a.loggingOptions.request)
-}
-
-func (a *SdkLogger) _applyLogRequestHeaders(
-	level Level,
-	request *http.Request,
-	logRequest RequestLoggerConfiguration) {
-
-	logHeaders := logRequest.headers
-	headersToInclude := logRequest.includeHeaders
-	headersToExclude := logRequest.excludeHeaders
-	headersToWhitelist := logRequest.whitelistHeaders
-
-	if logHeaders {
-		var headersToLog = a._extractHeadersToLog(
-			headersToInclude,
-			headersToExclude,
-			headersToWhitelist,
-			request.Header,
-		)
-
-		a.logger.Log(
-			level,
-			fmt.Sprintf("Request headers %v", headersToLog),
-			map[string]any{"headers": headersToLog},
+	logOp := a.loggingOptions.request
+	if logOp.headers {
+		a.logger.Log(level, "Request headers %{headers}",
+			map[string]any{"headers": a._extractHeadersToLog(
+				logOp.includeHeaders,
+				logOp.excludeHeaders,
+				logOp.whitelistHeaders,
+				request.Header,
+			)},
 		)
 	}
-}
 
-func (a *SdkLogger) _applyLogRequestBody(
-	level Level,
-	request *http.Request,
-	logRequest RequestLoggerConfiguration) {
-
-	if logRequest.body {
-		a.logger.Log(level, fmt.Sprintf("Request body %v", request.Body),
+	if logOp.body {
+		a.logger.Log(level, "Request body %{body}",
 			map[string]any{"body": request.Body},
 		)
 	}
 }
 
 func (a *SdkLogger) _applyLogResponseOptions(level Level, response *http.Response) {
-	a._applyLogResponseHeaders(
-		level,
-		response,
-		a.loggingOptions.response,
-	)
 
-	a._applyLogResponseBody(
-		level,
-		response,
-		a.loggingOptions.response,
-	)
-}
-
-func (a *SdkLogger) _applyLogResponseHeaders(
-	level Level,
-	response *http.Response,
-	logResponse MessageLoggerConfiguration) {
-
-	logHeaders := logResponse.headers
-	headersToInclude := logResponse.includeHeaders
-	headersToExclude := logResponse.excludeHeaders
-	headersToWhitelist := logResponse.whitelistHeaders
-
-	if logHeaders {
-		var headersToLog = a._extractHeadersToLog(
-			headersToInclude,
-			headersToExclude,
-			headersToWhitelist,
-			response.Header,
-		)
-
-		a.logger.Log(level, fmt.Sprintf("Response headers %v", headersToLog),
-			map[string]any{"headers": headersToLog},
+	logOp := a.loggingOptions.response
+	if logOp.headers {
+		a.logger.Log(level, "Response headers %{headers}",
+			map[string]any{"headers": a._extractHeadersToLog(
+				logOp.includeHeaders,
+				logOp.excludeHeaders,
+				logOp.whitelistHeaders,
+				response.Header,
+			)},
 		)
 	}
-}
 
-func (a *SdkLogger) _applyLogResponseBody(
-	level Level,
-	response *http.Response,
-	logResponse MessageLoggerConfiguration) {
-
-	if logResponse.body {
-		a.logger.Log(level, fmt.Sprintf("Response body %v", response.Body),
+	if logOp.body {
+		a.logger.Log(level, "Response body %{body}",
 			map[string]any{"body": response.Body},
 		)
 	}
@@ -228,9 +178,11 @@ func (a *SdkLogger) _includeHeadersToLog(
 	headersToInclude []string) http.Header {
 	// Filter headers based on the keys specified in includeHeaders
 	for _, name := range headersToInclude {
-		val, ok := headers[name]
-		if len(val) > 0 && ok {
-			filteredHeaders[name] = val
+		nameLower := strings.ToLower(name)
+		for headerKey, headerVal := range headers {
+			if strings.ToLower(headerKey) == nameLower {
+				filteredHeaders[headerKey] = headerVal
+			}
 		}
 	}
 	return filteredHeaders
@@ -252,7 +204,7 @@ func (a *SdkLogger) _excludeHeadersToLog(
 
 func _contains(key string, slice []string) bool {
 	for _, name := range slice {
-		if name == key {
+		if strings.EqualFold(name, key) {
 			return true
 		}
 	}

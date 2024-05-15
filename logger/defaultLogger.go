@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"encoding/json"
 	"fmt"
+	"regexp"
 )
 
 // LoggerInterface represents an interface for a generic logger.
@@ -19,7 +19,21 @@ func (c ConsoleLogger) Log(level Level, message string, params map[string]any) {
 	fmt.Println(level, ": ", _formatMessage(message, params))
 }
 
-func _formatMessage(message string, params map[string]any) string {
-	byt, _ := json.Marshal(params)
-	return message + " " + string(byt)
+func _formatMessage(msg string, obj map[string]interface{}) string {
+	regex := regexp.MustCompile(`\%{([^}]+)}`)
+
+	formattedMsg := regex.ReplaceAllStringFunc(msg, func(match string) string {
+		key := match[2 : len(match)-1]
+		if value, ok := obj[key]; ok {
+			switch v := value.(type) {
+			case string:
+				return v
+			default:
+				return fmt.Sprintf("%v", v)
+			}
+		}
+		return match
+	})
+
+	return formattedMsg
 }
