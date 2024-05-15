@@ -67,8 +67,32 @@ func WithRequestConfiguration(options ...RequestLoggerOptions) LoggerOptions {
 }
 
 // WithResponseConfiguration is an option that sets that enable to log Response in the LoggingOptions.
-func WithResponseConfiguration(options ...MessageLoggerOptions) LoggerOptions {
+func WithResponseConfiguration(options ...ResponseLoggerOptions) LoggerOptions {
 	return func(l *LoggerConfiguration) {
 		l.response = NewResponseLoggerConfiguration(options...)
+	}
+}
+
+// MessageLoggerConfiguration represents options for logging HTTP message details.
+type MessageLoggerConfiguration struct {
+	// Indicates whether the message body should be logged.
+	body bool
+	// Indicates whether the message headers should be logged.
+	headers bool
+	// Array of headers not to be displayed in logging.
+	excludeHeaders []string
+	// Array of headers to be displayed in logging.
+	includeHeaders []string
+	// Array of headers which values are non-sensitive to display in logging.
+	whitelistHeaders []string
+}
+
+func defaultMessageLoggerConfiguration() MessageLoggerConfiguration {
+	return MessageLoggerConfiguration{
+		body:             false,
+		headers:          false,
+		excludeHeaders:   []string{},
+		includeHeaders:   []string{},
+		whitelistHeaders: []string{},
 	}
 }
