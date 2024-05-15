@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/apimatic/go-core-runtime/https"
 	. "github.com/apimatic/go-core-runtime/logger"
+	"reflect"
 	"testing"
 )
 
@@ -38,11 +39,19 @@ func _callRequestAsJson(t *testing.T) {
 	}
 }
 
-type fmtLogger struct{}
+type fmtLogger struct {
+	entries []string
+}
+
+func (c *fmtLogger) AssertLogEntries(t *testing.T, expected ...string) {
+	if !reflect.DeepEqual(c.entries, expected) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, c.entries)
+	}
+}
 
 // Logs a message to the console with the specified log level.
-func (c fmtLogger) Log(level Level, message string, params map[string]any) {
-	fmt.Printf("Level : %v,\t Message : %v,\t Params : %v", level, message, params)
+func (c *fmtLogger) Log(level Level, message string, params map[string]any) {
+	c.entries = append(c.entries, fmt.Sprintf("%v, %v, %v", level, message, params))
 }
 
 func TestNullSDKLogger(t *testing.T) {
@@ -75,16 +84,24 @@ func TestSDKLoggerWithCustomConfig(t *testing.T) {
 }
 
 func TestSDKLoggerWithCustomLoggerDefaultConfig(t *testing.T) {
+	logger := &fmtLogger{}
 	request.Logger(NewSdkLogger(NewLoggerConfiguration(
-		WithLogger(fmtLogger{}),
+		WithLogger(logger),
 	)))
 	_callRequestAsJson(t)
+
+	expected := []string{
+		"info, Request %{method} %{url} %{contentType}, map[contentType: method:GET url:]",
+		"info, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",
+	}
+	logger.AssertLogEntries(t, expected...)
 }
 
 func TestSDKLoggerWithCustomLoggerCustomConfig(t *testing.T) {
+	logger := &fmtLogger{}
 	request.Logger(NewSdkLogger(NewLoggerConfiguration(
 		WithLevel("debug"),
-		WithLogger(fmtLogger{}),
+		WithLogger(logger),
 		WithMaskSensitiveHeaders(true),
 		WithRequestConfiguration(
 			WithRequestBody(true),
@@ -102,4 +119,14 @@ func TestSDKLoggerWithCustomLoggerCustomConfig(t *testing.T) {
 		),
 	)))
 	_callRequestAsJson(t)
+
+	expected := []string{
+		"debug, Request %{method} %{url} %{contentType}, map[contentType: method:GET url:]",
+		"debug, Request headers %{headers}, map[headers:map[]]",
+		"debug, Request body %{body}, map[body:null]",
+		"debug, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",
+		"debug, Response headers %{headers}, map[headers:map[Content-Type:[text/plain; charset=utf-8]]]",
+		"debug, Response body %{body}, map[body:{}]",
+	}
+	logger.AssertLogEntries(t, expected...)
 }

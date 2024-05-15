@@ -7,14 +7,16 @@ import (
 
 // LoggerInterface represents an interface for a generic logger.
 type LoggerInterface interface {
-	// Logs a message with a specified Log level and additional parameters.
+	// Log function provides a message string containing placeholders in the format '%{key}',
+	// along with the log level and a map of parameters that can be replaced in the message.
 	Log(level Level, message string, params map[string]any)
 }
 
 // ConsoleLogger represents a logger implementation that logs messages to the console.
 type ConsoleLogger struct{}
 
-// Logs a message to the console with the specified log level.
+// Log function provides a message string containing placeholders in the format '%{key}',
+// along with the log level and a map of parameters that can be replaced in the message.
 func (c ConsoleLogger) Log(level Level, message string, params map[string]any) {
 	fmt.Println(level, ": ", _formatMessage(message, params))
 }

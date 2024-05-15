@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 )
@@ -91,9 +92,12 @@ func (a *SdkLogger) _applyLogRequestOptions(level Level, request *http.Request) 
 	}
 
 	if logOp.body {
-		a.logger.Log(level, "Request body %{body}",
-			map[string]any{"body": request.Body},
-		)
+		if bodyBytes, err := json.Marshal(request.Body); err == nil {
+			a.logger.Log(level, "Request body %{body}",
+				map[string]any{"body": string(bodyBytes)},
+			)
+		}
+
 	}
 }
 
@@ -112,9 +116,12 @@ func (a *SdkLogger) _applyLogResponseOptions(level Level, response *http.Respons
 	}
 
 	if logOp.body {
-		a.logger.Log(level, "Response body %{body}",
-			map[string]any{"body": response.Body},
-		)
+
+		if bodyBytes, err := json.Marshal(response.Body); err == nil {
+			a.logger.Log(level, "Response body %{body}",
+				map[string]any{"body": string(bodyBytes)},
+			)
+		}
 	}
 }
 
