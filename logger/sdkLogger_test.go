@@ -25,6 +25,7 @@ func init() {
 	)
 
 	request = callBuilder(ctx, "GET", "//response/")
+	request.Header("Authorization", "ahsfhafu3264basfcasbk__aksdk")
 	request.AppendPath("/binary")
 	request.Header("Content-Type", "application/file")
 
@@ -124,7 +125,7 @@ func TestSDKLoggerWithCustomLoggerCustomConfig(t *testing.T) {
 
 	expected := []string{
 		"debug, Request %{method} %{url} %{contentType}, map[contentType: method:GET url:]",
-		"debug, Request headers %{headers}, map[headers:map[]]",
+		"debug, Request headers %{headers}, map[headers:map[Authorization:[**Redacted**]]]",
 		"debug, Request body %{body}, map[body:null]",
 		"debug, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",
 		"debug, Response headers %{headers}, map[headers:map[Content-Type:[text/plain; charset=utf-8]]]",
