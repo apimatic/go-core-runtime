@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/apimatic/go-core-runtime/logger"
 )
 
 // Constants for commonly used HTTP headers and content types.
@@ -71,6 +73,7 @@ type CallBuilder interface {
 	Authenticate(authGroup AuthGroup)
 	RequestRetryOption(option RequestRetryOption)
 	ArraySerializationOption(option ArraySerializationOption)
+	Logger(sdkLogger logger.SdkLoggerInterface)
 }
 
 // defaultCallBuilder is a struct that implements the CallBuilder interface for making API calls.
@@ -100,6 +103,7 @@ type defaultCallBuilder struct {
 	queryParams              formParams
 	errors                   map[string]ErrorBuilder[error]
 	arraySerializationOption ArraySerializationOption
+	sdkLogger                logger.SdkLoggerInterface
 }
 
 // newDefaultCallBuilder creates a new instance of defaultCallBuilder, which implements the CallBuilder interface.
@@ -124,6 +128,7 @@ func newDefaultCallBuilder(
 		retryConfig:              retryConfig,
 		ctx:                      ctx,
 		arraySerializationOption: option,
+		sdkLogger:                logger.NullSdkLogger{},
 	}
 	cb.addRetryInterceptor()
 	return &cb
@@ -158,6 +163,11 @@ func (cb *defaultCallBuilder) RequestRetryOption(option RequestRetryOption) {
 
 func (cb *defaultCallBuilder) ArraySerializationOption(option ArraySerializationOption) {
 	cb.arraySerializationOption = option
+}
+
+// Logger sets the api logger interface instance for the API call.
+func (cb *defaultCallBuilder) Logger(sdkLoggerInterface logger.SdkLoggerInterface) {
+	cb.sdkLogger = sdkLoggerInterface
 }
 
 // AppendPath appends the provided path to the existing path in the CallBuilder.
@@ -608,7 +618,9 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	if err != nil {
 		return nil, err
 	}
+	cb.sdkLogger.LogRequest(request)
 	context := pipeline(request)
+	cb.sdkLogger.LogResponse(context.Response)
 
 	if cb.clientError != nil {
 		err = cb.clientError

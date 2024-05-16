@@ -58,6 +58,18 @@ The https package provides logic related to HTTP requests, including building an
 | [`Interceptors`](https/interceptors.go)              | Provides handling to intercept requests.                                                        |
 | [`Retryer`](https/retryer.go)                        | Provides handling to automatically retry for failed requests.                                   |
 
+### Logger
+The logger package provides logic related to logging. It offers the Facade Design Pattern for configuring the Logger and SDK Logger. Additionally, it provides the LoggerConfiguration to customize logging behavior.
+
+| File Name                                                                | Description                                                                                                                   |
+|--------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| [`Console Logger`](logger/defaultLogger.go)                              | Provides default implementation of [`Logger Interface`](logger/defaultLogger.go) to log messages.                             |
+| [`Level`](logger/level.go)                                               | Provides constants for log level like Level_ERROR, Level_INFO, etc.                                                           |
+| [`Logger Configuration`](logger/loggerConfiguration.go)                  | Provides logging configurations for the Sdk Logger.                                                                           |
+| [`Response Logger Configuration`](logger/responseLoggerConfiguration.go) | Provides response logging configurations for the Sdk Logger.                                                                  |
+| [`Request Logger Configuration`](logger/requestLoggerConfiguration.go)   | Provides request logging configurations for the Sdk Logger.                                                                   |
+| [`Sdk Logger`](logger/sdkLogger.go)                                      | Provides default and null implementation of [` Sdk Logger Interface`](logger/sdkLogger.go) to log API requests and responses. |
+
 ### Test Helper
 Package testHelper provides helper functions for testing purposes.
 

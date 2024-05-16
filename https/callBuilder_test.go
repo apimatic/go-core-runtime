@@ -3,6 +3,7 @@ package https
 import (
 	"context"
 	"errors"
+	"github.com/apimatic/go-core-runtime/logger"
 	"io"
 	"net/http"
 	"reflect"
@@ -36,6 +37,24 @@ func RequestAuthentication() HttpInterceptor {
 func TestAppendPath(t *testing.T) {
 	request := GetCallBuilder(ctx, "GET", "//response/", nil)
 	request.AppendPath("/integer")
+	_, response, err := request.CallAsJson()
+	if err != nil {
+		t.Errorf("Error in CallAsJson: %v", err)
+	}
+
+	expected := 200
+
+	if response.StatusCode != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+	}
+}
+
+func TestLogger(t *testing.T) {
+	request := GetCallBuilder(ctx, "GET", "//response/", nil)
+	request.AppendPath("/integer")
+	request.Logger(logger.NullSdkLogger{})
+	request.ArraySerializationOption(Indexed)
+
 	_, response, err := request.CallAsJson()
 	if err != nil {
 		t.Errorf("Error in CallAsJson: %v", err)
