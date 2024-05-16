@@ -68,6 +68,13 @@ func TestSDKLoggerWithDefaultConfig(t *testing.T) {
 	_callRequestAsJson(t, request)
 }
 
+func TestSDKLoggerWithInvalidConfig(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.AppendPath("/binary")
+	request.Logger(NewSdkLogger(LoggerConfiguration{}))
+	_callRequestAsJson(t, request)
+}
+
 func TestSDKLoggerWithCustomConfig(t *testing.T) {
 	request := callBuilder(ctx, "GET", "//response/")
 	request.Header("Authorization", "ahsfhafu3264basfcasbk__aksdk")

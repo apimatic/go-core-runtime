@@ -14,6 +14,10 @@ type LoggerConfiguration struct {
 	maskSensitiveHeaders bool
 }
 
+func (l *LoggerConfiguration) isValid() bool {
+	return l.logger != nil && l.level.isValid()
+}
+
 // LoggerOptions represents a function type that can be used to apply configuration to the LoggerOptions struct.
 type LoggerOptions func(*LoggerConfiguration)
 

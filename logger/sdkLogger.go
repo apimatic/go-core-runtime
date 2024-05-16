@@ -29,11 +29,15 @@ type SdkLogger struct {
 	logger         LoggerInterface
 }
 
-// NewSdkLogger Constructs a new instance of SdkLogger.
-func NewSdkLogger(loggingOpt LoggerConfiguration) *SdkLogger {
-	return &SdkLogger{
-		loggingOptions: loggingOpt,
-		logger:         loggingOpt.logger,
+// NewSdkLogger Constructs a new instance of SdkLogger or NullSdkLogger.
+func NewSdkLogger(loggingOpt LoggerConfiguration) SdkLoggerInterface {
+	if loggingOpt.isValid() {
+		return &SdkLogger{
+			loggingOptions: loggingOpt,
+			logger:         loggingOpt.logger,
+		}
+	} else {
+		return NullSdkLogger{}
 	}
 }
 
