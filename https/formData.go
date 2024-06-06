@@ -141,7 +141,7 @@ func (fp *formParam) toMap() (map[string][]string, error) {
 		return map[string][]string{}, nil
 	}
 
-	if (fp.IsMultipart()){
+	if fp.IsMultipart() {
 		return fp.processDefault()
 	}
 	
@@ -191,15 +191,7 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 	result := make(map[string][]string)
 	for i := 0; i < reflectValue.Len(); i++ {
 		innerElem := reflectValue.Index(i)
-		var indexStr any
-		switch innerElem.Kind() {
-		case reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-			reflect.Float32, reflect.Float64, reflect.Complex64, reflect.Complex128, reflect.String:
-			indexStr = nil
-		default:
-			indexStr = fmt.Sprintf("%v", i)
-		}
+		indexStr := initIndexString(innerElem, i)
 		innerKey := fp.arraySerializationOption.joinKey(fp.key, indexStr)
 		innerfp := fp.clone(innerKey, innerElem.Interface())
 		innerFlatMap, err := innerfp.toMap()
@@ -209,6 +201,21 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 		fp.arraySerializationOption.appendMap(result, innerFlatMap)
 	}
 	return result, nil
+}
+
+func initIndexString(elem reflect.Value, index int) any {
+	if elemKind := elem.Kind(); elemKind == reflect.Int ||
+		elemKind == reflect.String {
+		return nil
+	} else {
+		switch elem.Interface().(type) {
+		case bool, int, int8, int16, int32, int64,
+			uint, uint8, uint16, uint32, uint64,
+			float32, float64, complex64, complex128, string:
+			return nil
+		}
+	}
+	return fmt.Sprintf("%v", index)
 }
 
 func (fp *formParam) processDefault() (map[string][]string, error) {
