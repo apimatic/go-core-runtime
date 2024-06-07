@@ -2,9 +2,8 @@ package utilities
 
 import (
 	"encoding/json"
+	"github.com/apimatic/go-core-runtime/internal/assert"
 	"testing"
-
-	"github.com/apimatic/go-core-runtime/internal"
 )
 
 type UnionTypeCase struct {
@@ -22,19 +21,19 @@ type UnionTypeCase struct {
 
 func (u *UnionTypeCase) Assert(t *testing.T, result any, err error, anyTypeHolderSelected bool) {
 	if u.shouldFail {
-		internal.Nil(t, result)
-		internal.False(t, anyTypeHolderSelected)
-		internal.EqualError(t, err, u.expectedErrorMessage)
+		assert.Nil(t, result)
+		assert.False(t, anyTypeHolderSelected)
+		assert.EqualError(t, err, u.expectedErrorMessage)
 		return
 	}
-	internal.Nil(t, err)
-	internal.True(t, anyTypeHolderSelected)
-	internal.IsType(t, u.expectedType, result)
+	assert.Nil(t, err)
+	assert.True(t, anyTypeHolderSelected)
+	assert.IsType(t, u.expectedType, result)
 	marshalled, _ := json.Marshal(result)
 	if u.expectedValue == "" {
 		u.expectedValue = u.testValue
 	}
-	internal.Equal(t, u.expectedValue, string(marshalled))
+	assert.Equal(t, u.expectedValue, string(marshalled))
 }
 
 func TestCommonOneOfAndAnyOfCases(t *testing.T) {

@@ -3,14 +3,13 @@ package https
 import (
 	"context"
 	"errors"
+	"github.com/apimatic/go-core-runtime/internal/assert"
 	"github.com/apimatic/go-core-runtime/logger"
 	"io"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/apimatic/go-core-runtime/internal"
 )
 
 var ctx = context.Background()
@@ -417,7 +416,7 @@ func TestError(t *testing.T) {
 
 			_, err := request.Call()
 
-			internal.ErrorContains(t, err, test.expected)
+			assert.ErrorContains(t, err, test.expected)
 		})
 	}
 }
