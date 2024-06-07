@@ -125,6 +125,26 @@ func TestPrepareFormFieldsBoolSlice(t *testing.T) {
 	}
 }
 
+func TestPrepareFormFieldsAnySlice(t *testing.T) {
+	anySlice := []any{
+		any("Item1"),
+		any("Item2"),
+	}
+
+	params := formParams{
+		{"anySlice", anySlice, nil, Csv},
+	}
+	result := url.Values{}
+	_ = params.prepareFormFields(result)
+
+	expected := url.Values{}
+	expected.Add("anySlice", fmt.Sprintf("%v,%v", anySlice[0], anySlice[1]))
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
+	}
+}
+
 func TestPrepareFormFieldsEnumSlice(t *testing.T) {
 	stringEnums := []internal.MonthNameEnum{
 		internal.MonthNameEnum_JANUARY,

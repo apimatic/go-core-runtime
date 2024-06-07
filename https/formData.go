@@ -191,8 +191,8 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 	result := make(map[string][]string)
 	for i := 0; i < reflectValue.Len(); i++ {
 		innerElem := reflectValue.Index(i)
-		indexStr := processElementIndex(innerElem, i)
-		innerKey := fp.arraySerializationOption.joinKey(fp.key, indexStr)
+		elemIndex := createElemIndex(innerElem, i)
+		innerKey := fp.arraySerializationOption.joinKey(fp.key, elemIndex)
 		innerParam := fp.clone(innerKey, innerElem.Interface())
 		innerFlatMap, err := innerParam.toMap()
 		if err != nil {
@@ -203,11 +203,14 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 	return result, nil
 }
 
-func processElementIndex(elem reflect.Value, index int) any {
+// creates index for enums and native types in slice
+func createElemIndex(elem reflect.Value, index int) any {
 	switch elem.Kind() {
+	// Case for handling enums of number and string types
 	case reflect.Int, reflect.String:
 		return nil
 	default:
+		// Interface of native types cannot be handled using reflect.Kind
 		switch elem.Interface().(type) {
 		case bool, int, int8, int16, int32, int64,
 			uint, uint8, uint16, uint32, uint64,
