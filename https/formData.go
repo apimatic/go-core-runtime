@@ -144,7 +144,7 @@ func (fp *formParam) toMap() (map[string][]string, error) {
 	if fp.IsMultipart() {
 		return fp.processDefault()
 	}
-	
+
 	switch reflect.TypeOf(fp.value).Kind() {
 	case reflect.Ptr:
 		return fp.processStructAndPtr()
@@ -176,8 +176,8 @@ func (fp *formParam) processMap() (map[string][]string, error) {
 	for iter.Next() {
 		innerKey := fp.arraySerializationOption.joinKey(fp.key, iter.Key().Interface())
 		innerValue := iter.Value().Interface()
-		innerfp := fp.clone(innerKey, innerValue)
-		innerFlatMap, err := innerfp.toMap()
+		innerParam := fp.clone(innerKey, innerValue)
+		innerFlatMap, err := innerParam.toMap()
 		if err != nil {
 			return nil, err
 		}
@@ -191,10 +191,10 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 	result := make(map[string][]string)
 	for i := 0; i < reflectValue.Len(); i++ {
 		innerElem := reflectValue.Index(i)
-		indexStr := initIndexString(innerElem, i)
+		indexStr := processElementIndex(innerElem, i)
 		innerKey := fp.arraySerializationOption.joinKey(fp.key, indexStr)
-		innerfp := fp.clone(innerKey, innerElem.Interface())
-		innerFlatMap, err := innerfp.toMap()
+		innerParam := fp.clone(innerKey, innerElem.Interface())
+		innerFlatMap, err := innerParam.toMap()
 		if err != nil {
 			return result, err
 		}
@@ -203,19 +203,20 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 	return result, nil
 }
 
-func initIndexString(elem reflect.Value, index int) any {
-	if elemKind := elem.Kind(); elemKind == reflect.Int ||
-		elemKind == reflect.String {
+func processElementIndex(elem reflect.Value, index int) any {
+	switch elem.Kind() {
+	case reflect.Int, reflect.String:
 		return nil
-	} else {
+	default:
 		switch elem.Interface().(type) {
 		case bool, int, int8, int16, int32, int64,
 			uint, uint8, uint16, uint32, uint64,
 			float32, float64, complex64, complex128, string:
 			return nil
+		default:
+			return index
 		}
 	}
-	return fmt.Sprintf("%v", index)
 }
 
 func (fp *formParam) processDefault() (map[string][]string, error) {
