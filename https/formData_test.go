@@ -1,6 +1,8 @@
 package https
 
 import (
+	"fmt"
+	"github.com/apimatic/go-core-runtime/internal"
 	"math"
 	"net/http"
 	"net/url"
@@ -117,6 +119,34 @@ func TestPrepareFormFieldsBoolSlice(t *testing.T) {
 	expected := result
 	expected.Add("param2", "false")
 	expected.Add("param2", "true")
+
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
+	}
+}
+
+func TestPrepareFormFieldsEnumSlice(t *testing.T) {
+	stringEnums := []internal.MonthNameEnum{
+		internal.MonthNameEnum_JANUARY,
+		internal.MonthNameEnum_FEBRUARY,
+		internal.MonthNameEnum_MARCH,
+	}
+	numberEnums := []internal.MonthNumberEnum{
+		internal.MonthNumberEnum_JANUARY,
+		internal.MonthNumberEnum_FEBRUARY,
+		internal.MonthNumberEnum_MARCH,
+	}
+
+	params := formParams{
+		{"stringEnums", stringEnums, nil, Csv},
+		{"numberEnums", numberEnums, nil, Csv},
+	}
+	result := url.Values{}
+	_ = params.prepareFormFields(result)
+
+	expected := url.Values{}
+	expected.Add("stringEnums", fmt.Sprintf("%v,%v,%v", stringEnums[0], stringEnums[1], stringEnums[2]))
+	expected.Add("numberEnums", fmt.Sprintf("%v,%v,%v", numberEnums[0], numberEnums[1], numberEnums[2]))
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
