@@ -191,7 +191,7 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 	result := make(map[string][]string)
 	for i := 0; i < reflectValue.Len(); i++ {
 		innerElem := reflectValue.Index(i)
-		elemIndex := createElemIndex(innerElem, i)
+		elemIndex := getElemIndex(innerElem, i)
 		innerKey := fp.arraySerializationOption.joinKey(fp.key, elemIndex)
 		innerParam := fp.clone(innerKey, innerElem.Interface())
 		innerFlatMap, err := innerParam.toMap()
@@ -203,22 +203,20 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 	return result, nil
 }
 
-// creates index for enums and native types in slice
-func createElemIndex(elem reflect.Value, index int) any {
-	switch elem.Kind() {
-	// Case for handling enums of number and string types
-	case reflect.Int, reflect.String:
+func getElemIndex(elem reflect.Value, index int) any {
+	if elemKind := elem.Kind(); elemKind == reflect.Int || elemKind == reflect.String {
+		// Handling enums of number and string types.
+		return nil
+	}
+	// Using Interface.(type) to handle native types.
+	// reflect.Kind have a limitation in case of interface of native types
+	switch elem.Interface().(type) {
+	case bool, int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64, complex64, complex128, string:
 		return nil
 	default:
-		// Interface of native types cannot be handled using reflect.Kind
-		switch elem.Interface().(type) {
-		case bool, int, int8, int16, int32, int64,
-			uint, uint8, uint16, uint32, uint64,
-			float32, float64, complex64, complex128, string:
-			return nil
-		default:
-			return index
-		}
+		return index
 	}
 }
 
