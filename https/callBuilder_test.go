@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/apimatic/go-core-runtime/assert"
+	"github.com/apimatic/go-core-runtime/internal"
 )
 
 var ctx = context.Background()
@@ -417,7 +417,7 @@ func TestError(t *testing.T) {
 
 			_, err := request.Call()
 
-			assert.ErrorContains(t, err, test.expected)
+			internal.ErrorContains(t, err, test.expected)
 		})
 	}
 }

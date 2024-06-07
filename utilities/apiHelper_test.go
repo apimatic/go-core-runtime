@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apimatic/go-core-runtime/assert"
+	"github.com/apimatic/go-core-runtime/internal"
 )
 
 // NullableTimeToStringMap
@@ -661,7 +661,7 @@ func TestUpdateUserAgentAllArguments(t *testing.T) {
 	os := runtime.GOOS
 	engine := runtime.Version()
 	engineVer := strings.Replace(runtime.Version(), "go", "", 1)
-	assert.Equal(t, "userAgent "+os+" "+engine+" "+engineVer, result)
+	internal.Equal(t, "userAgent "+os+" "+engine+" "+engineVer, result)
 }
 
 func TestUpdateUserAgentEmptyArguments(t *testing.T) {
@@ -675,7 +675,7 @@ func TestUpdateUserAgent2Arguments(t *testing.T) {
 	result := UpdateUserAgent("userAgent {os-info} {engine}")
 	os := runtime.GOOS
 	engine := runtime.Version()
-	assert.Equal(t, "userAgent "+os+" "+engine, result)
+	internal.Equal(t, "userAgent "+os+" "+engine, result)
 }
 
 func TestUpdateUserAgentWrongArguments(t *testing.T) {

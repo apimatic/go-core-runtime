@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/apimatic/go-core-runtime/assert"
+	"github.com/apimatic/go-core-runtime/internal"
 )
 
 const mockJSONResponseBody = `{
@@ -52,7 +52,7 @@ func TestCorrectMessageWhenDynamicErrorMessageWithStatusCode(t *testing.T) {
 
 	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, "Error: Status Code 500", actual)
+	internal.Equal(t, "Error: Status Code 500", actual)
 }
 
 func TestCorrectMessageWhenDynamicErrorMessageWithResponseHeader(t *testing.T) {
@@ -65,7 +65,7 @@ func TestCorrectMessageWhenDynamicErrorMessageWithResponseHeader(t *testing.T) {
 
 	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, "Error: Date Thu, 22 Feb 2024 06:01:57 GMT", actual)
+	internal.Equal(t, "Error: Date Thu, 22 Feb 2024 06:01:57 GMT", actual)
 }
 
 func TestDynamicErrorMessageWithResponseBody(t *testing.T) {
@@ -85,7 +85,7 @@ func TestDynamicErrorMessageWithResponseBody(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			res := getMockResponseWithJSONBody(mockJSONResponseBody)
 			actual := renderErrorTemplate(test.tpl, res)
-			assert.Equal(t, test.expected, actual)
+			internal.Equal(t, test.expected, actual)
 		})
 	}
 }
@@ -99,7 +99,7 @@ func TestEmptyStringWhenDynamicErrorMessageWithMissingResponseHeader(t *testing.
 
 	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, "Error: Date ", actual)
+	internal.Equal(t, "Error: Date ", actual)
 }
 
 func TestEmptyStringWhenDynamicErrorMessageWithResponseBodyPropertyMissing(t *testing.T) {
@@ -114,7 +114,7 @@ func TestEmptyStringWhenDynamicErrorMessageWithResponseBodyPropertyMissing(t *te
 
 	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, "Error: Code ", actual)
+	internal.Equal(t, "Error: Code ", actual)
 }
 
 func TestEmptyStringWhenDynamicErrorMessageWithInvalidJSONInResponseBody(t *testing.T) {
@@ -125,7 +125,7 @@ func TestEmptyStringWhenDynamicErrorMessageWithInvalidJSONInResponseBody(t *test
 
 	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, "Error: ", actual)
+	internal.Equal(t, "Error: ", actual)
 }
 
 func TestReturnWithoutChangesWhenDynamicErrorMessageWithInvalidPlaceholder(t *testing.T) {
@@ -134,7 +134,7 @@ func TestReturnWithoutChangesWhenDynamicErrorMessageWithInvalidPlaceholder(t *te
 
 	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, tpl, actual)
+	internal.Equal(t, tpl, actual)
 }
 
 func TestReturnWithoutChangesWhenDynamicErrorMessageWithNoTemplates(t *testing.T) {
@@ -143,5 +143,5 @@ func TestReturnWithoutChangesWhenDynamicErrorMessageWithNoTemplates(t *testing.T
 
 	actual := renderErrorTemplate(tpl, res)
 
-	assert.Equal(t, tpl, actual)
+	internal.Equal(t, tpl, actual)
 }
