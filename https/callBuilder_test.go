@@ -3,14 +3,13 @@ package https
 import (
 	"context"
 	"errors"
+	"github.com/apimatic/go-core-runtime/internal/assert"
 	"github.com/apimatic/go-core-runtime/logger"
 	"io"
 	"net/http"
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/apimatic/go-core-runtime/assert"
 )
 
 var ctx = context.Background()

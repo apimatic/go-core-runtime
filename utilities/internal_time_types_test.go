@@ -2,10 +2,9 @@ package utilities
 
 import (
 	"encoding/json"
+	"github.com/apimatic/go-core-runtime/internal/assert"
 	"testing"
 	"time"
-
-	"github.com/apimatic/go-core-runtime/assert"
 )
 
 func TestUnixDateTimeString(t *testing.T) {

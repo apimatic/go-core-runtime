@@ -2,9 +2,8 @@ package utilities
 
 import (
 	"encoding/json"
+	"github.com/apimatic/go-core-runtime/internal/assert"
 	"testing"
-
-	"github.com/apimatic/go-core-runtime/assert"
 )
 
 type UnionTypeCase struct {

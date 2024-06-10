@@ -2,11 +2,10 @@ package https
 
 import (
 	"errors"
+	"github.com/apimatic/go-core-runtime/internal/assert"
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/apimatic/go-core-runtime/assert"
 )
 
 const API_KEY = "api-key"

@@ -29,9 +29,9 @@ type formParam struct {
 
 func (fp *formParam) clone(key string, value any) formParam {
 	return formParam{
-		key: key,
-		value: value,
-		headers: fp.headers,
+		key:                      key,
+		value:                    value,
+		headers:                  fp.headers,
 		arraySerializationOption: fp.arraySerializationOption,
 	}
 }
@@ -141,10 +141,10 @@ func (fp *formParam) toMap() (map[string][]string, error) {
 		return map[string][]string{}, nil
 	}
 
-	if (fp.IsMultipart()){
+	if fp.IsMultipart() {
 		return fp.processDefault()
 	}
-	
+
 	switch reflect.TypeOf(fp.value).Kind() {
 	case reflect.Ptr:
 		return fp.processStructAndPtr()
@@ -162,7 +162,9 @@ func (fp *formParam) toMap() (map[string][]string, error) {
 
 func (fp *formParam) processStructAndPtr() (map[string][]string, error) {
 	innerData, err := structToAny(fp.value)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 
 	innerfp := fp.clone(fp.key, innerData)
 	return innerfp.toMap()
@@ -174,8 +176,8 @@ func (fp *formParam) processMap() (map[string][]string, error) {
 	for iter.Next() {
 		innerKey := fp.arraySerializationOption.joinKey(fp.key, iter.Key().Interface())
 		innerValue := iter.Value().Interface()
-		innerfp := fp.clone(innerKey, innerValue)
-		innerFlatMap, err := innerfp.toMap()
+		innerParam := fp.clone(innerKey, innerValue)
+		innerFlatMap, err := innerParam.toMap()
 		if err != nil {
 			return nil, err
 		}
@@ -188,23 +190,34 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 	reflectValue := reflect.ValueOf(fp.value)
 	result := make(map[string][]string)
 	for i := 0; i < reflectValue.Len(); i++ {
-		innerStruct := reflectValue.Index(i).Interface()
-		var indexStr any
-		switch innerStruct.(type) {
-		case bool, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64, complex64, complex128, string:
-			indexStr = nil
-		default:
-			indexStr = fmt.Sprintf("%v", i)
-		}
-		innerKey := fp.arraySerializationOption.joinKey(fp.key, indexStr)
-		innerfp := fp.clone(innerKey, innerStruct)
-		innerFlatMap, err := innerfp.toMap()
+		innerElem := reflectValue.Index(i)
+		elemIndex := getElemIndex(innerElem, i)
+		innerKey := fp.arraySerializationOption.joinKey(fp.key, elemIndex)
+		innerParam := fp.clone(innerKey, innerElem.Interface())
+		innerFlatMap, err := innerParam.toMap()
 		if err != nil {
 			return result, err
 		}
 		fp.arraySerializationOption.appendMap(result, innerFlatMap)
 	}
 	return result, nil
+}
+
+func getElemIndex(elem reflect.Value, index int) any {
+	if elemKind := elem.Kind(); elemKind == reflect.Int || elemKind == reflect.String {
+		// Handling enums of number and string types.
+		return nil
+	}
+	// Using Interface.(type) to handle native types.
+	// reflect.Kind have a limitation in case of interface of native types
+	switch elem.Interface().(type) {
+	case bool, int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64, complex64, complex128, string:
+		return nil
+	default:
+		return index
+	}
 }
 
 func (fp *formParam) processDefault() (map[string][]string, error) {

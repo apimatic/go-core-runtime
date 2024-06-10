@@ -3,12 +3,11 @@ package https
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/apimatic/go-core-runtime/internal/assert"
 	"io"
 	"log"
 	"net/http"
 	"testing"
-
-	"github.com/apimatic/go-core-runtime/assert"
 )
 
 const mockJSONResponseBody = `{

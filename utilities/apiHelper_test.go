@@ -3,14 +3,13 @@ package utilities
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/apimatic/go-core-runtime/internal/assert"
 	"net/url"
 	"reflect"
 	"runtime"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/apimatic/go-core-runtime/assert"
 )
 
 // NullableTimeToStringMap
