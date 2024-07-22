@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"net/url"
 	"reflect"
-	"strings"
 )
 
 // FormParam is a struct that represents a key-value pair for form parameters.
@@ -205,39 +205,49 @@ func (fp *formParam) processSlice() (map[string][]string, error) {
 }
 
 func getElemIndex(elem reflect.Value, index int) any {
-	if elemKind := elem.Kind(); elemKind == reflect.Int || elemKind == reflect.String {
-		// Handling enums of number and string types.
+	if isStringOrInt(elem) || isNativeType(elem.Interface()) {
 		return nil
 	}
-	// Using Interface.(type) to handle native types.
-	// reflect.Kind have a limitation in case of interface of native types
-	switch elem.Interface().(type) {
-	case bool, int, int8, int16, int32, int64,
-		uint, uint8, uint16, uint32, uint64,
-		float32, float64, complex64, complex128, string:
-		return nil
-	default:
-		return index
-	}
+	return index
 }
 
 func (fp *formParam) processDefault() (map[string][]string, error) {
 	var defaultValue string
-	switch reflect.TypeOf(fp.value).Kind() {
-	case reflect.String:
+	if isUUID(fp.value) || isStringOrInt(reflect.ValueOf(fp.value)) {
 		defaultValue = fmt.Sprintf("%v", fp.value)
-	default:
+	} else {
 		dataBytes, err := json.Marshal(fp.value)
 		if err == nil {
-			sanitizeBytes := func(input string) string {
-				return strings.TrimPrefix(strings.TrimSuffix(input, "\""), "\"")
-			}
-			defaultValue = sanitizeBytes(string(dataBytes))
+			defaultValue = string(dataBytes)
 		} else {
 			defaultValue = fmt.Sprintf("%v", fp.value)
 		}
 	}
 	return map[string][]string{fp.key: {defaultValue}}, nil
+}
+
+// isNativeType check if the value is any native type.
+func isNativeType(value any) bool {
+	switch value.(type) {
+	case bool, int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64, complex64, complex128, string:
+		return true
+	}
+	return false
+}
+
+// isString check if the value is a `string` or 'int' type or their any aliased type.
+// Covering enums of int and string types.
+func isStringOrInt(value reflect.Value) bool {
+	valKind := value.Kind()
+	return valKind == reflect.Int || valKind == reflect.String
+}
+
+// isUUID check if the value is a `uuid.UUID`.
+func isUUID(value any) bool {
+	_, ok := value.(uuid.UUID)
+	return ok
 }
 
 // structToAny converts a given data structure into an any type.
