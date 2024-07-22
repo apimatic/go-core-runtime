@@ -10,6 +10,7 @@ import (
 	"net/textproto"
 	"net/url"
 	"reflect"
+	"strings"
 )
 
 // FormParam is a struct that represents a key-value pair for form parameters.
@@ -221,8 +222,21 @@ func getElemIndex(elem reflect.Value, index int) any {
 }
 
 func (fp *formParam) processDefault() (map[string][]string, error) {
-	
-	defaultValue := fmt.Sprintf("%v", fp.value)
+	var defaultValue string
+	switch reflect.TypeOf(fp.value).Kind() {
+	case reflect.String:
+		defaultValue = fmt.Sprintf("%v", fp.value)
+	default:
+		dataBytes, err := json.Marshal(fp.value)
+		if err == nil {
+			sanitizeBytes := func(input string) string {
+				return strings.TrimPrefix(strings.TrimSuffix(input, "\""), "\"")
+			}
+			defaultValue = sanitizeBytes(string(dataBytes))
+		} else {
+			defaultValue = fmt.Sprintf("%v", fp.value)
+		}
+	}
 	return map[string][]string{fp.key: {defaultValue}}, nil
 }
 
