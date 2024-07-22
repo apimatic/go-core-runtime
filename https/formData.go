@@ -221,18 +221,8 @@ func getElemIndex(elem reflect.Value, index int) any {
 }
 
 func (fp *formParam) processDefault() (map[string][]string, error) {
-	var defaultValue string
-	switch reflect.TypeOf(fp.value).Kind() {
-	case reflect.String:
-		defaultValue = fmt.Sprintf("%v", fp.value)
-	default:
-		dataBytes, err := json.Marshal(fp.value)
-		if err == nil {
-			defaultValue = string(dataBytes)
-		} else {
-			defaultValue = fmt.Sprintf("%v", fp.value)
-		}
-	}
+	
+	defaultValue := fmt.Sprintf("%v", fp.value)
 	return map[string][]string{fp.key: {defaultValue}}, nil
 }
 
