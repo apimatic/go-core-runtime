@@ -3,6 +3,7 @@ package https
 import (
 	"fmt"
 	"github.com/apimatic/go-core-runtime/internal"
+	"github.com/google/uuid"
 	"math"
 	"net/http"
 	"net/url"
@@ -60,6 +61,18 @@ func TestFormEncodeMapNilValue(t *testing.T) {
 
 	expected := make(map[string][]string)
 
+	if !reflect.DeepEqual(result, expected) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
+	}
+}
+
+func TestFormEncodeUUIDValue(t *testing.T) {
+	uuidVal, _ := uuid.ParseBytes([]byte("992bf4b9-c900-4850-9992-107b2f9df928"))
+	param := formParam{"uuid-param", uuidVal, nil, Indexed}
+	result, _ := param.toMap()
+
+	expected := make(map[string][]string)
+	expected[param.key] = []string{"992bf4b9-c900-4850-9992-107b2f9df928"}
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
 	}
