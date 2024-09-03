@@ -1,6 +1,8 @@
 package https
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 )
 
@@ -14,4 +16,10 @@ func AddQuery(req *http.Request, key, value string) {
 	queryVal := req.URL.Query()
 	queryVal.Add(key, value)
 	req.URL.RawQuery = encodeSpace(queryVal.Encode())
+}
+
+func (ctx *HttpContext) GetResponseBody() ([]byte, error) {
+	bodyBytes, err := io.ReadAll(ctx.Response.Body)
+	ctx.Response.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	return bodyBytes, err
 }
