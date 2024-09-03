@@ -44,12 +44,9 @@ func TestErrorMethod(t *testing.T) {
 }
 
 func TestCorrectMessageWhenDynamicErrorMessageWithStatusCode(t *testing.T) {
-	res := http.Response{
-		StatusCode: 500,
-	}
 	tpl := "Error: Status Code {$statusCode}"
 
-	actual := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, 500, nil, nil)
 
 	assert.Equal(t, "Error: Status Code 500", actual)
 }
@@ -62,7 +59,7 @@ func TestCorrectMessageWhenDynamicErrorMessageWithResponseHeader(t *testing.T) {
 	}
 	tpl := "Error: Date {$response.header.Date}"
 
-	actual := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res.StatusCode, res.Header, nil)
 
 	assert.Equal(t, "Error: Date Thu, 22 Feb 2024 06:01:57 GMT", actual)
 }
@@ -83,7 +80,11 @@ func TestDynamicErrorMessageWithResponseBody(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			res := getMockResponseWithJSONBody(mockJSONResponseBody)
-			actual := renderErrorTemplate(test.tpl, res)
+			bodyBytes, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Error(err)
+			}
+			actual := renderErrorTemplate(test.tpl, res.StatusCode, res.Header, bodyBytes)
 			assert.Equal(t, test.expected, actual)
 		})
 	}
@@ -96,7 +97,7 @@ func TestEmptyStringWhenDynamicErrorMessageWithMissingResponseHeader(t *testing.
 	}
 	tpl := "Error: Date {$response.header.Date}"
 
-	actual := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res.StatusCode, res.Header, nil)
 
 	assert.Equal(t, "Error: Date ", actual)
 }
@@ -110,8 +111,11 @@ func TestEmptyStringWhenDynamicErrorMessageWithResponseBodyPropertyMissing(t *te
 		]
 	  }`)
 	tpl := "Error: Code {$response.body#/Error/0/Code}"
-
-	actual := renderErrorTemplate(tpl, res)
+	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Error(err)
+	}
+	actual := renderErrorTemplate(tpl, res.StatusCode, res.Header, bodyBytes)
 
 	assert.Equal(t, "Error: Code ", actual)
 }
@@ -121,8 +125,11 @@ func TestEmptyStringWhenDynamicErrorMessageWithInvalidJSONInResponseBody(t *test
 		Body: io.NopCloser(bytes.NewReader([]byte(`"invalidJson"}`))),
 	}
 	tpl := "Error: {$response.body#/Id}"
-
-	actual := renderErrorTemplate(tpl, res)
+	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Error(err)
+	}
+	actual := renderErrorTemplate(tpl, res.StatusCode, res.Header, bodyBytes)
 
 	assert.Equal(t, "Error: ", actual)
 }
@@ -131,7 +138,7 @@ func TestReturnWithoutChangesWhenDynamicErrorMessageWithInvalidPlaceholder(t *te
 	res := http.Response{}
 	tpl := "Error: Code {$something.something}"
 
-	actual := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res.StatusCode, res.Header, nil)
 
 	assert.Equal(t, tpl, actual)
 }
@@ -140,7 +147,7 @@ func TestReturnWithoutChangesWhenDynamicErrorMessageWithNoTemplates(t *testing.T
 	res := http.Response{}
 	tpl := "An error occurred."
 
-	actual := renderErrorTemplate(tpl, res)
+	actual := renderErrorTemplate(tpl, res.StatusCode, res.Header, nil)
 
 	assert.Equal(t, tpl, actual)
 }

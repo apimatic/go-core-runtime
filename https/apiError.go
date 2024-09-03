@@ -3,7 +3,6 @@ package https
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"regexp"
 	"strings"
@@ -30,19 +29,20 @@ type ErrorBuilder[T error] struct {
 }
 
 func (eb ErrorBuilder[T]) Build(httpctx HttpContext) error {
-	res := httpctx.Response
+	respStatusCode := httpctx.Response.StatusCode
+	respHeader := httpctx.Response.Header
+	respBodyBytes, _ := httpctx.GetResponseBody()
 
 	message := eb.Message
 	if eb.TemplatedMessage != "" {
-		message = renderErrorTemplate(eb.TemplatedMessage, *res)
+		message = renderErrorTemplate(eb.TemplatedMessage, respStatusCode, respHeader, respBodyBytes)
 	}
 
-	body, _ := io.ReadAll(res.Body)
 	err := ApiError{
 		Request:    *httpctx.Request,
-		StatusCode: res.StatusCode,
-		Headers:    res.Header,
-		Body:       body,
+		StatusCode: respStatusCode,
+		Headers:    respHeader,
+		Body:       respBodyBytes,
 		Message:    message,
 	}
 
@@ -53,7 +53,7 @@ func (eb ErrorBuilder[T]) Build(httpctx HttpContext) error {
 	return err
 }
 
-func renderErrorTemplate(tpl string, res http.Response) string {
+func renderErrorTemplate(tpl string, respStatusCode int, respHeader http.Header, respBytes []byte) string {
 	placeholderRegex := `\{\$(.*?)\}`
 	re := regexp.MustCompile(placeholderRegex)
 
@@ -62,7 +62,7 @@ func renderErrorTemplate(tpl string, res http.Response) string {
 
 	renderedVals := []any{}
 	for _, placeholder := range placeholders {
-		renderedVals = append(renderedVals, renderPlaceholder(placeholder, res))
+		renderedVals = append(renderedVals, renderPlaceholder(placeholder, respStatusCode, respHeader, respBytes))
 	}
 
 	// Replace each instance of a placeholder with "%v"
@@ -71,39 +71,29 @@ func renderErrorTemplate(tpl string, res http.Response) string {
 	return fmt.Sprintf(formattedTpl, renderedVals...)
 }
 
-func renderPlaceholder(placeholder string, res http.Response) any {
+func renderPlaceholder(placeholder string, respStatusCode int, respHeader http.Header, respBytes []byte) any {
 	if placeholder == "{$statusCode}" {
-		return res.StatusCode
+		return respStatusCode
 	}
 
 	if strings.HasPrefix(placeholder, "{$response.header.") {
 		headerName := placeholder[len("{$response.header.") : len(placeholder)-1]
-		return res.Header.Get(headerName)
+		return respHeader.Get(headerName)
 	}
 
 	// Return Response Body as-is
 	if placeholder == "{$response.body}" {
-		serializedBody, err := io.ReadAll(res.Body)
-		if err != nil {
-			return ""
-		}
-
-		return string(serializedBody)
+		return string(respBytes)
 	}
 
 	// Use JSON Pointer to get the desired value from a JSON Response Body
 	if strings.HasPrefix(placeholder, "{$response.body#") {
-		body, err := io.ReadAll(res.Body)
-		if err != nil {
-			return ""
-		}
-
 		jsonPtr := placeholder[len("{$response.body#") : len(placeholder)-1]
 		if jsonPtr == "" {
 			return ""
 		}
 
-		return getValueFromJSON(body, jsonPtr)
+		return getValueFromJSON(respBytes, jsonPtr)
 	}
 
 	return placeholder
