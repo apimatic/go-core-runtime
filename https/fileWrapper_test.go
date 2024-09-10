@@ -16,8 +16,52 @@ func TestGetFile(t *testing.T) {
 	}
 }
 
+func TestGetFileWithContentType(t *testing.T) {
+	file, err := GetFileWithContentType("https://www.google.com/doodles/googles-new-logo", "image/png")
+	if err != nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
+
+	if file.FileName != "googles-new-logo" ||
+		file.FileHeaders.Get(CONTENT_TYPE_HEADER) != "image/png" ||
+		len(file.File) <= 0 {
+		t.Errorf("Expected Image File not recieved ")
+	}
+}
+
+func TestGetFileFromLocalPath(t *testing.T) {
+	file, err := GetFile("../internal/binary.png")
+	if err != nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
+
+	if file.FileName != "binary.png" || len(file.File) <= 0 {
+		t.Errorf("Expected Image File not recieved ")
+	}
+}
+
+func TestGetFileWithContentTypeFromLocalPath(t *testing.T) {
+	file, err := GetFileWithContentType("../internal/binary.png", "image/png")
+	if err != nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
+
+	if file.FileName != "binary.png" ||
+		file.FileHeaders.Get(CONTENT_TYPE_HEADER) != "image/png" ||
+		len(file.File) <= 0 {
+		t.Errorf("Expected Image File not recieved ")
+	}
+}
+
 func TestGetFileErrorParsingUrl(t *testing.T) {
 	_, err := GetFile("")
+	if err == nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
+}
+
+func TestGetFileWithContentTypeErrorParsingUrl(t *testing.T) {
+	_, err := GetFileWithContentType("", "image/png")
 	if err == nil {
 		t.Errorf("GetFile failed: %v", err)
 	}
@@ -30,6 +74,13 @@ func TestGetFileErrorParsingUrlWithSpecialChar(t *testing.T) {
 	}
 }
 
+func TestGetFileWithContentTypeErrorParsingUrlWithSpecialChar(t *testing.T) {
+	_, err := GetFileWithContentType("hhhh%#", "image/png")
+	if err == nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
+}
+
 type errReader int
 
 func (errReader) Read(p []byte) (n int, err error) {
@@ -37,7 +88,7 @@ func (errReader) Read(p []byte) (n int, err error) {
 }
 
 func TestReadBytesInvalidResponse(t *testing.T) {
-	bytes, err := ReadBytes(errReader(0))
+	bytes, err := readBytes(errReader(0))
 
 	if len(bytes) != 0 {
 		t.Error(err)

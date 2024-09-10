@@ -5,7 +5,9 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
+	"path/filepath"
 )
 
 // FileWrapper is a struct that represents a file along with its metadata such as the
@@ -16,32 +18,52 @@ type FileWrapper struct {
 	FileHeaders http.Header
 }
 
-// GetFile retrieves a file from the given fileUrl and returns it as a FileWrapper.
-// It makes an HTTP GET request to the fileUrl to fetch the file's content and metadata.
-func GetFile(fileUrl string) (FileWrapper, error) {
-	url, err := url.Parse(fileUrl)
-	if err != nil {
-		return FileWrapper{}, internalError{Body: "Error parsing file", FileInfo: "fileWrapper.go/GetFile"}
-	}
-
-	resp, err := http.Get(url.String())
-	if err != nil {
-		return FileWrapper{}, internalError{Body: "Error fetching file", FileInfo: "fileWrapper.go/GetFile"}
-	}
-
-	body, err := ReadBytes(resp.Body)
-
-	file := FileWrapper{
-		File:        body,
-		FileName:    path.Base(url.Path),
-		FileHeaders: resp.Header,
-	}
-	return file, err
+// isURL checks if the given parsedPath is a URL
+func isURL(parsedPath *url.URL) bool {
+	return parsedPath.Scheme == "http" || parsedPath.Scheme == "https"
 }
 
-// ReadBytes reads the data from the input io.Reader and returns it as a byte array.
+// GetFile retrieves a file from the given filePath and returns it as a FileWrapper.
+// It makes an HTTP GET request to the filePath to fetch the file's content and metadata.
+// It uses os.ReadFile to read the file's content and metadata.
+func GetFile(filePath string) (FileWrapper, error) {
+	_fileWrapper := FileWrapper{FileHeaders: http.Header{}}
+	parsedPath, err := url.Parse(filePath)
+	if err != nil {
+		return _fileWrapper, internalError{Body: "Error parsing file", FileInfo: "fileWrapper.go/GetFile"}
+	}
+	if isURL(parsedPath) {
+		resp, err := http.Get(parsedPath.String())
+		if err != nil {
+			return _fileWrapper, internalError{Body: "Error fetching file", FileInfo: "fileWrapper.go/GetFile"}
+		}
+
+		_fileWrapper.File, err = readBytes(resp.Body)
+		_fileWrapper.FileName = path.Base(parsedPath.Path)
+		_fileWrapper.FileHeaders = resp.Header
+	} else {
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			return _fileWrapper, err
+		}
+		_fileWrapper.File, err = os.ReadFile(filePath)
+		if err != nil {
+			return _fileWrapper, internalError{Body: "Error reading file", FileInfo: "fileWrapper.go/GetFile"}
+		}
+		_fileWrapper.FileName = filepath.Base(filePath)
+		_fileWrapper.FileHeaders.Set(CONTENT_TYPE_HEADER, OCTET_STREAM_CONTENT_TYPE)
+	}
+	return _fileWrapper, err
+}
+
+func GetFileWithContentType(filePath string, contentType string) (FileWrapper, error) {
+	_fileWrapper, err := GetFile(filePath)
+	_fileWrapper.FileHeaders.Set(CONTENT_TYPE_HEADER, contentType)
+	return _fileWrapper, err
+}
+
+// readBytes reads the data from the input io.Reader and returns it as a byte array.
 // If there is an error while reading, it returns the error along with the byte array.
-func ReadBytes(input io.Reader) ([]byte, error) {
+func readBytes(input io.Reader) ([]byte, error) {
 	bytes, err := io.ReadAll(input)
 	if err != nil {
 		err = fmt.Errorf("error reading file: %v", err)

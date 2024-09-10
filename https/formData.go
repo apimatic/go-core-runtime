@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"net/url"
 	"reflect"
+
+	"github.com/google/uuid"
 )
 
 // FormParam is a struct that represents a key-value pair for form parameters.
@@ -88,7 +89,7 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 				"name":     field.key,
 				"filename": fieldValue.FileName,
 			}
-			formParamWriter(writer, field.headers, mediaParam, fieldValue.File)
+			formParamWriter(writer, formParamContentType(field.headers, fieldValue.FileHeaders), mediaParam, fieldValue.File)
 		default:
 			paramsMap, err := field.toMap()
 			if err != nil {
@@ -97,7 +98,7 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 			for key, values := range paramsMap {
 				mediaParam := map[string]string{"name": key}
 				for _, value := range values {
-					formParamWriter(writer, field.headers, mediaParam, []byte(value))
+					formParamWriter(writer, formParamContentType(field.headers, http.Header{}), mediaParam, []byte(value))
 				}
 			}
 		}
@@ -106,18 +107,27 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 	return *body, writer.FormDataContentType(), nil
 }
 
+
+func formParamContentType(fpHeaders, fileHeaders http.Header) string {
+	if contentType := fileHeaders.Get(CONTENT_TYPE_HEADER); contentType != "" {
+		return contentType
+	}
+	if contentType := fpHeaders.Get(CONTENT_TYPE_HEADER); contentType != "" {
+		return contentType
+	}
+	return OCTET_STREAM_CONTENT_TYPE
+}
+
 // formParamWriter writes a form parameter to the multipart writer.
 func formParamWriter(
 	writer *multipart.Writer,
-	fpHeaders http.Header,
+	contentType string,
 	mediaParam map[string]string,
 	bytes []byte) error {
 	mimeHeader := make(textproto.MIMEHeader)
 	contentDisp := mime.FormatMediaType("form-data", mediaParam)
 	mimeHeader.Set("Content-Disposition", contentDisp)
-	if contentType := fpHeaders.Get("Content-Type"); contentType != "" {
-		mimeHeader.Set("Content-Type", contentType)
-	}
+	mimeHeader.Set(CONTENT_TYPE_HEADER, contentType)
 	part, err := writer.CreatePart(mimeHeader)
 	if err != nil {
 		return err

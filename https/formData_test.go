@@ -2,14 +2,15 @@ package https
 
 import (
 	"fmt"
-	"github.com/apimatic/go-core-runtime/internal"
-	"github.com/google/uuid"
 	"math"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/apimatic/go-core-runtime/internal"
+	"github.com/google/uuid"
 )
 
 type Person struct {
@@ -198,22 +199,22 @@ func TestPrepareFormFieldsFloat64Pointer(t *testing.T) {
 
 func TestPrepareMultipartFieldsString(t *testing.T) {
 	header := http.Header{}
-	header.Add("Content-Type", TEXT_CONTENT_TYPE)
+	header.Add(CONTENT_TYPE_HEADER, TEXT_CONTENT_TYPE)
 	params := formParams{{"param", "value", header, Indexed}}
 	bytes, str, _ := params.prepareMultipartFields()
 
-	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
+	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, MULTIPART_CONTENT_TYPE) {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
 	}
 }
 
 func TestPrepareMultipartFields(t *testing.T) {
 	header := http.Header{}
-	header.Add("Content-Type", TEXT_CONTENT_TYPE)
+	header.Add(CONTENT_TYPE_HEADER, TEXT_CONTENT_TYPE)
 	params := formParams{{"param", 40, header, Indexed}}
 	bytes, str, _ := params.prepareMultipartFields()
 
-	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
+	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, MULTIPART_CONTENT_TYPE) {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
 	}
 }
@@ -223,7 +224,7 @@ func TestPrepareMultipartFieldsWithPointer(t *testing.T) {
 	params := formParams{{"param", &floatV, nil, Indexed}}
 	bytes, str, _ := params.prepareMultipartFields()
 
-	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, "multipart/form-data") {
+	if !strings.Contains(bytes.String(), `name="param"`) && !strings.Contains(str, MULTIPART_CONTENT_TYPE) {
 		t.Errorf("Failed:\nGot: %v", bytes.String())
 	}
 }
@@ -234,7 +235,7 @@ func TestPrepareMultipartFieldsWithFile(t *testing.T) {
 		t.Errorf("GetFile failed: %v", err)
 	}
 	header := http.Header{}
-	header.Add("Content-Type", "image/png")
+	header.Add(CONTENT_TYPE_HEADER, "image/png")
 	params := formParams{{"param", file, header, Indexed}}
 	bytes, _, _ := params.prepareMultipartFields()
 
