@@ -25,7 +25,7 @@ func isURL(parsedPath *url.URL) bool {
 
 // GetFile retrieves a file from the given filePath and returns it as a FileWrapper.
 // It makes an HTTP GET request to the filePath to fetch the file's content and metadata.
-// It uses os.ReadFile to read the file's content and metadata.
+// OR It uses os.ReadFile to read the file's content and metadata.
 func GetFile(filePath string) (FileWrapper, error) {
 	_fileWrapper := FileWrapper{FileHeaders: http.Header{}}
 	parsedPath, err := url.Parse(filePath)
@@ -56,6 +56,8 @@ func GetFile(filePath string) (FileWrapper, error) {
 	return _fileWrapper, err
 }
 
+// GetFileWithContentType retrieves a file from the given filePath using GetFile and returns it as a FileWrapper.
+// It also sets the provided "content-type" in the file headers.
 func GetFileWithContentType(filePath string, contentType string) (FileWrapper, error) {
 	_fileWrapper, err := GetFile(filePath)
 	_fileWrapper.FileHeaders.Set(CONTENT_TYPE_HEADER, contentType)
