@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"mime"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
 	"net/url"
 	"reflect"
+
+	"github.com/google/uuid"
 )
 
 // FormParam is a struct that represents a key-value pair for form parameters.
@@ -88,7 +89,7 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 				"name":     field.key,
 				"filename": fieldValue.FileName,
 			}
-			formParamWriter(writer, field.headers, mediaParam, fieldValue.File)
+			formParamWriter(writer, formParamContentType(field.headers, fieldValue.FileHeaders), mediaParam, fieldValue.File)
 		default:
 			paramsMap, err := field.toMap()
 			if err != nil {
@@ -106,6 +107,16 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 	return *body, writer.FormDataContentType(), nil
 }
 
+func formParamContentType(fpHeaders, fileHeaders http.Header) http.Header {
+	if contentType := fileHeaders.Get(CONTENT_TYPE_HEADER); contentType != "" {
+		fpHeaders.Set(CONTENT_TYPE_HEADER, contentType)
+	}
+	if contentType := fpHeaders.Get(CONTENT_TYPE_HEADER); contentType == "" {
+		fpHeaders.Set(CONTENT_TYPE_HEADER, OCTET_STREAM_CONTENT_TYPE)
+	}
+	return fpHeaders
+}
+
 // formParamWriter writes a form parameter to the multipart writer.
 func formParamWriter(
 	writer *multipart.Writer,
@@ -115,8 +126,8 @@ func formParamWriter(
 	mimeHeader := make(textproto.MIMEHeader)
 	contentDisp := mime.FormatMediaType("form-data", mediaParam)
 	mimeHeader.Set("Content-Disposition", contentDisp)
-	if contentType := fpHeaders.Get("Content-Type"); contentType != "" {
-		mimeHeader.Set("Content-Type", contentType)
+	if contentType := fpHeaders.Get(CONTENT_TYPE_HEADER); contentType != "" {
+		mimeHeader.Set(CONTENT_TYPE_HEADER, contentType)
 	}
 	part, err := writer.CreatePart(mimeHeader)
 	if err != nil {

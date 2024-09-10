@@ -27,6 +27,7 @@ const JSON_CONTENT_TYPE = "application/json"
 const TEXT_CONTENT_TYPE = "text/plain; charset=utf-8"
 const XML_CONTENT_TYPE = "application/xml"
 const MULTIPART_CONTENT_TYPE = "multipart/form-data"
+const OCTET_STREAM_CONTENT_TYPE = "application/octet-stream"
 
 // CallBuilderFactory is a function type used to create CallBuilder instances for making API calls.
 type CallBuilderFactory func(ctx context.Context, httpMethod, path string) CallBuilder
