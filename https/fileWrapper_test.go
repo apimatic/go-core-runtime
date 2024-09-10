@@ -35,7 +35,9 @@ func TestGetFileFromLocalPath(t *testing.T) {
 		t.Errorf("GetFile failed: %v", err)
 	}
 
-	if file.FileName != "binary.png" || len(file.File) <= 0 {
+	if file.FileName != "binary.png" ||
+		file.FileHeaders.Get(CONTENT_TYPE_HEADER) != OCTET_STREAM_CONTENT_TYPE ||
+		len(file.File) <= 0 {
 		t.Errorf("Expected Image File not recieved ")
 	}
 }
