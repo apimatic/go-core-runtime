@@ -32,26 +32,27 @@ func GetFile(filePath string) (FileWrapper, error) {
 	if err != nil {
 		return _fileWrapper, internalError{Body: "Error parsing file", FileInfo: "fileWrapper.go/GetFile"}
 	}
+
 	if isURL(parsedPath) {
 		resp, err := http.Get(parsedPath.String())
 		if err != nil {
 			return _fileWrapper, internalError{Body: "Error fetching file", FileInfo: "fileWrapper.go/GetFile"}
 		}
-
-		_fileWrapper.File, err = readBytes(resp.Body)
 		_fileWrapper.FileName = path.Base(parsedPath.Path)
 		_fileWrapper.FileHeaders = resp.Header
-	} else {
-		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			return _fileWrapper, err
-		}
-		_fileWrapper.File, err = os.ReadFile(filePath)
-		if err != nil {
-			return _fileWrapper, internalError{Body: "Error reading file", FileInfo: "fileWrapper.go/GetFile"}
-		}
-		_fileWrapper.FileName = filepath.Base(filePath)
-		_fileWrapper.FileHeaders.Set(CONTENT_TYPE_HEADER, OCTET_STREAM_CONTENT_TYPE)
+		_fileWrapper.File, err = readBytes(resp.Body)
+		return _fileWrapper, err
 	}
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return _fileWrapper, err
+	}
+	_fileWrapper.File, err = os.ReadFile(filePath)
+	if err != nil {
+		return _fileWrapper, internalError{Body: "Error reading file", FileInfo: "fileWrapper.go/GetFile"}
+	}
+	_fileWrapper.FileName = filepath.Base(filePath)
+	_fileWrapper.FileHeaders.Set(CONTENT_TYPE_HEADER, OCTET_STREAM_CONTENT_TYPE)
 	return _fileWrapper, err
 }
 
