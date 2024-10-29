@@ -670,7 +670,10 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 	cb.InterceptRequest(f)
 	result, err := cb.Call()
 	if err != nil {
-		return nil, result.Response, err
+		if result != nil {
+			return nil, result.Response, err
+		}
+		return nil, &http.Response{}, err
 	}
 
 	if result.Response != nil {
