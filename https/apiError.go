@@ -60,7 +60,7 @@ func renderErrorTemplate(tpl string, respStatusCode int, respHeader http.Header,
 	// Extract placeholders into an array of strings
 	placeholders := re.FindAllString(tpl, -1)
 
-	var renderedVals []any
+	renderedVals := make([]any, 0)
 	for _, placeholder := range placeholders {
 		renderedVals = append(renderedVals, renderPlaceholder(placeholder, respStatusCode, respHeader, respBytes))
 	}
