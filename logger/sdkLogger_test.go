@@ -77,7 +77,7 @@ func TestSDKLoggerWithInvalidConfig(t *testing.T) {
 
 func TestSDKLoggerWithCustomConfig(t *testing.T) {
 	request := callBuilder(ctx, "GET", "//response/")
-	request.Header("Authorization", "ahsfhafu3264basfcasbk__aksdk")
+	request.Header("Authorization", "ahsfhafu3264canvasback__asap")
 	request.AppendPath("/binary")
 	request.Header("Content-Type", "application/file")
 	request.QueryParam("env", "testing")
@@ -143,7 +143,7 @@ func TestSDKLoggerWithCustomLoggerDefaultConfigWithHeaders(t *testing.T) {
 
 func TestSDKLoggerWithCustomLoggerCustomConfig(t *testing.T) {
 	request := callBuilder(ctx, "GET", "//response/")
-	request.Header("Authorization", "ahsfhafu3264basfcasbk__aksdk")
+	request.Header("Authorization", "ahsfhafu3264canvasback__asap")
 	request.AppendPath("/binary")
 	request.Header("Content-Type", "application/file")
 	request.QueryParam("env", "testing")

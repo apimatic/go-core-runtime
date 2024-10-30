@@ -13,11 +13,11 @@ import (
 	"github.com/apimatic/go-core-runtime/https"
 )
 
-func setTestingError(test *testing.T, responseArg any, expectedArg any){
+func setTestingError(test *testing.T, responseArg any, expectedArg any) {
 	test.Errorf("got \n%v \nbut expected %v", responseArg, expectedArg)
 }
 
-func setTestResponseError(test *testing.T, responseErr error){
+func setTestResponseError(test *testing.T, responseErr error) {
 	test.Errorf("Invalid response data: %v", responseErr)
 }
 

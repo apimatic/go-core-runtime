@@ -178,7 +178,7 @@ func (a *SdkLogger) _extractHeadersToLog(
 		filteredHeaders = headers
 	}
 
-	return a._maskSenstiveHeaders(filteredHeaders, headersToWhitelist)
+	return a._maskSensitiveHeaders(filteredHeaders, headersToWhitelist)
 }
 
 func (a *SdkLogger) _includeHeadersToLog(
@@ -219,20 +219,20 @@ func _contains(key string, slice []string) bool {
 	return false
 }
 
-func (a *SdkLogger) _maskSenstiveHeaders(
+func (a *SdkLogger) _maskSensitiveHeaders(
 	headers http.Header,
 	headersToWhitelist []string) http.Header {
 
 	if a.loggingOptions.maskSensitiveHeaders {
 		for key := range headers {
 			val := headers.Get(key)
-			headers.Set(key, a._maskIfSenstiveHeader(key, val, headersToWhitelist))
+			headers.Set(key, a._maskIfSensitiveHeader(key, val, headersToWhitelist))
 		}
 	}
 	return headers
 }
 
-func (a *SdkLogger) _maskIfSenstiveHeader(
+func (a *SdkLogger) _maskIfSensitiveHeader(
 	name, value string,
 	headersToWhiteList []string) string {
 	var nonSensitiveHeaders []string = []string{

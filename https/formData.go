@@ -124,8 +124,8 @@ func formParamWriter(
 	mediaParam map[string]string,
 	bytes []byte) error {
 	mimeHeader := make(textproto.MIMEHeader)
-	contentDisp := mime.FormatMediaType("form-data", mediaParam)
-	mimeHeader.Set("Content-Disposition", contentDisp)
+	contentDisposition := mime.FormatMediaType("form-data", mediaParam)
+	mimeHeader.Set("Content-Disposition", contentDisposition)
 	if contentType := fpHeaders.Get(CONTENT_TYPE_HEADER); contentType != "" {
 		mimeHeader.Set(CONTENT_TYPE_HEADER, contentType)
 	}
@@ -161,8 +161,8 @@ func (fp *formParam) toMap() (map[string][]string, error) {
 	case reflect.Ptr:
 		return fp.processStructAndPtr()
 	case reflect.Struct:
-		innerfp := fp.clone(fp.key, toStructPtr(fp.value))
-		return innerfp.processStructAndPtr()
+		innerFormParam := fp.clone(fp.key, toStructPtr(fp.value))
+		return innerFormParam.processStructAndPtr()
 	case reflect.Map:
 		return fp.processMap()
 	case reflect.Slice:
@@ -178,8 +178,8 @@ func (fp *formParam) processStructAndPtr() (map[string][]string, error) {
 		return nil, err
 	}
 
-	innerfp := fp.clone(fp.key, innerData)
-	return innerfp.toMap()
+	innerFormParam := fp.clone(fp.key, innerData)
+	return innerFormParam.toMap()
 }
 
 func (fp *formParam) processMap() (map[string][]string, error) {

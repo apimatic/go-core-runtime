@@ -19,7 +19,7 @@ type ApiError struct {
 }
 
 func (a ApiError) Error() string {
-	return fmt.Sprintf("ApiError occured: %v", a.Message)
+	return fmt.Sprintf("ApiError occurred: %v", a.Message)
 }
 
 type ErrorBuilder[T error] struct {
