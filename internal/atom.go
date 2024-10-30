@@ -1,8 +1,9 @@
-package utilities
+package internal
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apimatic/go-core-runtime/utilities"
 	"strings"
 )
 
@@ -15,7 +16,7 @@ func (a *Atom) UnmarshalJSON(input []byte) error {
 	var temp atom
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return NewMarshalError("Atom", err)
+		return utilities.NewMarshalError("Atom", err)
 	}
 	err = temp.validate(input)
 	if err != nil {
@@ -42,5 +43,5 @@ func (a *atom) validate(input []byte) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return NewMarshalError("Atom", errors.New(strings.Join(errs, "\n\t=> ")))
+	return utilities.NewMarshalError("Atom", errors.New(strings.Join(errs, "\n\t=> ")))
 }

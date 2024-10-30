@@ -1,6 +1,7 @@
-package testHelper
+package testHelper_test
 
 import (
+	"github.com/apimatic/go-core-runtime/testHelper"
 	"net/http"
 	"testing"
 )
@@ -11,12 +12,12 @@ func TestCheckResponseHeaders(t *testing.T) {
 		"Accept":          {"application/noTerm"},
 		"Accept-Encoding": {"UTF-8"},
 	}
-	expected := []TestHeader{
-		NewTestHeader(true, "Content-Type", "application/responseType"),
-		NewTestHeader(true, "Accept", "application/noTerm"),
-		NewTestHeader(true, "Accept-Encoding", "UTF-8"),
+	expected := []testHelper.TestHeader{
+		testHelper.NewTestHeader(true, "Content-Type", "application/responseType"),
+		testHelper.NewTestHeader(true, "Accept", "application/noTerm"),
+		testHelper.NewTestHeader(true, "Accept-Encoding", "UTF-8"),
 	}
-	CheckResponseHeaders(t, result, expected, false)
+	testHelper.CheckResponseHeaders(t, result, expected, false)
 }
 
 func TestCheckResponseHeadersError(t *testing.T) {
@@ -27,12 +28,12 @@ func TestCheckResponseHeadersError(t *testing.T) {
 		"Accept":          {"application/noTerm"},
 		"Accept-Encoding": {"UTF-8"},
 	}
-	expected := []TestHeader{
-		NewTestHeader(true, "Content-Type", "application/responseType"),
-		NewTestHeader(true, "Accept", "application/noTerm"),
-		NewTestHeader(true, "Accept-Encoding", "UTF-8"),
+	expected := []testHelper.TestHeader{
+		testHelper.NewTestHeader(true, "Content-Type", "application/responseType"),
+		testHelper.NewTestHeader(true, "Accept", "application/noTerm"),
+		testHelper.NewTestHeader(true, "Accept-Encoding", "UTF-8"),
 	}
-	CheckResponseHeaders(&testing.T{}, result, expected, false)
+	testHelper.CheckResponseHeaders(&testing.T{}, result, expected, false)
 }
 
 func TestCheckResponseHeadersAllowExtras(t *testing.T) {
@@ -43,12 +44,12 @@ func TestCheckResponseHeadersAllowExtras(t *testing.T) {
 		"Accept-Encoding": {"UTF-8"},
 		"Authorization":   {"Bearer Token"},
 	}
-	expected := []TestHeader{
-		NewTestHeader(true, "Content-Type", "application/responseType"),
-		NewTestHeader(true, "Accept", "application/noTerm"),
-		NewTestHeader(true, "Accept-Encoding", "UTF-8"),
+	expected := []testHelper.TestHeader{
+		testHelper.NewTestHeader(true, "Content-Type", "application/responseType"),
+		testHelper.NewTestHeader(true, "Accept", "application/noTerm"),
+		testHelper.NewTestHeader(true, "Accept-Encoding", "UTF-8"),
 	}
-	CheckResponseHeaders(t, result, expected, true)
+	testHelper.CheckResponseHeaders(t, result, expected, true)
 }
 
 func TestCheckResponseHeadersAllowExtrasError(t *testing.T) {
@@ -57,10 +58,10 @@ func TestCheckResponseHeadersAllowExtrasError(t *testing.T) {
 		"Content-Type":  {"application/json"},
 		"Authorization": {"Bearer Token"},
 	}
-	expected := []TestHeader{
-		NewTestHeader(true, "Content-Type", "application/responseType"),
-		NewTestHeader(true, "Accept", "application/noTerm"),
-		NewTestHeader(true, "Accept-Encoding", "UTF-8"),
+	expected := []testHelper.TestHeader{
+		testHelper.NewTestHeader(true, "Content-Type", "application/responseType"),
+		testHelper.NewTestHeader(true, "Accept", "application/noTerm"),
+		testHelper.NewTestHeader(true, "Accept-Encoding", "UTF-8"),
 	}
-	CheckResponseHeaders(&testing.T{}, result, expected, true)
+	testHelper.CheckResponseHeaders(&testing.T{}, result, expected, true)
 }

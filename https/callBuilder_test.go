@@ -3,6 +3,7 @@ package https
 import (
 	"context"
 	"errors"
+	"github.com/apimatic/go-core-runtime/internal"
 	"github.com/apimatic/go-core-runtime/internal/assert"
 	"github.com/apimatic/go-core-runtime/logger"
 	"io"
@@ -18,7 +19,7 @@ func GetCallBuilder(ctx context.Context, method, path string, auth map[string]Au
 	client := NewHttpClient(NewHttpConfiguration())
 	callBuilder := CreateCallBuilderFactory(
 		func(server string) string {
-			return GetTestingServer().URL
+			return internal.GetTestingServer().URL
 		},
 		auth,
 		client,

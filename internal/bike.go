@@ -1,8 +1,9 @@
-package utilities
+package internal
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apimatic/go-core-runtime/utilities"
 	"strings"
 
 	"github.com/apimatic/go-core-runtime/types"
@@ -19,7 +20,7 @@ func (b *Bike) UnmarshalJSON(input []byte) error {
 	var temp bike
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return NewMarshalError("Bike", err)
+		return utilities.NewMarshalError("Bike", err)
 	}
 	err = temp.validate(input)
 	if err != nil {
@@ -46,5 +47,5 @@ func (b *bike) validate(input []byte) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return NewMarshalError("Bike", errors.New(strings.Join(errs, "\n\t=> ")))
+	return utilities.NewMarshalError("Bike", errors.New(strings.Join(errs, "\n\t=> ")))
 }

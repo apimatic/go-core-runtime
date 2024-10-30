@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/apimatic/go-core-runtime/https"
+	"github.com/apimatic/go-core-runtime/internal"
 	. "github.com/apimatic/go-core-runtime/logger"
 	"reflect"
 	"testing"
@@ -11,7 +12,7 @@ import (
 
 var callBuilder https.CallBuilderFactory
 var ctx = context.Background()
-var serverUrl = https.GetTestingServer().URL
+var serverUrl = internal.GetTestingServer().URL
 
 func init() {
 

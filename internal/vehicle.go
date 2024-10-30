@@ -1,8 +1,9 @@
-package utilities
+package internal
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apimatic/go-core-runtime/utilities"
 	"strings"
 )
 
@@ -20,7 +21,7 @@ type Vehicle[T any] struct {
 func (v Vehicle[T]) MarshalJSON() (
 	[]byte,
 	error) {
-	if err := ValidateAdditionalProperty(v.AdditionalProperties,
+	if err := utilities.ValidateAdditionalProperty(v.AdditionalProperties,
 		"year", "make", "model"); err != nil {
 		return nil, err
 	}
@@ -29,7 +30,7 @@ func (v Vehicle[T]) MarshalJSON() (
 
 func (v Vehicle[T]) toMap() map[string]any {
 	structMap := make(map[string]any)
-	MapAdditionalProperty(structMap, v.AdditionalProperties)
+	utilities.MapAdditionalProperty(structMap, v.AdditionalProperties)
 	if v.Make != nil {
 		structMap["make"] = *v.Make
 	} else {
@@ -48,13 +49,13 @@ func (v *Vehicle[T]) UnmarshalJSON(input []byte) error {
 	var temp tempVehicle
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return NewMarshalError("Vehicle", err)
+		return utilities.NewMarshalError("Vehicle", err)
 	}
 	err = temp.validate()
 	if err != nil {
 		return err
 	}
-	additionalProperties, err := UnmarshalAdditionalProperty[T](input, "year", "make", "model")
+	additionalProperties, err := utilities.UnmarshalAdditionalProperty[T](input, "year", "make", "model")
 	if err != nil {
 		return err
 	}
@@ -79,5 +80,5 @@ func (c *tempVehicle) validate() error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return NewMarshalError("Vehicle", errors.New(strings.Join(errs, "\n\t=> ")))
+	return utilities.NewMarshalError("Vehicle", errors.New(strings.Join(errs, "\n\t=> ")))
 }

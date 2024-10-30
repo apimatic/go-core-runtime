@@ -19,7 +19,7 @@ const (
 	MonthNameEnum_DECEMBER  MonthNameEnum = "December"
 )
 
-// MonthNumberEnum is a int enum.
+// MonthNumberEnum is an int enum.
 // An enum representing the months of a year
 type MonthNumberEnum int
 

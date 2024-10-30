@@ -1,8 +1,9 @@
-package utilities
+package internal
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apimatic/go-core-runtime/utilities"
 	"strings"
 )
 
@@ -22,7 +23,7 @@ func (s AnyOfNumberVehicle) String() string {
 	return ""
 }
 
-// MarshalJSON implements the json.Marshaler interface for AnyOfNumberVehicle.
+// MarshalJSON implements the json.Marshaller interface for AnyOfNumberVehicle.
 // It customizes the JSON marshaling process for AnyOfNumberVehicle objects.
 func (s AnyOfNumberVehicle) MarshalJSON() (
 	[]byte,
@@ -45,11 +46,11 @@ func (s AnyOfNumberVehicle) toMap() any {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface for AnyOfNumberVehicle.
-// It customizes the JSON unmarshaling process for AnyOfNumberVehicle objects.
+// It customizes the JSON unmarshalling process for AnyOfNumberVehicle objects.
 func (s *AnyOfNumberVehicle) UnmarshalJSON(input []byte) error {
-	result, err := UnmarshallAnyOf(input,
-		NewTypeHolder(new(int), false, &s.isNumber),
-		NewTypeHolder(&Vehicle[bool]{}, false, &s.isVehicle),
+	result, err := utilities.UnmarshallAnyOf(input,
+		utilities.NewTypeHolder(new(int), false, &s.isNumber),
+		utilities.NewTypeHolder(&Vehicle[bool]{}, false, &s.isVehicle),
 	)
 
 	s.value = result

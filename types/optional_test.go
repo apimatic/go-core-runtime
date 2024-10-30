@@ -1,15 +1,18 @@
-package types
+package types_test
 
 import (
 	"encoding/json"
+	"github.com/apimatic/go-core-runtime/types"
 	"reflect"
 	"testing"
 )
 
 func TestNewOptional(t *testing.T) {
 	value := "Optional Value"
-	expected := Optional[string]{value: &value, set: true}
-	result := NewOptional(&value)
+	expected := types.Optional[string]{}
+	expected.SetValue(&value)
+	expected.ShouldSetValue(true)
+	result := types.NewOptional(&value)
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -17,8 +20,10 @@ func TestNewOptional(t *testing.T) {
 }
 
 func TestEmptyOptional(t *testing.T) {
-	expected := Optional[any]{value: nil, set: false}
-	result := EmptyOptional[any]()
+	expected := types.Optional[any]{}
+	expected.SetValue(nil)
+	expected.ShouldSetValue(false)
+	result := types.EmptyOptional[any]()
 
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
@@ -27,8 +32,8 @@ func TestEmptyOptional(t *testing.T) {
 
 func TestGetterSetters(t *testing.T) {
 	value := "Optional Value"
-	expected := Optional[string]{value: &value, set: true}
-	result := Optional[string]{value: nil, set: false}
+	expected := types.NewOptional[string](&value)
+	result := types.Optional[string]{}
 	result.SetValue(&value)
 	result.ShouldSetValue(true)
 
@@ -40,12 +45,14 @@ func TestGetterSetters(t *testing.T) {
 
 func TestUnmarshalJSON(t *testing.T) {
 	value := "Optional Value"
-	expected := Optional[string]{value: &value, set: true}
+	expected := types.Optional[string]{}
+	expected.SetValue(&value)
+	expected.ShouldSetValue(true)
 	type tempStruct struct {
-		Optional Optional[string] `json:"optional"`
+		Optional types.Optional[string] `json:"optional"`
 	}
 	var result tempStruct
-	json.Unmarshal([]byte(`{"optional": "Optional Value"}`), &result)
+	_ = json.Unmarshal([]byte(`{"optional": "Optional Value"}`), &result)
 
 	if expected.IsValueSet() != result.Optional.IsValueSet() && expected.Value() != result.Optional.Value() {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Optional)
@@ -53,7 +60,7 @@ func TestUnmarshalJSON(t *testing.T) {
 }
 
 func TestUnmarshalJSONError(t *testing.T) {
-	var result Optional[string]
+	var result types.Optional[string]
 	err := json.Unmarshal([]byte(`{"optional": "Optional Value"}`), &result)
 	if err == nil {
 		t.Errorf("Failed:\nExpected: Unmarshalling Error \nGot: %v", result)
