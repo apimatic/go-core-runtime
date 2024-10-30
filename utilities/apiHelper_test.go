@@ -768,7 +768,7 @@ func GetTimeSlice(format string) []time.Time {
 
 func GetJsonDecoded(arr any) *json.Decoder {
 	buffer := &bytes.Buffer{}
-	json.NewEncoder(buffer).Encode(arr)
+	_ = json.NewEncoder(buffer).Encode(arr)
 	byteSlice := buffer.Bytes()
 
 	return json.NewDecoder(bytes.NewReader(byteSlice))

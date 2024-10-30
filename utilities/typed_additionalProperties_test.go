@@ -153,8 +153,8 @@ func Test_AnyOfNumberVehicleVehicle(t *testing.T) {
 	var testMap, objMap = make(map[string]any), make(map[string]any)
 	objBytes, _ := json.Marshal(deserializedObject)
 
-	json.Unmarshal(serializedObject, &testMap)
-	json.Unmarshal(objBytes, &objMap)
+	_ = json.Unmarshal(serializedObject, &testMap)
+	_ = json.Unmarshal(objBytes, &objMap)
 
 	// Verifying if the deserialized object matches the original
 	if !reflect.DeepEqual(testMap, objMap) {

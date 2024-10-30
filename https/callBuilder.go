@@ -553,7 +553,9 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 	} else {
 		if strings.TrimSpace(cb.body) != "" {
 			request.Body = io.NopCloser(bytes.NewBuffer([]byte(cb.body)))
-			defer request.Body.Close()
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(request.Body)
 		}
 	}
 

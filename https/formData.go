@@ -89,7 +89,10 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 				"name":     field.key,
 				"filename": fieldValue.FileName,
 			}
-			formParamWriter(writer, formParamContentType(field.headers, fieldValue.FileHeaders), mediaParam, fieldValue.File)
+			err := formParamWriter(writer, formParamContentType(field.headers, fieldValue.FileHeaders), mediaParam, fieldValue.File)
+			if err != nil {
+				return *body, writer.FormDataContentType(), err
+			}
 		default:
 			paramsMap, err := field.toMap()
 			if err != nil {
@@ -98,13 +101,17 @@ func (fp *formParams) prepareMultipartFields() (bytes.Buffer, string, error) {
 			for key, values := range paramsMap {
 				mediaParam := map[string]string{"name": key}
 				for _, value := range values {
-					formParamWriter(writer, field.headers, mediaParam, []byte(value))
+					err := formParamWriter(writer, field.headers, mediaParam, []byte(value))
+					if err != nil {
+						return *body, writer.FormDataContentType(), err
+					}
 				}
 			}
 		}
 	}
-	writer.Close()
-	return *body, writer.FormDataContentType(), nil
+	var err error = nil
+	err = writer.Close()
+	return *body, writer.FormDataContentType(), err
 }
 
 func formParamContentType(fpHeaders, fileHeaders http.Header) http.Header {

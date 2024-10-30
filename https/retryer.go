@@ -1,6 +1,7 @@
 package https
 
 import (
+	"errors"
 	"math"
 	"net"
 	"net/http"
@@ -168,7 +169,8 @@ func (rc *RetryConfiguration) GetRetryWaitTime(
 	var retryAfter, retryWaitTime time.Duration
 
 	if retryCount < rc.maxRetryAttempts {
-		if err, ok := timeoutError.(net.Error); ok && err.Timeout() {
+		var netError net.Error
+		if errors.As(timeoutError, &netError) && netError.Timeout() {
 			retry = rc.retryOnTimeout
 		} else if response != nil && response.Header != nil {
 			retryAfter = getRetryAfterInSeconds(response.Header)
@@ -211,7 +213,7 @@ func getRetryAfterInSeconds(headers http.Header) time.Duration {
 
 // defaultBackoff calculates the backoff time for exponential backoff based on the retry configuration.
 func defaultBackoff(retryInterval, maxWaitTime, retryAfter time.Duration, backoffFactor, retryCount int64) time.Duration {
-	waitTime := (math.Pow(float64(backoffFactor), float64(retryCount)) * float64(retryInterval))
+	waitTime := math.Pow(float64(backoffFactor), float64(retryCount)) * float64(retryInterval)
 	sleep := math.Max(waitTime, float64(retryAfter))
 	if time.Duration(sleep) <= maxWaitTime {
 		return time.Duration(sleep)

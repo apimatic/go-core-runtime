@@ -1,6 +1,7 @@
 package utilities
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -20,8 +21,8 @@ func NewMarshalError(structName string, err error) MarshalError {
 // It returns a string representation of the MarshalError instance when used in an error context.
 func (a MarshalError) Error() string {
 	indent := "\n\t=>"
-	switch a.innerError.(type) {
-	case MarshalError:
+	var marshalError MarshalError
+	if errors.As(a.innerError, &marshalError) {
 		indent = "."
 	}
 	return fmt.Sprintf("%v %v %v", a.structName, indent, a.innerError)

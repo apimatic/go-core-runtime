@@ -300,7 +300,7 @@ func TestText(t *testing.T) {
 	result, err := callBuilder.toRequest()
 
 	stringBuilder := new(strings.Builder)
-	io.Copy(stringBuilder, result.Body)
+	_, _ = io.Copy(stringBuilder, result.Body)
 
 	if !strings.Contains(stringBuilder.String(), "TestString") || err != nil {
 		t.Errorf("Failed:\nExpected text in body\n%v", stringBuilder.String())
