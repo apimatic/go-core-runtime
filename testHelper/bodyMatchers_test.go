@@ -18,7 +18,7 @@ func getValueReader(val any) io.ReadCloser {
 // Native Body Matcher Tests
 func TestNativeBodyMatcherNumber(t *testing.T) {
 	expected := `4`
-	var result int = 4
+	var result = 4
 	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
@@ -36,13 +36,12 @@ func TestNativeBodyMatcherLong(t *testing.T) {
 
 func TestNativeBodyMatcherBoolean(t *testing.T) {
 	expected := `true`
-	var result bool = true
-	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.NativeBodyMatcher(t, expected, getValueReader(true), false, false)
 }
 
 func TestNativeBodyMatcherStringSlice(t *testing.T) {
 	expected := `["Tuesday", "Saturday", "Wednesday", "Monday", "Sunday"]`
-	var result []string = []string{
+	var result = []string{
 		"Tuesday", "Saturday", "Wednesday", "Monday", "Sunday",
 	}
 	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), true, true)
@@ -50,7 +49,7 @@ func TestNativeBodyMatcherStringSlice(t *testing.T) {
 
 func TestNativeBodyMatcherIntSlice(t *testing.T) {
 	expected := `[1,2,3,4,5]`
-	var result []int = []int{
+	var result = []int{
 		1, 2, 3, 4, 5,
 	}
 	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), true, false)
@@ -58,14 +57,13 @@ func TestNativeBodyMatcherIntSlice(t *testing.T) {
 
 func TestNativeBodyMatcherBooleanError(t *testing.T) {
 	expected := `nil`
-	var result bool = true
-	testHelper.NativeBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
+	testHelper.NativeBodyMatcher(&testing.T{}, expected, getValueReader(true), false, false)
 }
 
 // Raw Body Matcher Tests
 func TestRawBodyMatcherIntSlice(t *testing.T) {
 	expected := `[1,2,3,4,5]`
-	var result []int = []int{
+	var result = []int{
 		1, 2, 3, 4, 5,
 	}
 	testHelper.RawBodyMatcher(t, expected, getValueReader(result))
@@ -73,8 +71,7 @@ func TestRawBodyMatcherIntSlice(t *testing.T) {
 
 func TestRawBodyMatcherBooleanError(t *testing.T) {
 	expected := `nil`
-	var result bool = true
-	testHelper.RawBodyMatcher(&testing.T{}, expected, getValueReader(result))
+	testHelper.RawBodyMatcher(&testing.T{}, expected, getValueReader(true))
 }
 
 // Is Same File Tests

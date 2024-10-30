@@ -29,7 +29,7 @@ func (s AnyOfNumberVehicle) MarshalJSON() (
 	[]byte,
 	error) {
 	if s.value == nil {
-		return nil, errors.New("No underlying type is set. Please use any of the `models.AnyOfNumberBooleanContainer.From*` functions to initialize the AnyOfNumberVehicle object.")
+		return nil, errors.New("no underlying type is set. Please use any of the `models.AnyOfNumberBooleanContainer.From*` functions to initialize the AnyOfNumberVehicle object")
 	}
 	return json.Marshal(s.toMap())
 }
@@ -81,12 +81,12 @@ type internalAnyOfNumberBoolean struct{}
 
 var AnyOfNumberBooleanContainer internalAnyOfNumberBoolean
 
-// The internalAnyOfNumberBoolean instance, wrapping the provided int value.
+// FromNumber The internalAnyOfNumberBoolean instance, wrapping the provided int value.
 func (s *internalAnyOfNumberBoolean) FromNumber(val int) AnyOfNumberVehicle {
 	return AnyOfNumberVehicle{value: &val}
 }
 
-// The internalAnyOfNumberBoolean instance, wrapping the provided bool value.
+// FromVehicle The internalAnyOfNumberBoolean instance, wrapping the provided bool value.
 func (s *internalAnyOfNumberBoolean) FromVehicle(val Vehicle[bool]) AnyOfNumberVehicle {
 	return AnyOfNumberVehicle{value: &val}
 }

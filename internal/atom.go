@@ -18,7 +18,7 @@ func (a *Atom) UnmarshalJSON(input []byte) error {
 	if err != nil {
 		return utilities.NewMarshalError("Atom", err)
 	}
-	err = temp.validate(input)
+	err = temp.validate()
 	if err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ type atom struct {
 	NumberOfProtons   *int `json:"number_of_protons"`
 }
 
-func (a *atom) validate(input []byte) error {
+func (a *atom) validate() error {
 	var errs []string
 	if a.NumberOfElectrons == nil {
 		errs = append(errs, "required field `NumberOfElectrons` is missing")

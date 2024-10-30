@@ -340,7 +340,7 @@ func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, ...*ut
 			var anyTypeHolderSelected bool
 			var typeHolders []*utilities.TypeHolder
 			for i, tt := range test.types {
-				var isNullableType bool = false
+				var isNullableType = false
 				if len(test.isNullableTypes) > 0 {
 					isNullableType = test.isNullableTypes[i]
 				}
@@ -358,7 +358,7 @@ func assertDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([
 			var anyTypeHolderSelected bool
 			var typeHolders []*utilities.TypeHolder
 			for i, tt := range test.types {
-				var isNullableType bool = false
+				var isNullableType = false
 				if len(test.isNullableTypes) > 0 {
 					isNullableType = test.isNullableTypes[i]
 				}

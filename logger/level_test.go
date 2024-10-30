@@ -24,26 +24,26 @@ func validateLevelEnumValues(level logger.Level, t *testing.T) {
 }
 
 func TestLevelEnumValueERROR(t *testing.T) {
-	level := logger.Level(logger.Level_ERROR)
+	level := logger.Level_ERROR
 	validateLevelEnumValues(level, t)
 }
 
 func TestLevelEnumValueWARN(t *testing.T) {
-	level := logger.Level(logger.Level_WARN)
+	level := logger.Level_WARN
 	validateLevelEnumValues(level, t)
 }
 
 func TestLevelEnumValueINFO(t *testing.T) {
-	level := logger.Level(logger.Level_INFO)
+	level := logger.Level_INFO
 	validateLevelEnumValues(level, t)
 }
 func TestLevelEnumValueDEBUG(t *testing.T) {
-	level := logger.Level(logger.Level_DEBUG)
+	level := logger.Level_DEBUG
 	validateLevelEnumValues(level, t)
 }
 
 func TestLevelEnumValueTRACE(t *testing.T) {
-	level := logger.Level(logger.Level_TRACE)
+	level := logger.Level_TRACE
 	validateLevelEnumValues(level, t)
 }
 

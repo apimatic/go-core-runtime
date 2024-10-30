@@ -307,7 +307,7 @@ func TestToTimeMapDefault(t *testing.T) {
 
 // TimeToStringSlice
 func TestTimeToStringSliceNil(t *testing.T) {
-	expected := []string{}
+	var expected = make([]string, 0)
 	result := utilities.TimeToStringSlice(nil, time.UnixDate)
 
 	if !reflect.DeepEqual(result, expected) {
@@ -359,7 +359,7 @@ func TestDefaultTimeToStringSlice(t *testing.T) {
 func TestToTimeSliceNil(t *testing.T) {
 	result, _ := utilities.ToTimeSlice(nil, time.UnixDate)
 
-	expected := []time.Time{}
+	var expected = make([]time.Time, 0)
 	if !reflect.DeepEqual(result, expected) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result)
 	}
@@ -446,7 +446,7 @@ func TestJsonDecoderToBooleanSlice(t *testing.T) {
 }
 
 func TestJsonDecoderToBooleanSliceWithEmptySlice(t *testing.T) {
-	boolSlice := []bool{}
+	var boolSlice []bool
 	result, _ := utilities.JsonDecoderToBooleanSlice(GetJsonDecoded(boolSlice))
 
 	expected := boolSlice
@@ -479,7 +479,7 @@ func TestJsonDecoderToIntSlice(t *testing.T) {
 }
 
 func TestJsonDecoderToIntSliceWithEmptySlice(t *testing.T) {
-	intSlice := []int{}
+	var intSlice []int
 	result, _ := utilities.JsonDecoderToIntSlice(GetJsonDecoded(intSlice))
 
 	expected := intSlice
@@ -513,7 +513,7 @@ func TestJsonDecoderToStringSlice(t *testing.T) {
 }
 
 func TestJsonDecoderToStringSliceWithEmptySlice(t *testing.T) {
-	stringSlice := []string{}
+	var stringSlice []string
 	result, _ := utilities.JsonDecoderToStringSlice(GetJsonDecoded(stringSlice))
 
 	expected := stringSlice

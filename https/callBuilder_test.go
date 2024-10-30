@@ -30,10 +30,6 @@ func GetCallBuilder(ctx context.Context, method, path string, auth map[string]Au
 	return callBuilder(ctx, method, path)
 }
 
-func RequestAuthentication() HttpInterceptor {
-	return PassThroughInterceptor
-}
-
 func TestAppendPath(t *testing.T) {
 	request := GetCallBuilder(ctx, "GET", "//response/", nil)
 	request.AppendPath("/integer")

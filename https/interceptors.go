@@ -28,7 +28,7 @@ func CallHttpInterceptors(
 	interceptors []HttpInterceptor,
 	client HttpCallExecutor,
 ) HttpCallExecutor {
-	var next HttpCallExecutor = client
+	next := client
 	for index := len(interceptors) - 1; index >= 0; index-- {
 		current := interceptors[index]
 		last := next

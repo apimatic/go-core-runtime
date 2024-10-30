@@ -18,10 +18,10 @@ type SdkLoggerInterface interface {
 type NullSdkLogger struct{}
 
 // LogRequest request Logs an HTTP request.
-func (a NullSdkLogger) LogRequest(_request *http.Request) {}
+func (a NullSdkLogger) LogRequest(*http.Request) {}
 
 // LogResponse Logs an HTTP response.
-func (a NullSdkLogger) LogResponse(_response *http.Response) {}
+func (a NullSdkLogger) LogResponse(*http.Response) {}
 
 // SdkLogger represents implementation for SdkLoggerInterface, providing methods to log HTTP requests and responses.
 type SdkLogger struct {
@@ -130,7 +130,7 @@ const CONTENT_TYPE_HEADER = "content-type"
 const CONTENT_LENGTH_HEADER = "content-length"
 
 func (a *SdkLogger) _getContentType(headers http.Header) string {
-	var contentType string = ""
+	var contentType = ""
 	if len(headers) > 0 {
 		contentType = headers.Get(CONTENT_TYPE_HEADER)
 	}
@@ -138,7 +138,7 @@ func (a *SdkLogger) _getContentType(headers http.Header) string {
 }
 
 func (a *SdkLogger) _getContentLength(headers http.Header) string {
-	var contentLength string = ""
+	var contentLength = ""
 	if len(headers) > 0 {
 		contentLength = headers.Get(CONTENT_LENGTH_HEADER)
 	}
@@ -235,7 +235,7 @@ func (a *SdkLogger) _maskSensitiveHeaders(
 func (a *SdkLogger) _maskIfSensitiveHeader(
 	name, value string,
 	headersToWhiteList []string) string {
-	var nonSensitiveHeaders []string = []string{
+	var nonSensitiveHeaders = []string{
 		"accept",
 		"accept-charset",
 		"accept-encoding",

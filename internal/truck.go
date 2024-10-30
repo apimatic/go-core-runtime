@@ -19,7 +19,7 @@ func (c *Truck) UnmarshalJSON(input []byte) error {
 	if err != nil {
 		return utilities.NewMarshalError("Truck", err)
 	}
-	err = temp.validate(input)
+	err = temp.validate()
 	if err != nil {
 		return err
 	}
@@ -35,7 +35,7 @@ type truck struct {
 	Roof   *string `json:"roof"`
 }
 
-func (t *truck) validate(input []byte) error {
+func (t *truck) validate() error {
 	var errs []string
 	if t.Id == nil {
 		errs = append(errs, "required field `Id` is missing")

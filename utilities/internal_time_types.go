@@ -94,7 +94,7 @@ func NewUnixDateTime(t time.Time) UnixDateTime {
 	return UnixDateTime{Time: t}
 }
 
-func (t UnixDateTime) Value() time.Time { return t.Time }
+func (u UnixDateTime) Value() time.Time { return u.Time }
 
 // String returns UnixDateTime as a string following the Unix standard.
 func (u UnixDateTime) String() string {

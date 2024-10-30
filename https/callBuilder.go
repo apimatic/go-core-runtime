@@ -1,4 +1,4 @@
-// Copyright (c) APIMatic. All rights reserved.
+// Package https Copyright (c) APIMatic. All rights reserved.
 package https
 
 import (
@@ -18,6 +18,7 @@ import (
 )
 
 // Constants for commonly used HTTP headers and content types.
+
 const CONTENT_TYPE_HEADER = "content-type"
 const ACCEPT_HEADER = "accept"
 const CONTENT_LENGTH_HEADER = "content-length"
@@ -124,7 +125,7 @@ func newDefaultCallBuilder(
 		httpMethod:               httpMethod,
 		authProvider:             authProvider,
 		baseUrlProvider:          baseUrlProvider,
-		retryOption:              RequestRetryOption(Default),
+		retryOption:              Default,
 		clientError:              nil,
 		retryConfig:              retryConfig,
 		ctx:                      ctx,
@@ -200,7 +201,7 @@ func (cb *defaultCallBuilder) AppendTemplateParams(params any) {
 			case string:
 				cb.AppendTemplateParam(x)
 			case int:
-				cb.AppendTemplateParam(strconv.Itoa(int(x)))
+				cb.AppendTemplateParam(strconv.Itoa(x))
 			default:
 				cb.AppendTemplateParam(fmt.Sprintf("%v", x))
 			}
@@ -771,7 +772,7 @@ func (cb *defaultCallBuilder) addRetryInterceptor() {
 						int64(retryCount),
 						httpContext.Response,
 						cb.clientError)
-					time.Sleep(time.Duration(waitTime) * time.Second)
+					time.Sleep(waitTime * time.Second)
 					retryCount++
 				}
 			}

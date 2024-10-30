@@ -86,7 +86,7 @@ func Test_BikeVehicle(t *testing.T) {
 		Make:  internal.ToPointer("Porsche"),
 		Model: internal.ToPointer("Taycan turbo GT"),
 		AdditionalProperties: map[string]internal.Bike{
-			"bike": internal.Bike{
+			"bike": {
 				Id:   2013,
 				Roof: internal.ToPointer("Chopper"),
 				Type: internal.ToPointer("Yamaha V Max"),

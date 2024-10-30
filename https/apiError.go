@@ -1,4 +1,4 @@
-// Copyright (c) APIMatic. All rights reserved.
+// Package https Copyright (c) APIMatic. All rights reserved.
 package https
 
 import (
@@ -60,7 +60,7 @@ func renderErrorTemplate(tpl string, respStatusCode int, respHeader http.Header,
 	// Extract placeholders into an array of strings
 	placeholders := re.FindAllString(tpl, -1)
 
-	renderedVals := []any{}
+	var renderedVals []any
 	for _, placeholder := range placeholders {
 		renderedVals = append(renderedVals, renderPlaceholder(placeholder, respStatusCode, respHeader, respBytes))
 	}
