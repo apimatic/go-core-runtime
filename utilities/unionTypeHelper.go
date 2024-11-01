@@ -80,7 +80,7 @@ func UnmarshallOneOfWithDiscriminator(data []byte, discField string, types ...*T
 	return unmarshallUnionType(data, filterTypeHolders(data, types, discField), true)
 }
 
-// filterTypeHolders filter out the typeholders from given list based on
+// filterTypeHolders filter out the typeHolders from given list based on
 // available discriminator field's value in the data
 func filterTypeHolders(data []byte, types []*TypeHolder, discField string) []*TypeHolder {
 	discValue, ok := extractDiscriminatorValue(data, discField)

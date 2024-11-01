@@ -15,8 +15,7 @@ func getValueFromJSON(rawJSON []byte, jsonPtr string) any {
 	if err := json.Unmarshal(rawJSON, &jsonBody); err == nil {
 		val, kind, err := getValueFromJSONPtr(jsonPtr, jsonBody)
 		if err == nil {
-			switch kind {
-			case reflect.Map:
+			if kind == reflect.Map {
 				obj, err := json.Marshal(val)
 				if err == nil {
 					result = string(obj)

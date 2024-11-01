@@ -1,8 +1,9 @@
-package utilities
+package internal
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apimatic/go-core-runtime/utilities"
 	"strings"
 )
 
@@ -22,13 +23,13 @@ func (s AnyOfNumberVehicle) String() string {
 	return ""
 }
 
-// MarshalJSON implements the json.Marshaler interface for AnyOfNumberVehicle.
+// MarshalJSON implements the json.Marshaller interface for AnyOfNumberVehicle.
 // It customizes the JSON marshaling process for AnyOfNumberVehicle objects.
 func (s AnyOfNumberVehicle) MarshalJSON() (
 	[]byte,
 	error) {
 	if s.value == nil {
-		return nil, errors.New("No underlying type is set. Please use any of the `models.AnyOfNumberBooleanContainer.From*` functions to initialize the AnyOfNumberVehicle object.")
+		return nil, errors.New("no underlying type is set. Please use any of the `models.AnyOfNumberBooleanContainer.From*` functions to initialize the AnyOfNumberVehicle object")
 	}
 	return json.Marshal(s.toMap())
 }
@@ -45,11 +46,11 @@ func (s AnyOfNumberVehicle) toMap() any {
 }
 
 // UnmarshalJSON implements the json.Unmarshaler interface for AnyOfNumberVehicle.
-// It customizes the JSON unmarshaling process for AnyOfNumberVehicle objects.
+// It customizes the JSON unmarshalling process for AnyOfNumberVehicle objects.
 func (s *AnyOfNumberVehicle) UnmarshalJSON(input []byte) error {
-	result, err := UnmarshallAnyOf(input,
-		NewTypeHolder(new(int), false, &s.isNumber),
-		NewTypeHolder(&Vehicle[bool]{}, false, &s.isVehicle),
+	result, err := utilities.UnmarshallAnyOf(input,
+		utilities.NewTypeHolder(new(int), false, &s.isNumber),
+		utilities.NewTypeHolder(&Vehicle[bool]{}, false, &s.isVehicle),
 	)
 
 	s.value = result
@@ -80,12 +81,12 @@ type internalAnyOfNumberBoolean struct{}
 
 var AnyOfNumberBooleanContainer internalAnyOfNumberBoolean
 
-// The internalAnyOfNumberBoolean instance, wrapping the provided int value.
+// FromNumber The internalAnyOfNumberBoolean instance, wrapping the provided int value.
 func (s *internalAnyOfNumberBoolean) FromNumber(val int) AnyOfNumberVehicle {
 	return AnyOfNumberVehicle{value: &val}
 }
 
-// The internalAnyOfNumberBoolean instance, wrapping the provided bool value.
+// FromVehicle The internalAnyOfNumberBoolean instance, wrapping the provided bool value.
 func (s *internalAnyOfNumberBoolean) FromVehicle(val Vehicle[bool]) AnyOfNumberVehicle {
 	return AnyOfNumberVehicle{value: &val}
 }

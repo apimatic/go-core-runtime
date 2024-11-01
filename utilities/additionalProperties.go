@@ -16,7 +16,7 @@ func ValidateAdditionalProperty[T any](dstMap map[string]T, keysToRemove ...stri
 		return false
 	}
 
-	for key, _ := range dstMap {
+	for key := range dstMap {
 		if strings.TrimSpace(key) == "" {
 			return errors.New("an additional property key can not be empty or whitespace")
 		}

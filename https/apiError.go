@@ -1,4 +1,4 @@
-// Copyright (c) APIMatic. All rights reserved.
+// Package https Copyright (c) APIMatic. All rights reserved.
 package https
 
 import (
@@ -19,7 +19,7 @@ type ApiError struct {
 }
 
 func (a ApiError) Error() string {
-	return fmt.Sprintf("ApiError occured: %v", a.Message)
+	return fmt.Sprintf("ApiError occurred: %v", a.Message)
 }
 
 type ErrorBuilder[T error] struct {
@@ -60,7 +60,7 @@ func renderErrorTemplate(tpl string, respStatusCode int, respHeader http.Header,
 	// Extract placeholders into an array of strings
 	placeholders := re.FindAllString(tpl, -1)
 
-	renderedVals := []any{}
+	renderedVals := make([]any, 0)
 	for _, placeholder := range placeholders {
 		renderedVals = append(renderedVals, renderPlaceholder(placeholder, respStatusCode, respHeader, respBytes))
 	}

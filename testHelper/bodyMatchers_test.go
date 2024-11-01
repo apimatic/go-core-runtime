@@ -1,8 +1,9 @@
-package testHelper
+package testHelper_test
 
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/apimatic/go-core-runtime/testHelper"
 	"io"
 	"testing"
 
@@ -17,63 +18,60 @@ func getValueReader(val any) io.ReadCloser {
 // Native Body Matcher Tests
 func TestNativeBodyMatcherNumber(t *testing.T) {
 	expected := `4`
-	var result int = 4
-	NativeBodyMatcher(t, expected, getValueReader(result), false, false)
+	var result = 4
+	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestNativeBodyMatcherPrecision(t *testing.T) {
 	expected := `4.11`
 	var result float32 = 4.11
-	NativeBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestNativeBodyMatcherLong(t *testing.T) {
 	expected := `411111111111111111`
 	var result int64 = 411111111111111111
-	NativeBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestNativeBodyMatcherBoolean(t *testing.T) {
 	expected := `true`
-	var result bool = true
-	NativeBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.NativeBodyMatcher(t, expected, getValueReader(true), false, false)
 }
 
 func TestNativeBodyMatcherStringSlice(t *testing.T) {
 	expected := `["Tuesday", "Saturday", "Wednesday", "Monday", "Sunday"]`
-	var result []string = []string{
+	var result = []string{
 		"Tuesday", "Saturday", "Wednesday", "Monday", "Sunday",
 	}
-	NativeBodyMatcher(t, expected, getValueReader(result), true, true)
+	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), true, true)
 }
 
 func TestNativeBodyMatcherIntSlice(t *testing.T) {
 	expected := `[1,2,3,4,5]`
-	var result []int = []int{
+	var result = []int{
 		1, 2, 3, 4, 5,
 	}
-	NativeBodyMatcher(t, expected, getValueReader(result), true, false)
+	testHelper.NativeBodyMatcher(t, expected, getValueReader(result), true, false)
 }
 
 func TestNativeBodyMatcherBooleanError(t *testing.T) {
 	expected := `nil`
-	var result bool = true
-	NativeBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
+	testHelper.NativeBodyMatcher(&testing.T{}, expected, getValueReader(true), false, false)
 }
 
 // Raw Body Matcher Tests
 func TestRawBodyMatcherIntSlice(t *testing.T) {
 	expected := `[1,2,3,4,5]`
-	var result []int = []int{
+	var result = []int{
 		1, 2, 3, 4, 5,
 	}
-	RawBodyMatcher(t, expected, getValueReader(result))
+	testHelper.RawBodyMatcher(t, expected, getValueReader(result))
 }
 
 func TestRawBodyMatcherBooleanError(t *testing.T) {
 	expected := `nil`
-	var result bool = true
-	RawBodyMatcher(&testing.T{}, expected, getValueReader(result))
+	testHelper.RawBodyMatcher(&testing.T{}, expected, getValueReader(true))
 }
 
 // Is Same File Tests
@@ -83,25 +81,25 @@ func TestIsSameFile(t *testing.T) {
 	if err != nil {
 		t.Error("Error fetching File from ", expected)
 	}
-	IsSameAsFile(t, expected, result.File)
+	testHelper.IsSameAsFile(t, expected, result.File)
 }
 
 func TestIsSameFileError(t *testing.T) {
 	expected := `http://localhost:3000/response/image`
 	result, _ := https.GetFile("https://play.google.com/store/apps/dev?id=5700313618786177705&hl=en_US&gl=US")
-	IsSameAsFile(&testing.T{}, expected, result.File)
+	testHelper.IsSameAsFile(&testing.T{}, expected, result.File)
 }
 
 func TestIsSameFileErrorURL(t *testing.T) {
 	expected := `http://response/image`
 	result, _ := https.GetFile(`http://localhost:3000/response/image`)
-	IsSameAsFile(&testing.T{}, expected, result.File)
+	testHelper.IsSameAsFile(&testing.T{}, expected, result.File)
 }
 
 // Slice to Comma Separated String Tests
 func TestSliceToCommaSeparatedString(t *testing.T) {
 	expected := `{"isMap": false,"id": "5a9fcb01caacc310dc6bab50"}`
-	SliceToCommaSeparatedString(expected)
+	testHelper.SliceToCommaSeparatedString(expected)
 }
 
 // Keys And Values Body Matcher Tests
@@ -117,18 +115,18 @@ type Attributes struct {
 
 func TestKeysAndValuesBodyMatcherEmpty(t *testing.T) {
 	expected := `{}`
-	KeysAndValuesBodyMatcher(t, expected, getValueReader(nil), false, false)
+	testHelper.KeysAndValuesBodyMatcher(t, expected, getValueReader(nil), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherEmptyArray(t *testing.T) {
 	expected := `[]`
-	KeysAndValuesBodyMatcher(t, expected, getValueReader(nil), false, false)
+	testHelper.KeysAndValuesBodyMatcher(t, expected, getValueReader(nil), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherArray(t *testing.T) {
 	expected := `["some string", 123]`
 	result := []any{"some string", 123}
-	KeysAndValuesBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.KeysAndValuesBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherObject(t *testing.T) {
@@ -136,7 +134,7 @@ func TestKeysAndValuesBodyMatcherObject(t *testing.T) {
 	result := Attributes{
 		Id: "5a9fcb01caacc310dc6bab51",
 	}
-	KeysAndValuesBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.KeysAndValuesBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherNestedObject(t *testing.T) {
@@ -154,7 +152,7 @@ func TestKeysAndValuesBodyMatcherNestedObject(t *testing.T) {
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
-	KeysAndValuesBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.KeysAndValuesBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherNestedArray(t *testing.T) {
@@ -174,7 +172,7 @@ func TestKeysAndValuesBodyMatcherNestedArray(t *testing.T) {
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
-	KeysAndValuesBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.KeysAndValuesBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherNestedObjectValueError(t *testing.T) {
@@ -192,7 +190,7 @@ func TestKeysAndValuesBodyMatcherNestedObjectValueError(t *testing.T) {
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
-	KeysAndValuesBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
+	testHelper.KeysAndValuesBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherNestedObjectTypeError(t *testing.T) {
@@ -208,7 +206,7 @@ func TestKeysAndValuesBodyMatcherNestedObjectTypeError(t *testing.T) {
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
-	KeysAndValuesBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
+	testHelper.KeysAndValuesBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
 }
 
 func TestKeysAndValuesBodyMatcherNestedObjectArrayCountError(t *testing.T) {
@@ -225,7 +223,7 @@ func TestKeysAndValuesBodyMatcherNestedObjectArrayCountError(t *testing.T) {
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
-	KeysAndValuesBodyMatcher(&testing.T{}, expected, getValueReader(result), true, false)
+	testHelper.KeysAndValuesBodyMatcher(&testing.T{}, expected, getValueReader(result), true, false)
 }
 
 func TestKeysAndValuesBodyMatcherUnmarshallingError(t *testing.T) {
@@ -242,24 +240,24 @@ func TestKeysAndValuesBodyMatcherUnmarshallingError(t *testing.T) {
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
-	KeysAndValuesBodyMatcher(&testing.T{}, expected, getValueReader(result), true, false)
+	testHelper.KeysAndValuesBodyMatcher(&testing.T{}, expected, getValueReader(result), true, false)
 }
 
 // Keys Body Matcher Tests
 func TestKeysBodyMatcherEmpty(t *testing.T) {
 	expected := `{}`
-	KeysBodyMatcher(t, expected, getValueReader(nil), false, false)
+	testHelper.KeysBodyMatcher(t, expected, getValueReader(nil), false, false)
 }
 
 func TestKeysBodyMatcherEmptyArray(t *testing.T) {
 	expected := `[]`
-	KeysBodyMatcher(t, expected, getValueReader(nil), false, false)
+	testHelper.KeysBodyMatcher(t, expected, getValueReader(nil), false, false)
 }
 
 func TestKeysBodyMatcherArray(t *testing.T) {
 	expected := `["some string", 123]`
 	result := []any{"123", 765}
-	KeysBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.KeysBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestKeysBodyMatcherObject(t *testing.T) {
@@ -267,7 +265,7 @@ func TestKeysBodyMatcherObject(t *testing.T) {
 	result := Attributes{
 		Id: "5a9fcb01caacc310dc6bab51",
 	}
-	KeysBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.KeysBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestKeysBodyMatcherNestedArray(t *testing.T) {
@@ -287,7 +285,7 @@ func TestKeysBodyMatcherNestedArray(t *testing.T) {
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
-	KeysBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.KeysBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestKeysBodyMatcherNestedObject(t *testing.T) {
@@ -305,7 +303,7 @@ func TestKeysBodyMatcherNestedObject(t *testing.T) {
 		},
 		Id: "5a9fcb01caacc310dc6bab50",
 	}
-	KeysBodyMatcher(t, expected, getValueReader(result), false, false)
+	testHelper.KeysBodyMatcher(t, expected, getValueReader(result), false, false)
 }
 
 func TestKeysBodyMatcherObjectError(t *testing.T) {
@@ -313,7 +311,7 @@ func TestKeysBodyMatcherObjectError(t *testing.T) {
 	result := Attributes{
 		Id: "5a9fcb01caacc310dc6bab51",
 	}
-	KeysBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
+	testHelper.KeysBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
 }
 
 func TestKeysBodyMatcherUnmarshallingError(t *testing.T) {
@@ -321,5 +319,5 @@ func TestKeysBodyMatcherUnmarshallingError(t *testing.T) {
 	result := Attributes{
 		Id: "5a9fcb01caacc310dc6bab51",
 	}
-	KeysBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
+	testHelper.KeysBodyMatcher(&testing.T{}, expected, getValueReader(result), false, false)
 }

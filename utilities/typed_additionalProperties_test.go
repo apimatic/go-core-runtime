@@ -1,18 +1,19 @@
-package utilities
+package utilities_test
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/apimatic/go-core-runtime/internal"
 	"reflect"
 	"testing"
 )
 
 func Test_Float64Vehicle(t *testing.T) {
 	// Creating an instance of Vehicle
-	testObj := Vehicle[float64]{
+	testObj := internal.Vehicle[float64]{
 		Year:  2022,
-		Make:  ToPointer("Porsche"),
-		Model: ToPointer("Taycan turbo GT"),
+		Make:  internal.ToPointer("Porsche"),
+		Model: internal.ToPointer("Taycan turbo GT"),
 		AdditionalProperties: map[string]float64{
 			"top_speed":                 290,
 			"Electric range (BEV, ECE)": 605,
@@ -29,7 +30,7 @@ func Test_Float64Vehicle(t *testing.T) {
 	// JSON string to be deserialized
 	jsonString := `{"make":"Porsche", "model":"Taycan turbo GT", "year":2022, "top_speed":290, "Acceleration 0 - 100 km/h":2.3, "Electric range (BEV, ECE)":605, "battery energy": "97.0"}`
 
-	var deserializedObject Vehicle[float64]
+	var deserializedObject internal.Vehicle[float64]
 	// Deserializing JSON string to struct
 	if err := json.Unmarshal([]byte(jsonString), &deserializedObject); err != nil {
 		t.Error(err)
@@ -43,10 +44,10 @@ func Test_Float64Vehicle(t *testing.T) {
 
 func Test_Float64VehicleWhiteSpace(t *testing.T) {
 	// Creating an instance of Vehicle with a whitespace key
-	testObj := Vehicle[float64]{
+	testObj := internal.Vehicle[float64]{
 		Year:  2022,
-		Make:  ToPointer("Porsche"),
-		Model: ToPointer("Taycan turbo GT"),
+		Make:  internal.ToPointer("Porsche"),
+		Model: internal.ToPointer("Taycan turbo GT"),
 		AdditionalProperties: map[string]float64{
 			"      ": 528,
 		},
@@ -62,10 +63,10 @@ func Test_Float64VehicleWhiteSpace(t *testing.T) {
 
 func Test_Float64VehicleConflict(t *testing.T) {
 	// Creating an instance of Vehicle with a conflicting key
-	testObj := Vehicle[float64]{
+	testObj := internal.Vehicle[float64]{
 		Year:  2022,
-		Make:  ToPointer("Porsche"),
-		Model: ToPointer("Taycan turbo GT"),
+		Make:  internal.ToPointer("Porsche"),
+		Model: internal.ToPointer("Taycan turbo GT"),
 		AdditionalProperties: map[string]float64{
 			"year": 2024,
 		},
@@ -80,15 +81,15 @@ func Test_Float64VehicleConflict(t *testing.T) {
 
 func Test_BikeVehicle(t *testing.T) {
 	// Creating an instance of Vehicle
-	testObj := Vehicle[Bike]{
+	testObj := internal.Vehicle[internal.Bike]{
 		Year:  2022,
-		Make:  ToPointer("Porsche"),
-		Model: ToPointer("Taycan turbo GT"),
-		AdditionalProperties: map[string]Bike{
-			"bike": Bike{
+		Make:  internal.ToPointer("Porsche"),
+		Model: internal.ToPointer("Taycan turbo GT"),
+		AdditionalProperties: map[string]internal.Bike{
+			"bike": {
 				Id:   2013,
-				Roof: ToPointer("Chopper"),
-				Type: ToPointer("Yamaha V Max"),
+				Roof: internal.ToPointer("Chopper"),
+				Type: internal.ToPointer("Yamaha V Max"),
 			},
 		},
 	}
@@ -102,7 +103,7 @@ func Test_BikeVehicle(t *testing.T) {
 	// JSON string to be deserialized
 	jsonString := `{"bike":{"id":2013,"roof":"Chopper","type":"Yamaha V Max"},"make":"Porsche","model":"Taycan turbo GT","year":2022}`
 
-	var deserializedObject Vehicle[Bike]
+	var deserializedObject internal.Vehicle[internal.Bike]
 	// Deserializing JSON string to struct
 	if err := json.Unmarshal([]byte(jsonString), &deserializedObject); err != nil {
 		t.Error(err)
@@ -116,16 +117,16 @@ func Test_BikeVehicle(t *testing.T) {
 
 func Test_AnyOfNumberVehicleVehicle(t *testing.T) {
 	// Creating an instance of Vehicle
-	testObj := Vehicle[AnyOfNumberVehicle]{
+	testObj := internal.Vehicle[internal.AnyOfNumberVehicle]{
 		Year:  2022,
-		Make:  ToPointer("Porsche"),
-		Model: ToPointer("Taycan turbo GT"),
-		AdditionalProperties: map[string]AnyOfNumberVehicle{
-			"top_speed": AnyOfNumberBooleanContainer.FromNumber(290),
-			"fav_bike": AnyOfNumberBooleanContainer.FromVehicle(Vehicle[bool]{
+		Make:  internal.ToPointer("Porsche"),
+		Model: internal.ToPointer("Taycan turbo GT"),
+		AdditionalProperties: map[string]internal.AnyOfNumberVehicle{
+			"top_speed": internal.AnyOfNumberBooleanContainer.FromNumber(290),
+			"fav_bike": internal.AnyOfNumberBooleanContainer.FromVehicle(internal.Vehicle[bool]{
 				Year:  2013,
-				Make:  ToPointer("Yamaha"),
-				Model: ToPointer("Chopper V Max"),
+				Make:  internal.ToPointer("Yamaha"),
+				Model: internal.ToPointer("Chopper V Max"),
 				AdditionalProperties: map[string]bool{
 					"is_chopper": true,
 				},
@@ -143,7 +144,7 @@ func Test_AnyOfNumberVehicleVehicle(t *testing.T) {
 	// JSON string to be deserialized
 	jsonString := `{"make":"Porsche", "model":"Taycan turbo GT", "year":2022, "top_speed":290, "fav_bike":{"is_chopper":true,"make":"Yamaha","model":"Chopper V Max","year":2013, "addProp1":"invalid"}, "addProp2":"invalid2"}`
 
-	var deserializedObject Vehicle[AnyOfNumberVehicle]
+	var deserializedObject internal.Vehicle[internal.AnyOfNumberVehicle]
 	// Deserializing JSON string to struct
 	if err := json.Unmarshal([]byte(jsonString), &deserializedObject); err != nil {
 		t.Error(err)
@@ -152,8 +153,8 @@ func Test_AnyOfNumberVehicleVehicle(t *testing.T) {
 	var testMap, objMap = make(map[string]any), make(map[string]any)
 	objBytes, _ := json.Marshal(deserializedObject)
 
-	json.Unmarshal(serializedObject, &testMap)
-	json.Unmarshal(objBytes, &objMap)
+	_ = json.Unmarshal(serializedObject, &testMap)
+	_ = json.Unmarshal(objBytes, &objMap)
 
 	// Verifying if the deserialized object matches the original
 	if !reflect.DeepEqual(testMap, objMap) {
