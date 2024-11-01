@@ -54,9 +54,23 @@ func Test_Float64VehicleWhiteSpace(t *testing.T) {
 	}
 
 	// Serializing testObj to JSON
-	if _, err := json.Marshal(testObj); err != nil {
-		fmt.Println(err)
+	if serializedObject, err := json.Marshal(testObj); err != nil {
+		t.Error(err)
 	} else {
+		fmt.Printf("serializedObject: %v\n", string(serializedObject))
+	}
+
+	// JSON string to be deserialized
+	jsonString := `{"make":"Porsche", "model":"Taycan turbo GT", "year":2022, "      ":528, "battery energy": "97.0"}`
+
+	var deserializedObject internal.Vehicle[float64]
+	// Deserializing JSON string to struct
+	if err := json.Unmarshal([]byte(jsonString), &deserializedObject); err != nil {
+		t.Error(err)
+	}
+
+	// Verifying if the deserialized object matches the original
+	if !reflect.DeepEqual(testObj, deserializedObject) {
 		t.Error("Test_Float64_Vehicle for WhiteSpace")
 	}
 }

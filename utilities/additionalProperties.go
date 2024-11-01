@@ -3,24 +3,12 @@ package utilities
 import (
 	"encoding/json"
 	"errors"
-	"strings"
 )
 
 func ValidateAdditionalProperty[T any](dstMap map[string]T, keysToRemove ...string) error {
-	containsKey := func(key string) bool {
-		for _, tag := range keysToRemove {
-			if tag == key {
-				return true
-			}
-		}
-		return false
-	}
 
-	for key := range dstMap {
-		if strings.TrimSpace(key) == "" {
-			return errors.New("an additional property key can not be empty or whitespace")
-		}
-		if containsKey(key) {
+	for _, key := range keysToRemove {
+		if _, ok := dstMap[key]; ok {
 			return errors.New("an additional property key, '" + key + "' conflicts with one of the model's properties")
 		}
 	}
