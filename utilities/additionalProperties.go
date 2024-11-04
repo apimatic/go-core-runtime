@@ -5,9 +5,20 @@ import (
 	"errors"
 )
 
-func ValidateAdditionalProperty[T any](dstMap map[string]T, keysToRemove ...string) error {
+// MapAdditionalProperties is deprecated. Use MergeAdditionalProperties instead.
+// This function is maintained for backward compatibility, appending additional properties
+// to the destination struct map.
+var MapAdditionalProperties = MergeAdditionalProperties[any]
 
-	for _, key := range keysToRemove {
+// UnmarshalAdditionalProperties is deprecated. Use ExtractAdditionalProperties instead.
+// This function is maintained for backward compatibility, unmarshal additional properties
+// from the input and removing fields that exist on the parent struct.
+var UnmarshalAdditionalProperties = ExtractAdditionalProperties[any]
+
+// DetectConflictingProperties checks if any of the keys in structProperties exist in the dstMap.
+// If a key is found, it returns an error indicating a conflict with one of the model's properties.
+func DetectConflictingProperties[T any](dstMap map[string]T, structProperties ...string) error {
+	for _, key := range structProperties {
 		if _, ok := dstMap[key]; ok {
 			return errors.New("an additional property key, '" + key + "' conflicts with one of the model's properties")
 		}
@@ -15,37 +26,43 @@ func ValidateAdditionalProperty[T any](dstMap map[string]T, keysToRemove ...stri
 	return nil
 }
 
-// MapAdditionalProperties append additional properties to destination struct map
-var MapAdditionalProperties = MapAdditionalProperty[any]
-
-// MapAdditionalProperty append additional properties to destination struct map
-func MapAdditionalProperty[T any](destinationMap additionalProperties[any], sourceMap additionalProperties[T]) {
+// MergeAdditionalProperties merges additional properties from the source map
+// into the destination map. If a key exists in both, the source map value overwrites
+// the destination map value.
+func MergeAdditionalProperties[T any](destinationMap additionalProperties[any], sourceMap additionalProperties[T]) {
 	for key, value := range sourceMap {
 		destinationMap[key] = value
 	}
 }
 
-// UnmarshalAdditionalProperties unmarshal additional properties and remove fields that exists on parent struct
-var UnmarshalAdditionalProperties = UnmarshalAdditionalProperty[any]
-
-// UnmarshalAdditionalProperty unmarshal additional properties and remove fields that exists on parent struct
-func UnmarshalAdditionalProperty[T any](input []byte, keysToRemove ...string) (map[string]T, error) {
+// ExtractAdditionalProperties unmarshal additional properties from the input and removes
+// fields that exist on the parent struct based on the provided keys to remove.
+func ExtractAdditionalProperties[T any](input []byte, keysToRemove ...string) (map[string]T, error) {
 	destinationMap := additionalProperties[T]{}
-	err := destinationMap.unmarshalAdditionalProperties(input, keysToRemove)
+	err := destinationMap.unmarshalAndFilterProperties(input, keysToRemove)
 	return destinationMap, err
 }
 
-// additionalProperties helper struct for handling additional properties in models
+// additionalProperties is a generic helper struct for handling additional properties in models.
+// It allows for the storage of key-value pairs where keys are strings and values are of a specified type T.
 type additionalProperties[T any] map[string]T
 
-func (srcMap *additionalProperties[T]) unmarshalAdditionalProperties(input []byte, keysToRemove []string) error {
+// unmarshalAndFilterProperties unmarshal additional properties from the input JSON byte array,
+// removing any keys specified in keysToRemove. It populates the srcMap with the remaining properties.
+// T represents the type of the values being unmarshalled.
+func (srcMap *additionalProperties[T]) unmarshalAndFilterProperties(input []byte, keysToRemove []string) error {
+	// Create a temporary map to hold the raw JSON data.
 	var dstRawMap map[string]json.RawMessage
 	if err := json.Unmarshal(input, &dstRawMap); err != nil {
 		return err
 	}
+
+	// Remove specified keys from the temporary map.
 	for _, key := range keysToRemove {
 		delete(dstRawMap, key)
 	}
+
+	// Unmarshal the remaining properties into the srcMap.
 	for key, value := range dstRawMap {
 		var typedVal T
 		if err := json.Unmarshal(value, &typedVal); err == nil {

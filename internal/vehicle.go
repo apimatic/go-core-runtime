@@ -21,7 +21,7 @@ type Vehicle[T any] struct {
 func (v Vehicle[T]) MarshalJSON() (
 	[]byte,
 	error) {
-	if err := utilities.ValidateAdditionalProperty(v.AdditionalProperties,
+	if err := utilities.DetectConflictingProperties(v.AdditionalProperties,
 		"year", "make", "model"); err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func (v Vehicle[T]) MarshalJSON() (
 
 func (v Vehicle[T]) toMap() map[string]any {
 	structMap := make(map[string]any)
-	utilities.MapAdditionalProperty(structMap, v.AdditionalProperties)
+	utilities.MergeAdditionalProperties(structMap, v.AdditionalProperties)
 	if v.Make != nil {
 		structMap["make"] = *v.Make
 	} else {
@@ -55,7 +55,7 @@ func (v *Vehicle[T]) UnmarshalJSON(input []byte) error {
 	if err != nil {
 		return err
 	}
-	additionalProperties, err := utilities.UnmarshalAdditionalProperty[T](input, "year", "make", "model")
+	additionalProperties, err := utilities.ExtractAdditionalProperties[T](input, "year", "make", "model")
 	if err != nil {
 		return err
 	}
