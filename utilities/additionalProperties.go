@@ -38,8 +38,16 @@ func MergeAdditionalProperties[T any](destinationMap additionalProperties[any], 
 // ExtractAdditionalProperties unmarshal additional properties from the input and removes
 // fields that exist on the parent struct based on the provided keys to remove.
 func ExtractAdditionalProperties[T any](input []byte, keysToRemove ...string) (map[string]T, error) {
+	rawMap, err := unmarshalAndFilterProperties(input, keysToRemove)
+
 	destinationMap := additionalProperties[T]{}
-	err := destinationMap.unmarshalAndFilterProperties(input, keysToRemove)
+	// Unmarshal the remaining properties into the destinationMap.
+	for key, value := range rawMap {
+		var typedVal T
+		if err := json.Unmarshal(value, &typedVal); err == nil {
+			destinationMap[key] = typedVal
+		}
+	}
 	return destinationMap, err
 }
 
@@ -48,26 +56,17 @@ func ExtractAdditionalProperties[T any](input []byte, keysToRemove ...string) (m
 type additionalProperties[T any] map[string]T
 
 // unmarshalAndFilterProperties unmarshal additional properties from the input JSON byte array,
-// removing any keys specified in keysToRemove. It populates the srcMap with the remaining properties.
-// T represents the type of the values being unmarshalled.
-func (srcMap *additionalProperties[T]) unmarshalAndFilterProperties(input []byte, keysToRemove []string) error {
+// removing any keys specified in keysToRemove.
+func unmarshalAndFilterProperties(input []byte, keysToRemove []string) (map[string]json.RawMessage, error) {
 	// Create a temporary map to hold the raw JSON data.
-	var dstRawMap map[string]json.RawMessage
-	if err := json.Unmarshal(input, &dstRawMap); err != nil {
-		return err
+	var rawMap map[string]json.RawMessage
+	if err := json.Unmarshal(input, &rawMap); err != nil {
+		return rawMap, err
 	}
 
 	// Remove specified keys from the temporary map.
 	for _, key := range keysToRemove {
-		delete(dstRawMap, key)
+		delete(rawMap, key)
 	}
-
-	// Unmarshal the remaining properties into the srcMap.
-	for key, value := range dstRawMap {
-		var typedVal T
-		if err := json.Unmarshal(value, &typedVal); err == nil {
-			(*srcMap)[key] = typedVal
-		}
-	}
-	return nil
+	return rawMap, nil
 }
