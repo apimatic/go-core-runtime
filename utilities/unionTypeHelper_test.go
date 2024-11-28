@@ -1,8 +1,10 @@
-package utilities
+package utilities_test
 
 import (
 	"encoding/json"
+	"github.com/apimatic/go-core-runtime/internal"
 	"github.com/apimatic/go-core-runtime/internal/assert"
+	"github.com/apimatic/go-core-runtime/utilities"
 	"testing"
 )
 
@@ -77,7 +79,7 @@ func TestCommonOneOfAndAnyOfCases(t *testing.T) {
 		},
 		{
 			name:            `(Truck,Car) => nil`,
-			types:           []any{&Truck{}, &Car{}},
+			types:           []any{&internal.Truck{}, &internal.Car{}},
 			isNullableTypes: []bool{false, true},
 			testValue:       `null`,
 			expectedType:    nil,
@@ -85,7 +87,7 @@ func TestCommonOneOfAndAnyOfCases(t *testing.T) {
 	}
 
 	//assertCases(t, tests, UnmarshallOneOf)
-	assertCases(t, tests, UnmarshallAnyOf)
+	assertCases(t, tests, utilities.UnmarshallAnyOf)
 }
 
 func TestOneOf(t *testing.T) {
@@ -116,27 +118,27 @@ func TestOneOf(t *testing.T) {
 		},
 		{
 			name:         `(int[],Atom) => Atom`,
-			types:        []any{new([]int), &Atom{}},
+			types:        []any{new([]int), &internal.Atom{}},
 			testValue:    `{"number_of_electrons":2345,"number_of_protons":1234}`,
-			expectedType: &Atom{},
+			expectedType: &internal.Atom{},
 		},
 		{
 			name:         `(int{},Atom) => int{}`,
-			types:        []any{new(map[string]int), &Atom{}},
+			types:        []any{new(map[string]int), &internal.Atom{}},
 			testValue:    `{"number_of_":2345,"number_of_protons":1234}`,
 			expectedType: new(map[string]int),
 		},
 		{
 			name:         `(Truck,Car) => Car`,
-			types:        []any{&Truck{}, &Car{}},
+			types:        []any{&internal.Truck{}, &internal.Car{}},
 			testValue:    `{"id":2345,"roof":"BIG","type":null}`,
-			expectedType: &Car{},
+			expectedType: &internal.Car{},
 		},
 		{
 			name:         `(Truck,[]Car) => []Car`,
-			types:        []any{&Truck{}, &[]Car{}},
+			types:        []any{&internal.Truck{}, &[]internal.Car{}},
 			testValue:    `[{"id":2345,"roof":"BIG","type":null}]`,
-			expectedType: &[]Car{},
+			expectedType: &[]internal.Car{},
 		},
 		{
 			name:                 `(bool,int) => FAIL`,
@@ -164,61 +166,61 @@ func TestOneOf(t *testing.T) {
 		},
 		{
 			name:                 `(Car,Truck) => FAIL`,
-			types:                []any{&Car{}, &Truck{}},
+			types:                []any{&internal.Car{}, &internal.Truck{}},
 			testValue:            `{"id":2345,"weight":"heavy","roof":"BIG"}`,
 			shouldFail:           true,
-			expectedErrorMessage: "There are more than one matching types i.e. {*utilities.Car and *utilities.Truck} on: {\"id\":2345,\"weight\":\"heavy\",\"roof\":\"BIG\"}",
+			expectedErrorMessage: "There are more than one matching types i.e. {*internal.Car and *internal.Truck} on: {\"id\":2345,\"weight\":\"heavy\",\"roof\":\"BIG\"}",
 		},
 		{
 			name:       `(Car,Truck) => FAIL`,
-			types:      []any{&Car{}, &Truck{}},
+			types:      []any{&internal.Car{}, &internal.Truck{}},
 			testValue:  `{"roof":"BIG"}`,
 			shouldFail: true,
-			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Car, *utilities.Truck} on: {\"roof\":\"BIG\"}\n\n" +
+			expectedErrorMessage: "We could not match any acceptable type from {*internal.Car, *internal.Truck} on: {\"roof\":\"BIG\"}\n\n" +
 				"Error 1:\n  => Car \n\t=> required field `Id` is missing\n\n" +
 				"Error 2:\n  => Truck \n\t=> required field `Id` is missing\n\t=> required field `Weight` is missing",
 		},
 		{
 			name:       `(Car,Truck) => FAIL2`,
-			types:      []any{&Car{}, &Truck{}},
+			types:      []any{&internal.Car{}, &internal.Truck{}},
 			testValue:  `"car or truck"`,
 			shouldFail: true,
-			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Car, *utilities.Truck} on: \"car or truck\"\n\n" +
-				"Error 1:\n  => Car \n\t=> json: cannot unmarshal string into Go value of type utilities.car\n\n" +
-				"Error 2:\n  => Truck \n\t=> json: cannot unmarshal string into Go value of type utilities.truck",
+			expectedErrorMessage: "We could not match any acceptable type from {*internal.Car, *internal.Truck} on: \"car or truck\"\n\n" +
+				"Error 1:\n  => Car \n\t=> json: cannot unmarshal string into Go value of type internal.car\n\n" +
+				"Error 2:\n  => Truck \n\t=> json: cannot unmarshal string into Go value of type internal.truck",
 		},
 		{
 			name:       `(Car,Truck) => FAIL3`,
-			types:      []any{&Car{}, &Truck{}},
+			types:      []any{&internal.Car{}, &internal.Truck{}},
 			testValue:  `null`,
 			shouldFail: true,
-			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Car, *utilities.Truck} on: null\n\n" +
-				"Error 1:\n  => json: cannot unmarshal null into Go value of type *utilities.Car\n\n" +
-				"Error 2:\n  => json: cannot unmarshal null into Go value of type *utilities.Truck",
+			expectedErrorMessage: "We could not match any acceptable type from {*internal.Car, *internal.Truck} on: null\n\n" +
+				"Error 1:\n  => json: cannot unmarshal null into Go value of type *internal.Car\n\n" +
+				"Error 2:\n  => json: cannot unmarshal null into Go value of type *internal.Truck",
 		},
 	}
 
-	assertCases(t, tests, UnmarshallOneOf)
+	assertCases(t, tests, utilities.UnmarshallOneOf)
 }
 
 func TestOneOfDiscriminator(t *testing.T) {
 	var tests = []UnionTypeCase{
 		{
 			name:               `(Car,Bike) => Car`,
-			types:              []any{&Car{}, &Bike{}},
+			types:              []any{&internal.Car{}, &internal.Bike{}},
 			discriminators:     []string{"4 wheeler", "2 wheeler"},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG","type":"4 wheeler"}`,
-			expectedType:       &Car{},
+			expectedType:       &internal.Car{},
 		},
 		{
 			name:               `(Car,Bike) => Bike`,
-			types:              []any{&Car{}, &Bike{}},
+			types:              []any{&internal.Car{}, &internal.Bike{}},
 			discriminators:     []string{"4 wheeler", "2 wheeler"},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
 			expectedValue:      `{"id":2345,"roof":"BIG","air_level":{},"type":"2 wheeler"}`,
-			expectedType:       &Bike{},
+			expectedType:       &internal.Bike{},
 		},
 		{
 			name:               `(string,bool) => bool`,
@@ -230,7 +232,7 @@ func TestOneOfDiscriminator(t *testing.T) {
 		},
 	}
 
-	assertDiscriminatorCases(t, tests, UnmarshallOneOfWithDiscriminator)
+	assertDiscriminatorCases(t, tests, utilities.UnmarshallOneOfWithDiscriminator)
 }
 
 func TestAnyOf(t *testing.T) {
@@ -249,16 +251,16 @@ func TestAnyOf(t *testing.T) {
 		},
 		{
 			name:         `(Truck,Car) => Truck`,
-			types:        []any{&Truck{}, &Car{}},
+			types:        []any{&internal.Truck{}, &internal.Car{}},
 			testValue:    `{"id":2345,"weight":"heavy","roof":"BIG"}`,
-			expectedType: &Truck{},
+			expectedType: &internal.Truck{},
 		},
 		{
 			name:          `(Car,Truck) => Car`,
-			types:         []any{&Car{}, &Truck{}},
+			types:         []any{&internal.Car{}, &internal.Truck{}},
 			testValue:     `{"id":2345,"weight":"heavy","roof":"BIG"}`,
 			expectedValue: `{"id":2345,"roof":"BIG","type":null}`,
-			expectedType:  &Car{},
+			expectedType:  &internal.Car{},
 		},
 		{
 			name:       `(bool,int) => FAIL`,
@@ -271,78 +273,78 @@ func TestAnyOf(t *testing.T) {
 		},
 		{
 			name:       `(Bike,Atom) => FAIL`,
-			types:      []any{&Bike{}, &Atom{}},
+			types:      []any{&internal.Bike{}, &internal.Atom{}},
 			testValue:  `{"id":2345,"roof":"BIG","air_level":{},"type":"2 wheeler","number_of_protons":1234}`,
 			shouldFail: true,
-			expectedErrorMessage: "We could not match any acceptable type from {*utilities.Bike, *utilities.Atom} on: {\"id\":2345,\"roof\":\"BIG\",\"air_level\":{},\"type\":\"2 wheeler\",\"number_of_protons\":1234}\n\n" +
+			expectedErrorMessage: "We could not match any acceptable type from {*internal.Bike, *internal.Atom} on: {\"id\":2345,\"roof\":\"BIG\",\"air_level\":{},\"type\":\"2 wheeler\",\"number_of_protons\":1234}\n\n" +
 				"Error 1:\n  => Bike . Atom \n\t=> required field `NumberOfElectrons` is missing\n\t=> required field `NumberOfProtons` is missing\n\n" +
 				"Error 2:\n  => Atom \n\t=> required field `NumberOfElectrons` is missing",
 		},
 	}
 
-	assertCases(t, tests, UnmarshallAnyOf)
+	assertCases(t, tests, utilities.UnmarshallAnyOf)
 }
 
 func TestAnyOfDiscriminator(t *testing.T) {
 	var tests = []UnionTypeCase{
 		{
 			name:               `(Car,Bike) => Car`,
-			types:              []any{&Car{}, &Bike{}},
+			types:              []any{&internal.Car{}, &internal.Bike{}},
 			discriminators:     []string{"4 wheeler", "2 wheeler"},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG","type":"unknown"}`,
-			expectedType:       &Car{},
+			expectedType:       &internal.Car{},
 		},
 		{
 			name:               `(Car,Bike) => Car2`,
-			types:              []any{&Car{}, &Bike{}},
+			types:              []any{&internal.Car{}, &internal.Bike{}},
 			discriminators:     []string{"4 wheeler", "2 wheeler"},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG"}`,
 			expectedValue:      `{"id":2345,"roof":"BIG","type":null}`,
-			expectedType:       &Car{},
+			expectedType:       &internal.Car{},
 		},
 		{
 			name:               `(Car,Bike) => Car3`,
-			types:              []any{&Car{}, &Bike{}},
+			types:              []any{&internal.Car{}, &internal.Bike{}},
 			discriminators:     []string{"4 wheeler", "2 wheeler"},
 			discriminatorField: "",
 			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
-			expectedType:       &Car{},
+			expectedType:       &internal.Car{},
 		},
 		{
 			name:               `(Car,Bike) => Car4`,
-			types:              []any{&Car{}, &Bike{}},
+			types:              []any{&internal.Car{}, &internal.Bike{}},
 			discriminators:     []string{"4 wheeler", ""},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG","type":""}`,
-			expectedType:       &Car{},
+			expectedType:       &internal.Car{},
 		},
 		{
 			name:               `(Car,Bike) => Bike`,
-			types:              []any{&Car{}, &Bike{}},
+			types:              []any{&internal.Car{}, &internal.Bike{}},
 			discriminators:     []string{"", "2 wheeler"},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
 			expectedValue:      `{"id":2345,"roof":"BIG","air_level":{},"type":"2 wheeler"}`,
-			expectedType:       &Bike{},
+			expectedType:       &internal.Bike{},
 		},
 	}
 
-	assertDiscriminatorCases(t, tests, UnmarshallAnyOfWithDiscriminator)
+	assertDiscriminatorCases(t, tests, utilities.UnmarshallAnyOfWithDiscriminator)
 }
 
-func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, ...*TypeHolder) (any, error)) {
+func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, ...*utilities.TypeHolder) (any, error)) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var anyTypeHolderSelected bool
-			var typeHolders []*TypeHolder
+			var typeHolders []*utilities.TypeHolder
 			for i, tt := range test.types {
-				var isNullableType bool = false
+				var isNullableType = false
 				if len(test.isNullableTypes) > 0 {
 					isNullableType = test.isNullableTypes[i]
 				}
-				typeHolders = append(typeHolders, NewTypeHolder(tt, isNullableType, &anyTypeHolderSelected))
+				typeHolders = append(typeHolders, utilities.NewTypeHolder(tt, isNullableType, &anyTypeHolderSelected))
 			}
 			result, err := caller([]byte(test.testValue), typeHolders...)
 			test.Assert(t, result, err, anyTypeHolderSelected)
@@ -350,17 +352,17 @@ func assertCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, ...*Ty
 	}
 }
 
-func assertDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, string, ...*TypeHolder) (any, error)) {
+func assertDiscriminatorCases(t *testing.T, tests []UnionTypeCase, caller func([]byte, string, ...*utilities.TypeHolder) (any, error)) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var anyTypeHolderSelected bool
-			var typeHolders []*TypeHolder
+			var typeHolders []*utilities.TypeHolder
 			for i, tt := range test.types {
-				var isNullableType bool = false
+				var isNullableType = false
 				if len(test.isNullableTypes) > 0 {
 					isNullableType = test.isNullableTypes[i]
 				}
-				typeHolders = append(typeHolders, NewTypeHolderDiscriminator(tt, isNullableType, &anyTypeHolderSelected, test.discriminators[i]))
+				typeHolders = append(typeHolders, utilities.NewTypeHolderDiscriminator(tt, isNullableType, &anyTypeHolderSelected, test.discriminators[i]))
 			}
 			result, err := caller([]byte(test.testValue), test.discriminatorField, typeHolders...)
 			test.Assert(t, result, err, anyTypeHolderSelected)

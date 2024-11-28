@@ -1,4 +1,4 @@
-// Copyright (c) APIMatic. All rights reserved.
+// Package https Copyright (c) APIMatic. All rights reserved.
 package https
 
 import (
@@ -18,6 +18,7 @@ import (
 )
 
 // Constants for commonly used HTTP headers and content types.
+
 const CONTENT_TYPE_HEADER = "content-type"
 const ACCEPT_HEADER = "accept"
 const CONTENT_LENGTH_HEADER = "content-length"
@@ -124,7 +125,7 @@ func newDefaultCallBuilder(
 		httpMethod:               httpMethod,
 		authProvider:             authProvider,
 		baseUrlProvider:          baseUrlProvider,
-		retryOption:              RequestRetryOption(Default),
+		retryOption:              Default,
 		clientError:              nil,
 		retryConfig:              retryConfig,
 		ctx:                      ctx,
@@ -200,7 +201,7 @@ func (cb *defaultCallBuilder) AppendTemplateParams(params any) {
 			case string:
 				cb.AppendTemplateParam(x)
 			case int:
-				cb.AppendTemplateParam(strconv.Itoa(int(x)))
+				cb.AppendTemplateParam(strconv.Itoa(x))
 			default:
 				cb.AppendTemplateParam(fmt.Sprintf("%v", x))
 			}
@@ -515,7 +516,7 @@ func (cb *defaultCallBuilder) InterceptRequest(
 		})
 }
 
-// toRequest converts the CallBuilder configuration into an http.Request object.
+// toRequest converts the CallBuilder configuration into a http.Request object.
 // It prepares the request by setting the HTTP method, URL, headers, and request body.
 // If there are any validation errors, it returns an error along with an empty request.
 func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
@@ -529,7 +530,7 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 		request.Method = cb.httpMethod
 	}
 
-	url, err := url.Parse(mergePath(cb.baseUrlProvider(cb.baseUrlArg), cb.path))
+	urlObj, err := url.Parse(mergePath(cb.baseUrlProvider(cb.baseUrlArg), cb.path))
 	if err != nil {
 		return &request, err
 	}
@@ -539,11 +540,11 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 		return &request, err
 	} else {
 		if len(cb.query) > 0 {
-			url.RawQuery = encodeSpace(cb.query.Encode())
+			urlObj.RawQuery = encodeSpace(cb.query.Encode())
 		}
 	}
 
-	request.URL = url
+	request.URL = urlObj
 
 	request.Header = make(http.Header)
 
@@ -553,7 +554,9 @@ func (cb *defaultCallBuilder) toRequest() (*http.Request, error) {
 	} else {
 		if strings.TrimSpace(cb.body) != "" {
 			request.Body = io.NopCloser(bytes.NewBuffer([]byte(cb.body)))
-			defer request.Body.Close()
+			defer func(Body io.ReadCloser) {
+				_ = Body.Close()
+			}(request.Body)
 		}
 	}
 
@@ -603,15 +606,15 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 	f := func(request *http.Request) HttpContext {
 		client := cb.httpClient
 		response, err := client.Execute(request)
-		context := HttpContext{
+		httpContext := HttpContext{
 			Request:  request,
 			Response: response,
 		}
 		if err == nil {
-			err = cb.selectApiError(context)
+			err = cb.selectApiError(httpContext)
 		}
 		cb.clientError = err
-		return context
+		return httpContext
 	}
 
 	pipeline := CallHttpInterceptors(cb.interceptors, f)
@@ -620,20 +623,20 @@ func (cb *defaultCallBuilder) Call() (*HttpContext, error) {
 		return nil, err
 	}
 	cb.sdkLogger.LogRequest(request)
-	context := pipeline(request)
-	cb.sdkLogger.LogResponse(context.Response)
+	executor := pipeline(request)
+	cb.sdkLogger.LogResponse(executor.Response)
 
 	if cb.clientError != nil {
 		err = cb.clientError
 	}
 
-	return &context, err
+	return &executor, err
 }
 
 func (cb *defaultCallBuilder) selectApiError(context HttpContext) error {
 	statusCode := context.Response.StatusCode
 	if statusCode >= 200 && statusCode < 300 {
-		// Return early if its a successful APICall
+		// Return early if it is a successful APICall
 		return nil
 	}
 
@@ -670,7 +673,10 @@ func (cb *defaultCallBuilder) CallAsJson() (*json.Decoder, *http.Response, error
 	cb.InterceptRequest(f)
 	result, err := cb.Call()
 	if err != nil {
-		return nil, result.Response, err
+		if result != nil {
+			return nil, result.Response, err
+		}
+		return nil, &http.Response{}, err
 	}
 
 	if result.Response != nil {
@@ -718,12 +724,12 @@ func (cb *defaultCallBuilder) CallAsStream() ([]byte, *http.Response, error) {
 			return nil, result.Response, fmt.Errorf("response body empty")
 		}
 
-		bytes, err := result.GetResponseBody()
+		responseBody, err := result.GetResponseBody()
 		if err != nil {
 			return nil, result.Response, fmt.Errorf("error reading Response body: %v", err.Error())
 		}
 
-		return bytes, result.Response, err
+		return responseBody, result.Response, err
 	}
 	return nil, result.Response, err
 }
@@ -739,7 +745,7 @@ func (cb *defaultCallBuilder) addRetryInterceptor() {
 			req *http.Request,
 			next HttpCallExecutor,
 		) HttpContext {
-			var context HttpContext
+			var httpContext HttpContext
 			allowedWaitTime := cb.retryConfig.maximumRetryWaitTime
 			if allowedWaitTime == 0 {
 				allowedWaitTime = 1<<63 - 1
@@ -756,7 +762,7 @@ func (cb *defaultCallBuilder) addRetryInterceptor() {
 				default:
 				}
 
-				context = next(req)
+				httpContext = next(req)
 				if retryCount > 0 {
 					allowedWaitTime -= waitTime
 				}
@@ -764,13 +770,13 @@ func (cb *defaultCallBuilder) addRetryInterceptor() {
 					waitTime = cb.retryConfig.GetRetryWaitTime(
 						allowedWaitTime,
 						int64(retryCount),
-						context.Response,
+						httpContext.Response,
 						cb.clientError)
-					time.Sleep(time.Duration(waitTime) * time.Second)
+					time.Sleep(waitTime * time.Second)
 					retryCount++
 				}
 			}
-			return context
+			return httpContext
 		})
 }
 

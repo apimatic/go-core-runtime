@@ -47,7 +47,7 @@ func (o *Optional[T]) IsValueSet() bool {
 	return o.set
 }
 
-// UnmarshalJSON unmarshals the JSON input into the Optional value.
+// UnmarshalJSON unmarshal the JSON input into the Optional value.
 func (o *Optional[T]) UnmarshalJSON(input []byte) error {
 	var temp *T
 	if input != nil {

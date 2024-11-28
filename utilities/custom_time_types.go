@@ -6,6 +6,38 @@ import (
 	"time"
 )
 
+// ExtractTimeTypeAdditionalProperties unmarshal additional properties from the input and removes
+// fields that exist on the parent struct based on the provided keys to remove.
+func ExtractTimeTypeAdditionalProperties(input []byte, layout string, keysToRemove ...string) (map[string]time.Time, error) {
+	rawMap, err := unmarshalAndFilterProperties(input, keysToRemove)
+
+	destinationMap := additionalProperties[time.Time]{}
+	// Unmarshal the remaining properties into the srcMap.
+	for key, value := range rawMap {
+		if layout == time.UnixDate {
+			var unixTime UnixDateTime
+			if err := json.Unmarshal([]byte(value), &unixTime); err == nil {
+				destinationMap[key] = unixTime.Value()
+			}
+		} else {
+			if typedVal, err := unmarshalTime(value, layout); err == nil {
+				destinationMap[key] = typedVal
+			}
+		}
+	}
+	return destinationMap, err
+}
+
+func MergeTimeTypeAdditionalProperties(destinationMap additionalProperties[any], sourceMap additionalProperties[time.Time], layout string) {
+	for key, value := range sourceMap {
+		if layout == time.UnixDate {
+			destinationMap[key] = value.Unix()
+		} else {
+			destinationMap[key] = value.Format(layout)
+		}
+	}
+}
+
 // DefaultTime is a struct that implements time.Time with custom formatting.
 type DefaultTime struct{ time.Time }
 
@@ -94,7 +126,7 @@ func NewUnixDateTime(t time.Time) UnixDateTime {
 	return UnixDateTime{Time: t}
 }
 
-func (t UnixDateTime) Value() time.Time { return t.Time }
+func (u UnixDateTime) Value() time.Time { return u.Time }
 
 // String returns UnixDateTime as a string following the Unix standard.
 func (u UnixDateTime) String() string {

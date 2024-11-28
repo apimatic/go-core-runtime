@@ -101,21 +101,21 @@ func TestGetRetryAfterInSeconds(t *testing.T) {
 
 func TestDefaultBackoff(t *testing.T) {
 	backoff := defaultBackoff(5, 100, 20, 2, 1)
-	if time.Duration(backoff) != time.Duration(20) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", time.Duration(20)*time.Second, time.Duration(backoff)*time.Second)
+	if backoff != time.Duration(20) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", time.Duration(20)*time.Second, backoff*time.Second)
 	}
 }
 
 func TestDefaultBackoffZero(t *testing.T) {
 	backoff := defaultBackoff(5, 1, 20, 2, 1)
-	if time.Duration(backoff) != time.Duration(0) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", time.Duration(0)*time.Second, time.Duration(backoff)*time.Second)
+	if backoff != time.Duration(0) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", time.Duration(0)*time.Second, backoff*time.Second)
 	}
 }
 
 func TestShouldRetryEnable(t *testing.T) {
 	retryConfig := getRetryConfiguration()
-	shouldRetry := retryConfig.ShouldRetry(RequestRetryOption(Enable), "")
+	shouldRetry := retryConfig.ShouldRetry(Enable, "")
 	if !shouldRetry {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", shouldRetry, false)
 	}
@@ -123,7 +123,7 @@ func TestShouldRetryEnable(t *testing.T) {
 
 func TestShouldRetryDisable(t *testing.T) {
 	retryConfig := getRetryConfiguration()
-	shouldRetry := retryConfig.ShouldRetry(RequestRetryOption(Disable), "")
+	shouldRetry := retryConfig.ShouldRetry(Disable, "")
 	if shouldRetry {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", shouldRetry, true)
 	}
@@ -131,7 +131,7 @@ func TestShouldRetryDisable(t *testing.T) {
 
 func TestShouldRetryDefaultFalse(t *testing.T) {
 	retryConfig := getRetryConfiguration()
-	shouldRetry := retryConfig.ShouldRetry(RequestRetryOption(Default), http.MethodGet)
+	shouldRetry := retryConfig.ShouldRetry(Default, http.MethodGet)
 	if shouldRetry {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", shouldRetry, true)
 	}
@@ -144,7 +144,7 @@ func TestShouldRetryDefaultTrue(t *testing.T) {
 		WithHttpStatusCodesToRetry([]int64{429}),
 		WithMaximumRetryWaitTime(50),
 	)
-	shouldRetry := retryConfig.ShouldRetry(RequestRetryOption(Default), http.MethodDelete)
+	shouldRetry := retryConfig.ShouldRetry(Default, http.MethodDelete)
 	if !shouldRetry {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", shouldRetry, false)
 	}

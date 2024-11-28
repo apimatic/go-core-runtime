@@ -1,6 +1,7 @@
 package https
 
 import (
+	"errors"
 	"math"
 	"net"
 	"net/http"
@@ -139,8 +140,8 @@ func (r *RetryConfiguration) HttpStatusCodesToRetry() []int64 {
 }
 
 // containsHttpStatusCodesToRetry checks if the given HTTP status code exists in the list of status codes to retry on.
-func (rc *RetryConfiguration) containsHttpStatusCodesToRetry(httpStatusCode int64) bool {
-	for _, val := range rc.httpStatusCodesToRetry {
+func (r *RetryConfiguration) containsHttpStatusCodesToRetry(httpStatusCode int64) bool {
+	for _, val := range r.httpStatusCodesToRetry {
 		if val == httpStatusCode {
 			return true
 		}
@@ -149,8 +150,8 @@ func (rc *RetryConfiguration) containsHttpStatusCodesToRetry(httpStatusCode int6
 }
 
 // containsHttpMethodsToRetry checks if the given HTTP method exists in the list of methods to retry on.
-func (rc *RetryConfiguration) containsHttpMethodsToRetry(httpMethod string) bool {
-	for _, v := range rc.httpMethodsToRetry {
+func (r *RetryConfiguration) containsHttpMethodsToRetry(httpMethod string) bool {
+	for _, v := range r.httpMethodsToRetry {
 		if v == httpMethod {
 			return true
 		}
@@ -159,7 +160,7 @@ func (rc *RetryConfiguration) containsHttpMethodsToRetry(httpMethod string) bool
 }
 
 // GetRetryWaitTime calculates the wait time for the next retry attempt.
-func (rc *RetryConfiguration) GetRetryWaitTime(
+func (r *RetryConfiguration) GetRetryWaitTime(
 	maxWaitTime time.Duration,
 	retryCount int64,
 	response *http.Response,
@@ -167,28 +168,29 @@ func (rc *RetryConfiguration) GetRetryWaitTime(
 	retry := false
 	var retryAfter, retryWaitTime time.Duration
 
-	if retryCount < rc.maxRetryAttempts {
-		if err, ok := timeoutError.(net.Error); ok && err.Timeout() {
-			retry = rc.retryOnTimeout
+	if retryCount < r.maxRetryAttempts {
+		var netError net.Error
+		if errors.As(timeoutError, &netError) && netError.Timeout() {
+			retry = r.retryOnTimeout
 		} else if response != nil && response.Header != nil {
 			retryAfter = getRetryAfterInSeconds(response.Header)
-			if retryAfter > 0 || rc.containsHttpStatusCodesToRetry(int64(response.StatusCode)) {
+			if retryAfter > 0 || r.containsHttpStatusCodesToRetry(int64(response.StatusCode)) {
 				retry = true
 			}
 		}
 
 		if retry {
-			retryWaitTime = defaultBackoff(rc.retryInterval, maxWaitTime, retryAfter, rc.backoffFactor, retryCount)
+			retryWaitTime = defaultBackoff(r.retryInterval, maxWaitTime, retryAfter, r.backoffFactor, retryCount)
 		}
 	}
 	return retryWaitTime
 }
 
 // ShouldRetry determines if the request should be retried based on the RetryConfiguration and request HTTP method.
-func (rc *RetryConfiguration) ShouldRetry(retryRequestOption RequestRetryOption, httpMethod string) bool {
+func (r *RetryConfiguration) ShouldRetry(retryRequestOption RequestRetryOption, httpMethod string) bool {
 	switch retryRequestOption.String() {
 	default:
-		if rc.maxRetryAttempts > 0 && httpMethod != "" && rc.containsHttpMethodsToRetry(httpMethod) {
+		if r.maxRetryAttempts > 0 && httpMethod != "" && r.containsHttpMethodsToRetry(httpMethod) {
 			return true
 		}
 		return false
@@ -211,7 +213,7 @@ func getRetryAfterInSeconds(headers http.Header) time.Duration {
 
 // defaultBackoff calculates the backoff time for exponential backoff based on the retry configuration.
 func defaultBackoff(retryInterval, maxWaitTime, retryAfter time.Duration, backoffFactor, retryCount int64) time.Duration {
-	waitTime := (math.Pow(float64(backoffFactor), float64(retryCount)) * float64(retryInterval))
+	waitTime := math.Pow(float64(backoffFactor), float64(retryCount)) * float64(retryInterval)
 	sleep := math.Max(waitTime, float64(retryAfter))
 	if time.Duration(sleep) <= maxWaitTime {
 		return time.Duration(sleep)

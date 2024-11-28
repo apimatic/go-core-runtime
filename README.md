@@ -89,12 +89,12 @@ Package types provides utility types and functions.
 ### Utilities
 The utilities package provides utility functions for making HTTP calls.
 
-| File Name                                           | Description                                                                            |
-|-----------------------------------------------------|----------------------------------------------------------------------------------------|
-| [`API Helper`](utilities/apiHelper.go)              | Provides helper functions for making the HTTP calls.                                   |
-| [`Marshal Error`](utilities/marshal_error.go)       | Defines a structure for error that will be returned if marshalling/unmarshalling fail. |
-| [`Union Type Helper`](utilities/unionTypeHelper.go) | Provides helper functions for unmarshalling containers of multiple types.              |
-
+| File Name                                               | Description                                                                                     |
+|---------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| [`API Helper`](utilities/apiHelper.go)                  | Provides helper functions for making the HTTP calls.                                            |
+| [`Marshal Error`](utilities/marshal_error.go)           | Defines a structure for error that will be returned if marshalling/unmarshalling fail.          |
+| [`Union Type Helper`](utilities/unionTypeHelper.go)     | Provides helper functions for unmarshalling containers of multiple types.                       |
+| [`Additional Properties`](utilities/additionalProperties.go) | Provides helper functions for handling additional properties. |
 
 ## Contributing
 Contributions are welcome! If you encounter any issues or have suggestions for improvement, please open an issue.

@@ -13,11 +13,11 @@ import (
 	"github.com/apimatic/go-core-runtime/https"
 )
 
-func setTestingError(test *testing.T, responseArg any, expectedArg any){
+func setTestingError(test *testing.T, responseArg any, expectedArg any) {
 	test.Errorf("got \n%v \nbut expected %v", responseArg, expectedArg)
 }
 
-func setTestResponseError(test *testing.T, responseErr error){
+func setTestResponseError(test *testing.T, responseErr error) {
 	test.Errorf("Invalid response data: %v", responseErr)
 }
 
@@ -37,14 +37,14 @@ func RawBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCl
 // NativeBodyMatcher compares the response body as a primitive type(int, int64, float64, bool & time.Time) using a simple equality test.
 // Response must match exactly except in case of arrays where array ordering and strictness can be controlled via other options.
 func NativeBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCloser, isArray, checkArrayCount bool) {
-	
+
 	responseBytes, responseReadErr := io.ReadAll(responseBody)
 	if responseReadErr != nil {
 		setTestResponseError(test, responseReadErr)
 	}
 	expectedBytes := []byte(expectedBody)
-	
-	if (isArray){
+
+	if isArray {
 		matchNativeArray(test, expectedBytes, responseBytes, checkArrayCount)
 		return
 	}
@@ -60,13 +60,13 @@ func matchNativeArray(test *testing.T, expectedBytes, responseBytes []byte, chec
 	if expectedErr != nil || responseErr != nil {
 		test.Error("error while unmarshalling for comparison")
 	}
-	if (!checkArrayCount){
+	if !checkArrayCount {
 		matchNativeArrayValues(test, response, expected)
 		return
 	}
 	if !reflect.DeepEqual(response, expected) {
 		setTestingError(test, response, expected)
-	}	
+	}
 }
 
 func matchNativeArrayValues(test *testing.T, response, expected []any) {
@@ -106,7 +106,7 @@ func KeysBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadC
 // The test generated will perform deep checking which means if the response object contains nested objects, their keys and values will also be tested.
 // In case of nested arrays, their ordering and strictness depends on the provided options.
 func KeysAndValuesBodyMatcher(test *testing.T, expectedBody string, responseBody io.ReadCloser, checkArrayCount, checkArrayOrder bool) {
-	
+
 	responseBytes, responseErr := io.ReadAll(responseBody)
 	if responseErr != nil {
 		setTestResponseError(test, responseErr)

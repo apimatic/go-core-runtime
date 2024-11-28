@@ -21,17 +21,17 @@ func NewMockHeaderCredentials(apiKey string) *MockHeaderCredentials {
 	return &MockHeaderCredentials{apiKey: apiKey}
 }
 
-func (creds *MockHeaderCredentials) Validate() error {
-	if creds.apiKey == "" {
+func (mhc *MockHeaderCredentials) Validate() error {
+	if mhc.apiKey == "" {
 		return errors.New(API_KEY_MISSING_ERROR)
 	}
 
 	return nil
 }
 
-func (creds *MockHeaderCredentials) Authenticator() HttpInterceptor {
+func (mhc *MockHeaderCredentials) Authenticator() HttpInterceptor {
 	return func(req *http.Request, next HttpCallExecutor) HttpContext {
-		req.Header.Set(API_KEY, creds.apiKey)
+		req.Header.Set(API_KEY, mhc.apiKey)
 		return next(req)
 	}
 }
@@ -44,28 +44,28 @@ func NewMockQueryCredentials(apiToken string) *MockQueryCredentials {
 	return &MockQueryCredentials{apiToken: apiToken}
 }
 
-func (creds *MockQueryCredentials) Validate() error {
+func (mhc *MockQueryCredentials) Validate() error {
 
-	if creds.apiToken == "" {
+	if mhc.apiToken == "" {
 		return errors.New(API_TOKEN_MISSING_ERROR)
 	}
 
 	return nil
 }
 
-func (creds *MockQueryCredentials) Authenticator() HttpInterceptor {
+func (mhc *MockQueryCredentials) Authenticator() HttpInterceptor {
 	return func(req *http.Request, next HttpCallExecutor) HttpContext {
 		query := req.URL.Query()
-		query.Add(API_TOKEN, creds.apiToken)
+		query.Add(API_TOKEN, mhc.apiToken)
 		req.URL.RawQuery = query.Encode()
 		return next(req)
 	}
 }
 
-func AuthenticationError(errMsgs ...string) string {
+func AuthenticationError(errMessages ...string) string {
 	var body strings.Builder
 
-	for _, errMsg := range errMsgs {
+	for _, errMsg := range errMessages {
 		body.WriteString("\n-> ")
 		body.WriteString(errMsg)
 	}
@@ -78,8 +78,8 @@ func AuthenticationError(errMsgs ...string) string {
 	return authError.Error()
 }
 
-const MockHeaderToken = "1234"
-const MockQueryToken = "abcd"
+const MockHeaderToken = "mockHeaderToken"
+const MockQueryToken = "mockQueryToken"
 
 func getMockCallBuilderWithAuths() CallBuilder {
 	auths := map[string]AuthInterface{

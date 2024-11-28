@@ -1,8 +1,9 @@
-package utilities
+package internal
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apimatic/go-core-runtime/utilities"
 	"strings"
 
 	"github.com/apimatic/go-core-runtime/types"
@@ -19,9 +20,9 @@ func (b *Bike) UnmarshalJSON(input []byte) error {
 	var temp bike
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return NewMarshalError("Bike", err)
+		return utilities.NewMarshalError("Bike", err)
 	}
-	err = temp.validate(input)
+	err = temp.validate()
 	if err != nil {
 		return err
 	}
@@ -38,7 +39,7 @@ type bike struct {
 	Type     *string              `json:"type"`
 }
 
-func (b *bike) validate(input []byte) error {
+func (b *bike) validate() error {
 	var errs []string
 	if b.Id == nil {
 		errs = append(errs, "required field `Id` is missing")
@@ -46,5 +47,5 @@ func (b *bike) validate(input []byte) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return NewMarshalError("Bike", errors.New(strings.Join(errs, "\n\t=> ")))
+	return utilities.NewMarshalError("Bike", errors.New(strings.Join(errs, "\n\t=> ")))
 }

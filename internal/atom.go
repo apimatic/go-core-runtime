@@ -1,8 +1,9 @@
-package utilities
+package internal
 
 import (
 	"encoding/json"
 	"errors"
+	"github.com/apimatic/go-core-runtime/utilities"
 	"strings"
 )
 
@@ -15,9 +16,9 @@ func (a *Atom) UnmarshalJSON(input []byte) error {
 	var temp atom
 	err := json.Unmarshal(input, &temp)
 	if err != nil {
-		return NewMarshalError("Atom", err)
+		return utilities.NewMarshalError("Atom", err)
 	}
-	err = temp.validate(input)
+	err = temp.validate()
 	if err != nil {
 		return err
 	}
@@ -31,7 +32,7 @@ type atom struct {
 	NumberOfProtons   *int `json:"number_of_protons"`
 }
 
-func (a *atom) validate(input []byte) error {
+func (a *atom) validate() error {
 	var errs []string
 	if a.NumberOfElectrons == nil {
 		errs = append(errs, "required field `NumberOfElectrons` is missing")
@@ -42,5 +43,5 @@ func (a *atom) validate(input []byte) error {
 	if len(errs) == 0 {
 		return nil
 	}
-	return NewMarshalError("Atom", errors.New(strings.Join(errs, "\n\t=> ")))
+	return utilities.NewMarshalError("Atom", errors.New(strings.Join(errs, "\n\t=> ")))
 }
