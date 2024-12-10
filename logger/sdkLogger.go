@@ -1,7 +1,8 @@
 package logger
 
 import (
-	"encoding/json"
+	"bytes"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -93,12 +94,17 @@ func (a *SdkLogger) _applyLogRequestOptions(level Level, request *http.Request) 
 	}
 
 	if logOp.body {
-		if bodyBytes, err := json.Marshal(request.Body); err == nil {
-			a.logger.Log(level, "Request body %{body}",
-				map[string]any{"body": string(bodyBytes)},
-			)
+		if request.Body == nil {
+			a.logger.Log(level, "Request body %{body}", map[string]any{"body": nil})
+			return
 		}
-
+		bodyBytes, err := io.ReadAll(request.Body)
+		request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		if err != nil {
+			a.logger.Log(level, "Error reading request body %{body}", map[string]any{"body": err})
+		} else {
+			a.logger.Log(level, "Request body %{body}", map[string]any{"body": string(bodyBytes)})
+		}
 	}
 }
 
@@ -117,11 +123,16 @@ func (a *SdkLogger) _applyLogResponseOptions(level Level, response *http.Respons
 	}
 
 	if logOp.body {
-
-		if bodyBytes, err := json.Marshal(response.Body); err == nil {
-			a.logger.Log(level, "Response body %{body}",
-				map[string]any{"body": string(bodyBytes)},
-			)
+		if response.Body == http.NoBody {
+			a.logger.Log(level, "Response body %{body}", map[string]any{"body": nil})
+			return
+		}
+		bodyBytes, err := io.ReadAll(response.Body)
+		response.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		if err != nil {
+			a.logger.Log(level, "Error reading response body %{body}", map[string]any{"body": err})
+		} else {
+			a.logger.Log(level, "Response body %{body}", map[string]any{"body": string(bodyBytes)})
 		}
 	}
 }

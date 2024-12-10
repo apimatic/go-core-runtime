@@ -48,11 +48,19 @@ func TestLevelEnumValueTRACE(t *testing.T) {
 }
 
 func TestLevelEnumValueInvalid(t *testing.T) {
-	level := logger.Level("Invalid")
+	var level logger.Level
+	json.Unmarshal([]byte(`"invalid"`), &level)
 	validateLevelEnumValues(level, new(testing.T))
 }
 
 func TestLevelEnumValueInvalid2(t *testing.T) {
-	level := logger.Level("nil")
+	var level logger.Level
+	json.Unmarshal([]byte(`nil`), &level)
+	validateLevelEnumValues(level, new(testing.T))
+}
+
+func TestLevelEnumValueInvalid3(t *testing.T) {
+	var level logger.Level
+	json.Unmarshal([]byte(`{"key": "value"}`), &level)
 	validateLevelEnumValues(level, new(testing.T))
 }
