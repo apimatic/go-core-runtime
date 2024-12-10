@@ -14,8 +14,13 @@ func GetTestingServer() *httptest.Server {
 			case "/response/integer":
 				_, _ = w.Write([]byte(`4`))
 			case "/template/abc/def", "/template/1/2/3/4/5", "/response/binary":
-				_, _ = w.Write([]byte(`"passed": true,
-				"message": "It's a hit!",`))
+				_, _ = w.Write([]byte(`"passed": true, "message": "It's a hit!",`))
+			case "/response/binary/customHeader":
+				if r.Header.Get("custom-header") == "CustomHeaderValue" {
+					_, _ = w.Write([]byte(`"passed": true, "message": "It's a hit!",`))
+				} else {
+					w.WriteHeader(http.StatusBadRequest)
+				}
 			case "/error/400":
 				w.WriteHeader(http.StatusBadRequest)
 			case "/error/500":
@@ -23,6 +28,8 @@ func GetTestingServer() *httptest.Server {
 				_, _ = w.Write([]byte(`{"errorDetail":"The server is down at the moment."}`))
 			case "/error/404":
 				w.WriteHeader(http.StatusNotFound)
+			case "/empty/response":
+				w.WriteHeader(http.StatusOK)
 			}
 		case "POST":
 			switch r.URL.Path {
