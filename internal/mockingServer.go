@@ -16,11 +16,7 @@ func GetTestingServer() *httptest.Server {
 			case "/template/abc/def", "/template/1/2/3/4/5", "/response/binary":
 				_, _ = w.Write([]byte(`"passed": true, "message": "It's a hit!",`))
 			case "/response/binary/customHeader":
-				if r.Header.Get("custom-header") == "CustomHeaderValue" {
-					_, _ = w.Write([]byte(`"passed": true, "message": "It's a hit!",`))
-				} else {
-					w.WriteHeader(http.StatusBadRequest)
-				}
+				w.WriteHeader(http.StatusBadRequest)
 			case "/error/400":
 				w.WriteHeader(http.StatusBadRequest)
 			case "/error/500":
