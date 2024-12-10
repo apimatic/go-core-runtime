@@ -14,6 +14,8 @@ var callBuilder https.CallBuilderFactory
 var ctx = context.Background()
 var serverUrl = internal.GetTestingServer().URL
 
+var _testsErrorFormat = "Failed:\nExpected: %v\nGot: %v"
+
 func init() {
 
 	client := https.NewHttpClient(https.NewHttpConfiguration())
@@ -36,7 +38,7 @@ func _callRequestAsJson(t *testing.T, request https.CallBuilder) {
 	}
 	expected := 200
 	if response.StatusCode != expected {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+		t.Errorf(_testsErrorFormat, expected, response)
 	}
 }
 
@@ -46,7 +48,7 @@ type fmtLogger struct {
 
 func (c *fmtLogger) AssertLogEntries(t *testing.T, expected ...string) {
 	if !reflect.DeepEqual(c.entries, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, c.entries)
+		t.Errorf(_testsErrorFormat, expected, c.entries)
 	}
 }
 
@@ -118,7 +120,7 @@ func TestSDKLoggerWithWithEmptyResponse(t *testing.T) {
 	_, response, _ := request.CallAsJson()
 	expected := 200
 	if response.StatusCode != expected {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+		t.Errorf(_testsErrorFormat, expected, response)
 	}
 }
 
