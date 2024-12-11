@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 )
@@ -21,6 +22,11 @@ func GetTestingServer() *httptest.Server {
 				} else {
 					w.WriteHeader(http.StatusBadRequest)
 				}
+			case "/response/empty":
+				w.WriteHeader(http.StatusOK)
+			case "/response/invalid":
+				reqBody, _ := io.ReadAll(r.Body)
+				_, _ = w.Write(reqBody)
 			case "/error/400":
 				w.WriteHeader(http.StatusBadRequest)
 			case "/error/500":
@@ -28,8 +34,6 @@ func GetTestingServer() *httptest.Server {
 				_, _ = w.Write([]byte(`{"errorDetail":"The server is down at the moment."}`))
 			case "/error/404":
 				w.WriteHeader(http.StatusNotFound)
-			case "/empty/response":
-				w.WriteHeader(http.StatusOK)
 			}
 		case "POST":
 			switch r.URL.Path {

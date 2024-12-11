@@ -103,9 +103,30 @@ func TestSDKLoggerWithCustomConfig(t *testing.T) {
 	_callRequestAsJson(t, request)
 }
 
-func TestSDKLoggerWithWithEmptyResponse(t *testing.T) {
+func TestSDKLoggerWithEmptyResponse(t *testing.T) {
 	request := callBuilder(ctx, "GET", "//response/")
-	request.AppendPath("/empty/response")
+	request.AppendPath("/empty")
+
+	request.Logger(NewSdkLogger(NewLoggerConfiguration(
+		WithLevel("debug"),
+		WithRequestConfiguration(
+			WithRequestBody(true),
+		),
+		WithResponseConfiguration(
+			WithResponseBody(true),
+		),
+	)))
+	request.Json("Apimatic")
+	_, response, _ := request.CallAsJson()
+	expected := 200
+	if response.StatusCode != expected {
+		t.Errorf(_testsErrorFormat, expected, response)
+	}
+}
+
+func TestSDKLoggerWithInvalidResponse(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.AppendPath("/invalid")
 
 	request.Logger(NewSdkLogger(NewLoggerConfiguration(
 		WithLevel("debug"),
