@@ -17,4 +17,4 @@ updates:
     open-pull-requests-limit: 10
     rebase-strategy: "auto"
     reviewers:
-      - "asadali214"
+      - "haseeb-mhr"
