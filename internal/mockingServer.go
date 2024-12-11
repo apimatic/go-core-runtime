@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"io"
 	"net/http"
 	"net/http/httptest"
 )
@@ -14,8 +15,18 @@ func GetTestingServer() *httptest.Server {
 			case "/response/integer":
 				_, _ = w.Write([]byte(`4`))
 			case "/template/abc/def", "/template/1/2/3/4/5", "/response/binary":
-				_, _ = w.Write([]byte(`"passed": true,
-				"message": "It's a hit!",`))
+				_, _ = w.Write([]byte(`"passed": true, "message": "It's a hit!",`))
+			case "/response/binary/customHeader":
+				if r.Header.Get("custom-header") == "CustomHeaderValue" {
+					_, _ = w.Write([]byte(`"passed": true, "message": "It's a hit!",`))
+				} else {
+					w.WriteHeader(http.StatusBadRequest)
+				}
+			case "/response/empty":
+				w.WriteHeader(http.StatusOK)
+			case "/response/invalid":
+				reqBody, _ := io.ReadAll(r.Body)
+				_, _ = w.Write(reqBody)
 			case "/error/400":
 				w.WriteHeader(http.StatusBadRequest)
 			case "/error/500":

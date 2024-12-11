@@ -14,6 +14,8 @@ var callBuilder https.CallBuilderFactory
 var ctx = context.Background()
 var serverUrl = internal.GetTestingServer().URL
 
+var _testsErrorFormat = "Failed:\nExpected: %v\nGot: %v"
+
 func init() {
 
 	client := https.NewHttpClient(https.NewHttpConfiguration())
@@ -36,7 +38,7 @@ func _callRequestAsJson(t *testing.T, request https.CallBuilder) {
 	}
 	expected := 200
 	if response.StatusCode != expected {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+		t.Errorf(_testsErrorFormat, expected, response)
 	}
 }
 
@@ -46,7 +48,7 @@ type fmtLogger struct {
 
 func (c *fmtLogger) AssertLogEntries(t *testing.T, expected ...string) {
 	if !reflect.DeepEqual(c.entries, expected) {
-		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, c.entries)
+		t.Errorf(_testsErrorFormat, expected, c.entries)
 	}
 }
 
@@ -101,6 +103,48 @@ func TestSDKLoggerWithCustomConfig(t *testing.T) {
 	_callRequestAsJson(t, request)
 }
 
+func TestSDKLoggerWithEmptyResponse(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.AppendPath("/empty")
+
+	request.Logger(NewSdkLogger(NewLoggerConfiguration(
+		WithLevel("debug"),
+		WithRequestConfiguration(
+			WithRequestBody(true),
+		),
+		WithResponseConfiguration(
+			WithResponseBody(true),
+		),
+	)))
+	request.Json("Apimatic")
+	_, response, _ := request.CallAsJson()
+	expected := 200
+	if response.StatusCode != expected {
+		t.Errorf(_testsErrorFormat, expected, response)
+	}
+}
+
+func TestSDKLoggerWithInvalidResponse(t *testing.T) {
+	request := callBuilder(ctx, "GET", "//response/")
+	request.AppendPath("/invalid")
+
+	request.Logger(NewSdkLogger(NewLoggerConfiguration(
+		WithLevel("debug"),
+		WithRequestConfiguration(
+			WithRequestBody(true),
+		),
+		WithResponseConfiguration(
+			WithResponseBody(true),
+		),
+	)))
+	request.Json("Apimatic")
+	_, response, _ := request.CallAsJson()
+	expected := 200
+	if response.StatusCode != expected {
+		t.Errorf(_testsErrorFormat, expected, response)
+	}
+}
+
 func TestSDKLoggerWithCustomLoggerDefaultConfig(t *testing.T) {
 	request := callBuilder(ctx, "GET", "//response/")
 	request.AppendPath("/binary")
@@ -116,15 +160,16 @@ func TestSDKLoggerWithCustomLoggerDefaultConfig(t *testing.T) {
 	expected := []string{
 		"info, Request %{method} %{url} %{contentType}, map[contentType: method:GET url:" + serverUrl + "/response/binary]",
 		"info, Request headers %{headers}, map[headers:map[]]",
-		"info, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",
+		"info, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:41 contentType:text/plain; charset=utf-8 statusCode:200]",
 	}
 	logger.AssertLogEntries(t, expected...)
 }
 
 func TestSDKLoggerWithCustomLoggerDefaultConfigWithHeaders(t *testing.T) {
 	request := callBuilder(ctx, "GET", "//response/")
-	request.AppendPath("/binary")
+	request.AppendPath("/binary/customHeader")
 	request.Header("Content-Type", "application/file")
+	request.Header("custom-header", "CustomHeaderValue")
 	logger := &fmtLogger{}
 	request.Logger(NewSdkLogger(NewLoggerConfiguration(
 		WithLogger(logger),
@@ -135,9 +180,9 @@ func TestSDKLoggerWithCustomLoggerDefaultConfigWithHeaders(t *testing.T) {
 	_callRequestAsJson(t, request)
 
 	expected := []string{
-		"info, Request %{method} %{url} %{contentType}, map[contentType:application/file method:GET url:" + serverUrl + "/response/binary]",
-		"info, Request headers %{headers}, map[headers:map[Content-Type:[application/file]]]",
-		"info, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",
+		"info, Request %{method} %{url} %{contentType}, map[contentType:application/file method:GET url:" + serverUrl + "/response/binary/customHeader]",
+		"info, Request headers %{headers}, map[headers:map[Content-Type:[application/file] Custom-Header:[**Redacted**]]]",
+		"info, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:41 contentType:text/plain; charset=utf-8 statusCode:200]",
 	}
 	logger.AssertLogEntries(t, expected...)
 }
@@ -174,10 +219,10 @@ func TestSDKLoggerWithCustomLoggerCustomConfig(t *testing.T) {
 	expected := []string{
 		"debug, Request %{method} %{url} %{contentType}, map[contentType:application/file method:GET url:" + serverUrl + "/response/binary]",
 		"debug, Request headers %{headers}, map[headers:map[Authorization:[**Redacted**] Content-Type:[application/file]]]",
-		"debug, Request body %{body}, map[body:null]",
-		"debug, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:45 contentType:text/plain; charset=utf-8 statusCode:200]",
+		"debug, Request body %{body}, map[body:<nil>]",
+		"debug, Response %{statusCode} %{contentLength} %{contentType}, map[contentLength:41 contentType:text/plain; charset=utf-8 statusCode:200]",
 		"debug, Response headers %{headers}, map[headers:map[Content-Type:[text/plain; charset=utf-8]]]",
-		"debug, Response body %{body}, map[body:{}]",
+		"debug, Response body %{body}, map[body:\"passed\": true, \"message\": \"It's a hit!\",]",
 	}
 	logger.AssertLogEntries(t, expected...)
 }
