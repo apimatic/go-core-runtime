@@ -183,8 +183,8 @@ func (cb *defaultCallBuilder) AppendPath(path string) {
 
 // AppendTemplateParam appends the provided parameter to the existing path in the CallBuilder as a URL template parameter.
 func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
-	if strings.Contains(cb.path, "%v") {
-		cb.path = fmt.Sprintf(cb.path, url.QueryEscape(param))
+	if index := strings.Index(cb.path, "%v"); index != -1 {
+		cb.path = cb.path[:index] + url.QueryEscape(param) + cb.path[index+len("%v"):]
 	} else {
 		cb.AppendPath(url.QueryEscape(param))
 	}
