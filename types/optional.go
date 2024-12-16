@@ -61,3 +61,7 @@ func (o *Optional[T]) UnmarshalJSON(input []byte) error {
 
 	return nil
 }
+
+func (o Optional[T]) MarshalJSON() ([]byte, error) {
+	return json.Marshal(o.value)
+}
