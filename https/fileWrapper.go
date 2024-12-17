@@ -18,6 +18,10 @@ type FileWrapper struct {
 	FileHeaders http.Header
 }
 
+func (f FileWrapper) String() string {
+	return fmt.Sprintf("FileWrapper[FileName=%v]", f.FileName)
+}
+
 // isURL checks if the given parsedPath is a URL
 func isURL(parsedPath *url.URL) bool {
 	return parsedPath.Scheme == "http" || parsedPath.Scheme == "https"
