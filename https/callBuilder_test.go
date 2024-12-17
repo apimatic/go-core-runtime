@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 )
 
 var ctx = context.Background()
@@ -127,6 +128,31 @@ func TestAppendTemplateParamsIntegers(t *testing.T) {
 		t.Errorf("Error in CallAsJson: %v", err)
 	}
 
+	expected := 200
+
+	if response.StatusCode != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+	}
+}
+
+func TestAppendTemplateParamsAnySlice(t *testing.T) {
+	request := GetCallBuilder(ctx, "GET", "/template/%v", nil)
+	request.AppendTemplateParams([]any{time.Time{}})
+	_, response, _ := request.CallAsJson()
+
+	expected := 200
+
+	if response.StatusCode != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, response)
+	}
+}
+
+func TestAppendTemplateParamsAny(t *testing.T) {
+	request := GetCallBuilder(ctx, "GET", "/template/%v", nil)
+	request.AppendTemplateParams(time.Now())
+	request.AppendTemplateParams("abc")
+	request.AppendTemplateParams(2)
+	_, response, _ := request.CallAsJson()
 	expected := 200
 
 	if response.StatusCode != expected {

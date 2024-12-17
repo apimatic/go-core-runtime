@@ -219,7 +219,7 @@ func TestOneOfDiscriminator(t *testing.T) {
 			discriminators:     []string{"4 wheeler", "2 wheeler"},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
-			expectedValue:      `{"id":2345,"roof":"BIG","air_level":{},"type":"2 wheeler"}`,
+			expectedValue:      `{"id":2345,"roof":"BIG","air_level":null,"type":"2 wheeler"}`,
 			expectedType:       &internal.Bike{},
 		},
 		{
@@ -326,7 +326,7 @@ func TestAnyOfDiscriminator(t *testing.T) {
 			discriminators:     []string{"", "2 wheeler"},
 			discriminatorField: "type",
 			testValue:          `{"id":2345,"roof":"BIG","type":"2 wheeler"}`,
-			expectedValue:      `{"id":2345,"roof":"BIG","air_level":{},"type":"2 wheeler"}`,
+			expectedValue:      `{"id":2345,"roof":"BIG","air_level":null,"type":"2 wheeler"}`,
 			expectedType:       &internal.Bike{},
 		},
 	}

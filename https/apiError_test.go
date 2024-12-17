@@ -43,6 +43,17 @@ func TestErrorMethod(t *testing.T) {
 	}
 }
 
+func TestStringMethod(t *testing.T) {
+	expected := "ApiError[StatusCode=500, Message=Server Error]"
+	result := ApiError{
+		StatusCode: 500,
+		Message:    "Server Error",
+	}
+	if result.String() != expected {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", expected, result.Error())
+	}
+}
+
 func TestCorrectMessageWhenDynamicErrorMessageWithStatusCode(t *testing.T) {
 	tpl := "Error: Status Code {$statusCode}"
 
