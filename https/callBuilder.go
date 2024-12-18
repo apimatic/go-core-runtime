@@ -40,7 +40,7 @@ type baseUrlProvider func(server string) string
 type CallBuilder interface {
 	AppendPath(path string)
 	AppendTemplateParam(param string)
-	AppendTemplateParams(params any)
+	AppendTemplateParams(params ...any)
 	AppendErrors(errors map[string]ErrorBuilder[error])
 	BaseUrl(arg string)
 	Method(httpMethodName string)
@@ -183,8 +183,8 @@ func (cb *defaultCallBuilder) AppendPath(path string) {
 
 // AppendTemplateParam appends the provided parameter to the existing path in the CallBuilder as a URL template parameter.
 func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
-	if strings.Contains(cb.path, "%v") {
-		cb.path = fmt.Sprintf(cb.path, "/"+url.QueryEscape(param))
+	if index := strings.Index(cb.path, "%v"); index != -1 {
+		cb.path = cb.path[:index] + url.QueryEscape(param) + cb.path[index+len("%v"):]
 	} else {
 		cb.AppendPath(url.QueryEscape(param))
 	}
@@ -192,18 +192,30 @@ func (cb *defaultCallBuilder) AppendTemplateParam(param string) {
 
 // AppendTemplateParams appends the provided parameters to the existing path in the CallBuilder as URL template parameters.
 // It accepts a slice of strings or a slice of integers as the params argument.
-func (cb *defaultCallBuilder) AppendTemplateParams(params any) {
-	reflectValue := reflect.ValueOf(params)
-	if reflectValue.Type().Kind() == reflect.Slice {
-		for i := 0; i < reflectValue.Len(); i++ {
-			innerParam := reflectValue.Index(i).Interface()
-			switch x := innerParam.(type) {
+func (cb *defaultCallBuilder) AppendTemplateParams(params ...any) {
+
+	for _, param := range params {
+		paramValue := reflect.ValueOf(param)
+		if paramValue.Type().Kind() == reflect.Slice {
+			for i := 0; i < paramValue.Len(); i++ {
+				innerParam := paramValue.Index(i).Interface()
+				switch x := innerParam.(type) {
+				case string:
+					cb.AppendTemplateParam(x)
+				case int:
+					cb.AppendTemplateParam(strconv.Itoa(x))
+				default:
+					cb.AppendTemplateParam(FormatAny(x))
+				}
+			}
+		} else {
+			switch x := param.(type) {
 			case string:
 				cb.AppendTemplateParam(x)
 			case int:
 				cb.AppendTemplateParam(strconv.Itoa(x))
 			default:
-				cb.AppendTemplateParam(fmt.Sprintf("%v", x))
+				cb.AppendTemplateParam(FormatAny(x))
 			}
 		}
 	}
@@ -273,7 +285,18 @@ func (cb *defaultCallBuilder) Header(
 	if cb.headers == nil {
 		cb.headers = make(map[string]string)
 	}
-	SetHeaders(cb.headers, strings.ToLower(name), fmt.Sprintf("%v", value))
+	SetHeaders(cb.headers, strings.ToLower(name), FormatAny(value))
+}
+
+func FormatAny(value any) string {
+	if valueBytes, err := json.Marshal(value); err == nil {
+		return sanitizeString(valueBytes)
+	}
+	return ""
+}
+
+func sanitizeString(valueBytes []byte) string {
+	return strings.Trim(string(valueBytes), "\"")
 }
 
 // CombineHeaders combines the provided headers with the existing headers in the CallBuilder.
@@ -454,7 +477,7 @@ func (cb *defaultCallBuilder) validateJson() error {
 		cb.setContentTypeIfNotSet(JSON_CONTENT_TYPE)
 		return nil
 	}
-	cb.Text(fmt.Sprint(cb.jsonData))
+	cb.Text(FormatAny(cb.jsonData))
 	return nil
 }
 

@@ -66,3 +66,17 @@ func TestUnmarshalJSONError(t *testing.T) {
 		t.Errorf("Failed:\nExpected: Unmarshalling Error \nGot: %v", result)
 	}
 }
+
+func TestMarshalJSON(t *testing.T) {
+	value := "Optional Value"
+	expected := types.Optional[string]{}
+	expected.SetValue(&value)
+	expected.ShouldSetValue(true)
+	optionalBytes, _ := json.Marshal(expected)
+
+	var result string
+	_ = json.Unmarshal(optionalBytes, &result)
+	if value != result {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", value, result)
+	}
+}

@@ -55,6 +55,19 @@ func TestGetFileWithContentTypeFromLocalPath(t *testing.T) {
 	}
 }
 
+func TestGetFileStringFromLocalPath(t *testing.T) {
+	file, err := GetFileWithContentType("../internal/binary.png", "image/png")
+	if err != nil {
+		t.Errorf("GetFile failed: %v", err)
+	}
+
+	if file.String() != "FileWrapper[FileName=binary.png]" ||
+		file.FileHeaders.Get(CONTENT_TYPE_HEADER) != "image/png" ||
+		len(file.File) <= 0 {
+		t.Errorf("Expected Image File not recieved ")
+	}
+}
+
 func TestGetFileErrorParsingUrl(t *testing.T) {
 	_, err := GetFile("")
 	if err == nil {

@@ -18,6 +18,11 @@ type ApiError struct {
 	Message    string
 }
 
+func (a ApiError) String() string {
+	return fmt.Sprintf(
+		"ApiError[StatusCode=%v, Message=%v]", a.StatusCode, a.Message)
+}
+
 func (a ApiError) Error() string {
 	return fmt.Sprintf("ApiError occurred: %v", a.Message)
 }
