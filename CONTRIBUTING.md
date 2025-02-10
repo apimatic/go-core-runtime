@@ -1,4 +1,4 @@
-# Contributing to apimatic/core-lib-php
+# Contributing to apimatic/go-core-runtime
 
 Thank you for your interest in contributing! 🎉 Your contributions help make this project better. We value open-source contributions to this library, please take a few minutes to review this guide before you start.
 
