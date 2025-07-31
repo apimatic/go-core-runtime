@@ -1,10 +1,12 @@
 # Getting Started with Go Core Runtime
 [![Go Reference](https://pkg.go.dev/badge/github.com/apimatic/go-core-runtime.svg)](https://pkg.go.dev/github.com/apimatic/go-core-runtime)
 [![GitHub release](https://img.shields.io/github/v/release/apimatic/go-core-runtime)](https://pkg.go.dev/github.com/apimatic/go-core-runtime?tab=versions)
+[![Test Coverage][coverage-badge]][coverage-url]
+[![Maintainability Rating][maintainability-badge]][maintainability-url]
+[![Vulnerabilities][vulnerabilities-badge]][vulnerabilities-url]
 [![Licence][license-badge]][license-url]
 [![Tests][test-badge]][test-url]
-[![Test Coverage](https://api.codeclimate.com/v1/badges/2c5a5f8dca8e970ac36e/test_coverage)](https://codeclimate.com/github/apimatic/go-core-runtime/test_coverage)
-[![Maintainability](https://api.codeclimate.com/v1/badges/2c5a5f8dca8e970ac36e/maintainability)](https://codeclimate.com/github/apimatic/go-core-runtime/maintainability)
+
 
 ## Introduction
 
@@ -111,3 +113,9 @@ For any questions or support, please feel free to contact us at support@apimatic
 [license-url]: LICENSE
 [test-badge]: https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml/badge.svg
 [test-url]: https://github.com/apimatic/go-core-runtime/actions/workflows/test.yaml
+[coverage-badge]: https://sonarcloud.io/api/project_badges/measure?project=apimatic_go-core-runtime&metric=coverage
+[coverage-url]: https://sonarcloud.io/summary/new_code?id=apimatic_go-core-runtime
+[maintainability-badge]: https://sonarcloud.io/api/project_badges/measure?project=apimatic_go-core-runtime&metric=sqale_rating
+[maintainability-url]: https://sonarcloud.io/summary/new_code?id=apimatic_go-core-runtime
+[vulnerabilities-badge]: https://sonarcloud.io/api/project_badges/measure?project=apimatic_go-core-runtime&metric=vulnerabilities
+[vulnerabilities-url]: https://sonarcloud.io/summary/new_code?id=apimatic_go-core-runtime
