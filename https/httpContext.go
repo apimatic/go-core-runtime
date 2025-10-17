@@ -23,3 +23,9 @@ func (ctx *HttpContext) GetResponseBody() ([]byte, error) {
 	ctx.Response.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	return bodyBytes, err
 }
+
+func ReadRequestBody(req *http.Request) ([]byte, error) {
+	bodyBytes, err := io.ReadAll(req.Body)
+	req.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	return bodyBytes, err
+}

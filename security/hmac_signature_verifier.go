@@ -3,6 +3,7 @@ package security
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"crypto/sha512"
 	"crypto/subtle"
 	"errors"
 	"fmt"
@@ -28,7 +29,7 @@ type HmacSignatureVerifier struct {
 	// Template containing "{digest}".
 	signatureValueTemplate string
 	// Resolves the bytes to sign from the request.
-	requestBytesResolver func(http.Request) []byte
+	requestBytesResolver func(*http.Request) ([]byte, error)
 	// Codec used to decode (and possibly encode) digest text ↔ bytes (e.g., hex/base64).
 	digestCodec DigestCodec
 }
@@ -40,7 +41,7 @@ func NewHmacSignatureVerifier(
 	secretKey string,
 	signatureHeaderName string,
 	digestCodec DigestCodec,
-	requestBytesResolver func(http.Request) []byte,
+	requestBytesResolver func(*http.Request) ([]byte, error),
 	algorithm string,
 	signatureValueTemplate string,
 ) (*HmacSignatureVerifier, error) {
@@ -75,7 +76,7 @@ func NewHmacSignatureVerifier(
 }
 
 // Verify verifies the HMAC signature for the given request.
-func (v *HmacSignatureVerifier) Verify(request http.Request) VerificationResult {
+func (v *HmacSignatureVerifier) Verify(request *http.Request) VerificationResult {
 	headerValue := []string{""}
 	for k, val := range request.Header {
 		if strings.EqualFold(k, v.signatureHeaderName) {
@@ -84,7 +85,7 @@ func (v *HmacSignatureVerifier) Verify(request http.Request) VerificationResult 
 		}
 	}
 
-	if len(headerValue) <= 1 {
+	if len(headerValue) < 1 {
 		return NewFailure(fmt.Sprintf("Signature header '%s' is missing.", v.signatureHeaderName))
 	}
 
@@ -93,7 +94,10 @@ func (v *HmacSignatureVerifier) Verify(request http.Request) VerificationResult 
 		return NewFailure(fmt.Sprintf("Malformed signature header '%s'.", v.signatureHeaderName))
 	}
 
-	message := v.requestBytesResolver(request)
+	message, err := v.requestBytesResolver(request)
+	if err != nil {
+		return NewFailure(fmt.Sprintf("Error resolving Request Bytes: %v", err))
+	}
 	computed, err := v.computeHMAC(message)
 	if err != nil {
 		return NewFailure(fmt.Sprintf("Error computing HMAC: %v", err))
@@ -110,6 +114,10 @@ func (v *HmacSignatureVerifier) computeHMAC(message []byte) ([]byte, error) {
 	switch strings.ToUpper(v.algorithm) {
 	case "HMACSHA256", "HMAC-SHA256", "SHA256":
 		mac := hmac.New(sha256.New, v.secretKey)
+		mac.Write(message)
+		return mac.Sum(nil), nil
+	case "HMACSHA512", "HMAC-SHA512", "SHA512":
+		mac := hmac.New(sha512.New, v.secretKey)
 		mac.Write(message)
 		return mac.Sum(nil), nil
 	default:
