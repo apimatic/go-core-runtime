@@ -77,7 +77,7 @@ func NewHmacSignatureVerifier(
 
 // Verify verifies the HMAC signature for the given request.
 func (v *HmacSignatureVerifier) Verify(request *http.Request) VerificationResult {
-	headerValue := []string{""}
+	headerValue := make([]string, 0)
 	for k, val := range request.Header {
 		if strings.EqualFold(k, v.signatureHeaderName) {
 			headerValue = val
@@ -161,12 +161,6 @@ func (v *HmacSignatureVerifier) extractSignature(headerValue string) []byte {
 	if len(digest) >= 2 && digest[0] == '"' && digest[len(digest)-1] == '"' {
 		digest = digest[1 : len(digest)-1]
 	}
-
-	defer func() {
-		if r := recover(); r != nil {
-			_ = r // ignore panic from invalid hex/base64
-		}
-	}()
 
 	decoded, _ := v.digestCodec.Decode(digest)
 	return decoded

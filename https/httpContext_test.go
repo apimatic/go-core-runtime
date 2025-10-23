@@ -36,3 +36,21 @@ func TestGetResponseBody(t *testing.T) {
 		t.Errorf("Failed:\nExpected: %v\nGot: %v", bodyBytes, newBodyBytes)
 	}
 }
+
+func TestReadRequestBody(t *testing.T) {
+	bodyBytes := []byte(`{"invalidJson"}`)
+	respBody := io.NopCloser(bytes.NewReader(bodyBytes))
+	ctx := HttpContext{
+		Request: &http.Request{
+			Body: respBody,
+		},
+	}
+
+	newBodyBytes, err := ReadRequestBody(ctx.Request)
+	if err != nil {
+		t.Error(err)
+	}
+	if !reflect.DeepEqual(newBodyBytes, bodyBytes) {
+		t.Errorf("Failed:\nExpected: %v\nGot: %v", bodyBytes, newBodyBytes)
+	}
+}
