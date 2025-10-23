@@ -19,7 +19,7 @@ func TestNewHttpClient(t *testing.T) {
 
 func TestHttpClientExecute(t *testing.T) {
 	client := NewHttpClient(NewHttpConfiguration())
-	request, _ := http.NewRequest(http.MethodGet, "https://apimatic-goo.free.beeceptor.com", nil)
+	request, _ := http.NewRequest(http.MethodGet, "https://apimatic-go.free.beeceptor.com", nil)
 	response, _ := client.Execute(request)
 
 	if response == nil || response.StatusCode != 200 {
