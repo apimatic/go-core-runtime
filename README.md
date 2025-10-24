@@ -75,12 +75,12 @@ The logger package provides logic related to logging. It offers the Facade Desig
 ### Security
 The security package provides logic related to request authentication and verification. It includes digest encoding/decoding, signature verification, and HMAC-based request validation.
 
-| File Name                                                                                     | Description                                                                                                                                                   |
-|-----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`DigestCodec`](security/digest_codec.go)                                                     | Provides interfaces for encoding and decoding digest values, and factory functions for creating digest codecs based on encoding type (Hex, Base64, Base64Url). |
-| [`SignatureVerifier`](security/hmac_signature_verifier.go)                                    | Provides interfaces for verifying HMAC-based signatures for HTTP requests.                                                                                 |
-| [`HmacSignatureVerifier`](security/hmac_signature_verifier.go)                                | Provides implementation of [`SignatureVerifier`](security/hmac_signature_verifier.go) for verifying HMAC-based signatures for HTTP requests.                                                                                 |
-| [`VerificationResult`](security/verification_result.go)                                       | Provides a structure to represent the result of request verification, including status and error details.               |
+| File Name                                                                                     | Description                                                                                                                                                                                         |
+|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DigestCodec`](security/digest_codec.go)                                                     | Provides digest encoding/decoding interfaces and implementations for Hex, Base64, and Base64URL formats.                                                                                            |
+| [`SignatureVerifier`](security/hmac_signature_verifier.go)                                    | Provides interfaces for verifying signatures for HTTP requests.                                                                                                                             |
+| [`HmacSignatureVerifier`](security/hmac_signature_verifier.go)                                | Provides an implementation of [`SignatureVerifier`](security/hmac_signature_verifier.go) for HMAC-based signature verification for HTTP requests, supporting configurable algorithms and templates. |
+| [`VerificationResult`](security/verification_result.go)                                       | Defines the structure for representing signature verification outcomes with success/failure states and error details.                                                                               |
 
 
 ### Test Helper
