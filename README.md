@@ -72,6 +72,17 @@ The logger package provides logic related to logging. It offers the Facade Desig
 | [`Request Logger Configuration`](logger/requestLoggerConfiguration.go)   | Provides request logging configurations for the Sdk Logger.                                                                   |
 | [`Sdk Logger`](logger/sdkLogger.go)                                      | Provides default and null implementation of [` Sdk Logger Interface`](logger/sdkLogger.go) to log API requests and responses. |
 
+### Security
+The security package provides logic related to request authentication and verification. It includes digest encoding/decoding, signature verification, and HMAC-based request validation.
+
+| File Name                                                                                     | Description                                                                                                                                                                                         |
+|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DigestCodec`](security/digest_codec.go)                                                     | Provides digest encoding/decoding interfaces and implementations for Hex, Base64, and Base64URL formats.                                                                                            |
+| [`SignatureVerifier`](security/hmac_signature_verifier.go)                                    | Provides interfaces for verifying signatures for HTTP requests.                                                                                                                             |
+| [`HmacSignatureVerifier`](security/hmac_signature_verifier.go)                                | Provides an implementation of [`SignatureVerifier`](security/hmac_signature_verifier.go) for HMAC-based signature verification for HTTP requests, supporting configurable algorithms and templates. |
+| [`VerificationResult`](security/verification_result.go)                                       | Defines the structure for representing signature verification outcomes with success/failure states and error details.                                                                               |
+
+
 ### Test Helper
 Package testHelper provides helper functions for testing purposes.
 
